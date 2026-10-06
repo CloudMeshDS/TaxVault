@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TaxVault</string>
+    <string name="title_activity_main">TaxVault</string>
+    <string name="package_name">nz.taxvault.mobile</string>
+    <string name="custom_url_scheme">nz.taxvault.mobile</string>
+</resources>
