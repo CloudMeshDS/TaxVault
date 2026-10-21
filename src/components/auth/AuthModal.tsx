@@ -26,7 +26,7 @@ import { SupportedCountry, BusinessEntityType, UserProfile } from '../../types';
 import { TAX_CONFIGS } from '../../services/taxRules';
 import { supabaseService } from '../../services/supabaseService';
 import { emailJsService } from '../../services/emailJsService';
-import { createCleanUserProfile } from '../../services/storageService';
+import { createCleanUserProfile, takePendingSignupProfile } from '../../services/storageService';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
@@ -277,7 +277,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           updatedProfile = null;
         }
         if (!updatedProfile) {
-          updatedProfile = createCleanUserProfile(authedEmail, undefined, currentProfile?.country || 'IN', authedUid);
+          updatedProfile = takePendingSignupProfile(authedEmail, authedUid) || createCleanUserProfile(authedEmail, undefined, currentProfile?.country || 'IN', authedUid);
           await supabaseService.upsertProfile(updatedProfile).catch(() => {});
         }
 
@@ -409,7 +409,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const profileRes = await supabaseService.fetchProfile(uid, targetEmail).catch(() => ({ profile: null }));
       let authenticatedProfile = profileRes.profile;
       if (!authenticatedProfile) {
-        authenticatedProfile = createCleanUserProfile(targetEmail, targetEmail.split('@')[0], currentProfile?.country || 'IN', uid);
+        authenticatedProfile = takePendingSignupProfile(targetEmail, uid) || createCleanUserProfile(targetEmail, targetEmail.split('@')[0], currentProfile?.country || 'IN', uid);
         await supabaseService.upsertProfile(authenticatedProfile).catch(() => {});
       }
       setTimeout(() => {

@@ -237,6 +237,33 @@ export function createCleanUserProfile(
   };
 }
 
+const PENDING_SIGNUP_KEY = 'taxvault_pending_signup_profile_v1';
+
+/**
+ * Sign-up details (name, business, country) entered before the account has a session. With
+ * email confirmation on, sign-up returns no session, so the profile can't be saved yet under
+ * Row Level Security; it is kept here and written on the first sign-in instead.
+ */
+export function savePendingSignupProfile(profile: UserProfile): void {
+  try {
+    localStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(profile));
+  } catch {}
+}
+
+/** Returns (and clears) the pending sign-up profile for this email, re-keyed to the auth user id. */
+export function takePendingSignupProfile(email: string, userId?: string): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(PENDING_SIGNUP_KEY);
+    if (!raw) return null;
+    const pending: UserProfile = JSON.parse(raw);
+    if ((pending.email || '').toLowerCase() !== email.toLowerCase()) return null;
+    localStorage.removeItem(PENDING_SIGNUP_KEY);
+    return { ...pending, id: userId || pending.id, email: email.toLowerCase() };
+  } catch {
+    return null;
+  }
+}
+
 export const INITIAL_SAMPLE_EXPENSES: ExpenseRecord[] = [
   {
     id: 'exp-01-amazon',

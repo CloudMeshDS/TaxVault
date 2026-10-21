@@ -1,7 +1,7 @@
 import { ExpenseRecord, SupportedCountry, UserProfile } from '../types';
 import { storageService, DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE } from './storageService';
 import { supabaseService } from './supabaseService';
-import { apiUrl } from './apiBase';
+import { authedFetch } from './apiBase';
 
 /**
  * TaxVault API Client
@@ -35,7 +35,7 @@ export const apiClient = {
    */
   async getHealth(): Promise<{ status: string; supabaseConfigured: boolean }> {
     try {
-      const res = await fetch(apiUrl('/api/health'));
+      const res = await authedFetch('/api/health');
       if (res.ok) return await res.json();
     } catch {}
     const cfg = supabaseService.getConfig();
@@ -47,7 +47,7 @@ export const apiClient = {
    */
   async getSupabaseStatus(): Promise<SupabaseStatusResponse> {
     try {
-      const res = await fetch(apiUrl('/api/supabase/status'));
+      const res = await authedFetch('/api/supabase/status');
       if (res.ok) return await res.json();
     } catch {}
 
@@ -83,7 +83,7 @@ export const apiClient = {
       if (userId) params.append('userId', userId);
       if (userEmail) params.append('userEmail', userEmail);
       const qs = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(apiUrl(`/api/expenses${qs}`), {
+      const res = await authedFetch(`/api/expenses${qs}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {
@@ -97,9 +97,12 @@ export const apiClient = {
       // Backend API unreachable (e.g. Capacitor mobile APK or dev server offline)
     }
 
-    // 2. Direct Supabase Cloud query (vital for cross-device consistency)
+    // 2. Direct Supabase Cloud query (vital for cross-device consistency). RLS limits it to the
+    //    signed-in user's rows; without a session it would return [] and wipe the local cache.
     try {
-      const res = await supabaseService.fetchExpenses(userId);
+      const res = (await supabaseService.hasSession())
+        ? await supabaseService.fetchExpenses(userId)
+        : { expenses: [], error: 'No Supabase session' };
       if (!res.error && Array.isArray(res.expenses)) {
         if (res.expenses.length > 0 || userId) {
           storageService.saveExpenses(res.expenses);
@@ -135,7 +138,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(apiUrl('/api/expenses'), {
+      const res = await authedFetch('/api/expenses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(expense),
@@ -191,7 +194,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(apiUrl(`/api/expenses/${encodeURIComponent(expense.id)}`), {
+      const res = await authedFetch(`/api/expenses/${encodeURIComponent(expense.id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(expense),
@@ -236,7 +239,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(apiUrl(`/api/expenses/${encodeURIComponent(id)}`), {
+      const res = await authedFetch(`/api/expenses/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: { 'Accept': 'application/json' },
       });
@@ -284,7 +287,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(apiUrl(`/api/expenses/${encodeURIComponent(id)}/restore`), {
+      const res = await authedFetch(`/api/expenses/${encodeURIComponent(id)}/restore`, {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
       });
@@ -318,7 +321,7 @@ export const apiClient = {
       if (email) params.append('email', email);
       if (userId) params.append('userId', userId);
       const qs = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(apiUrl(`/api/profile${qs}`), {
+      const res = await authedFetch(`/api/profile${qs}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {
@@ -332,19 +335,37 @@ export const apiClient = {
       // Backend API unreachable
     }
 
-    // 2. Direct Supabase Cloud fetchProfile
-    try {
-      const res = await supabaseService.fetchProfile(userId, email);
-      if (res.profile) {
-        storageService.saveUserProfile(res.profile);
-        return res.profile;
+    // 2. Direct Supabase Cloud fetchProfile (RLS returns only the signed-in user's own profile)
+    const hasSession = await supabaseService.hasSession();
+    if (hasSession) {
+      try {
+        const res = await supabaseService.fetchProfile(userId, email);
+        if (res.profile) {
+          storageService.saveUserProfile(res.profile);
+          return res.profile;
+        }
+      } catch (err) {
+        console.warn('Direct Supabase getProfile fallback error:', err);
       }
-    } catch (err) {
-      console.warn('Direct Supabase getProfile fallback error:', err);
     }
 
-    if (email || userId) return null;
+    if (hasSession && (email || userId)) return null;
     return storageService.getUserProfile();
+  },
+
+  /**
+   * The signed-in user's plan and scan usage as recorded by the server (GET /api/subscription).
+   * Null for on-device demo accounts or when offline.
+   */
+  async getSubscription(): Promise<UserProfile['subscription'] | null> {
+    try {
+      const res = await authedFetch('/api/subscription', { headers: { 'Accept': 'application/json' } });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) return json.data;
+      }
+    } catch {}
+    return null;
   },
 
   /**
@@ -355,7 +376,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(apiUrl('/api/profile'), {
+      const res = await authedFetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(profile),
@@ -390,7 +411,7 @@ export const apiClient = {
    */
   async seedCountryData(country: SupportedCountry = 'NZ'): Promise<{ success: boolean; count: number; profile?: UserProfile; expenses?: ExpenseRecord[] }> {
     try {
-      const res = await fetch(apiUrl(`/api/seed-country/${encodeURIComponent(country)}`), {
+      const res = await authedFetch(`/api/seed-country/${encodeURIComponent(country)}`, {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
       });
@@ -403,7 +424,9 @@ export const apiClient = {
     } catch (err) {
       console.warn(`API seed-country for ${country} failed, using local fallback:`, err);
     }
+    // Demo accounts and offline use: seed the on-device store (the server only seeds signed-in accounts)
     const targetProfile = DEFAULT_PROFILES[country] || DEFAULT_INDIAN_PROFILE;
+    storageService.resetToSampleData();
     storageService.saveUserProfile(targetProfile);
     return { success: true, count: storageService.getExpenses().length, profile: targetProfile };
   },
@@ -420,7 +443,7 @@ export const apiClient = {
    */
   async clearAllData(userId?: string): Promise<boolean> {
     try {
-      const res = await fetch(apiUrl('/api/reset-data'), {
+      const res = await authedFetch('/api/reset-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -441,7 +464,7 @@ export const apiClient = {
    */
   async parseSearchQuery(query: string): Promise<any> {
     try {
-      const res = await fetch(apiUrl('/api/ai-search'), {
+      const res = await authedFetch('/api/ai-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ query }),
@@ -461,7 +484,7 @@ export const apiClient = {
    */
   async getReportsMetrics(): Promise<any> {
     try {
-      const res = await fetch(apiUrl('/api/reports'), {
+      const res = await authedFetch('/api/reports', {
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {

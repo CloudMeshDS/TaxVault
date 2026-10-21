@@ -10,7 +10,7 @@ import {
 import { CATEGORY_MAP, validateCalculation, formatCurrency } from './taxRules';
 import { usageTrackingService } from './usageTrackingService';
 import { activityLogService } from './activityLogService';
-import { apiUrl } from './apiBase';
+import { authedFetch } from './apiBase';
 
 export interface ExtractedReceiptData {
   merchant: string;
@@ -66,6 +66,8 @@ export interface ExtractedReceiptData {
   ocrStatus?: string;
   ocrMessage?: string;
   isManualEntry?: boolean;
+  /** Why automatic reading was skipped (shown on the review screen; never saved) */
+  extractionNotice?: string;
 }
 
 export interface SampleReceipt {
@@ -961,6 +963,9 @@ Return ONLY a valid JSON object matching this structure:
   }
 }
 
+// Why the server declined the last AI read (not signed in / monthly scan limit), if it did
+let lastServerOcrRefusal: string | null = null;
+
 /**
  * Server-side OCR (POST /api/receipt-ocr): the server holds the Gemini key, so it never
  * ships inside the web bundle or the APK. Images are compressed first to keep uploads small.
@@ -974,7 +979,7 @@ async function callServerOcr(
     const isPdf = inputPayload.startsWith('data:application/pdf') || inputPayload.startsWith('JVBERi');
     const payload = isPdf ? inputPayload : await optimizeReceiptImage(inputPayload, 1280, 0.82);
     const started = Date.now();
-    const res = await fetch(apiUrl('/api/receipt-ocr'), {
+    const res = await authedFetch('/api/receipt-ocr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ input: payload, customerTaxId, country }),
@@ -982,6 +987,12 @@ async function callServerOcr(
     });
     if (!res.ok) {
       console.warn(`Server OCR status: ${res.status}`);
+      if (res.status === 401) {
+        lastServerOcrRefusal = 'Automatic reading needs a signed-in TaxVault account. Enter the details below, or sign in to scan.';
+      } else if (res.status === 402) {
+        const body = await res.json().catch(() => ({}));
+        lastServerOcrRefusal = `${body?.error || 'You have used all free AI scans for this month.'} Enter the details below, or upgrade for unlimited scans.`;
+      }
       return null;
     }
     const json = await res.json();
@@ -1040,6 +1051,7 @@ function createManualEntryFallback(
   const cInfo = currencyMap[country] || currencyMap['NZ'];
 
   return {
+    extractionNotice: reason,
     merchant: '',
     invoiceNumber: '',
     receiptNumber: '',
@@ -1144,6 +1156,7 @@ export async function parseReceiptData(
     const isUsable = (r: ExtractedReceiptData | null): r is ExtractedReceiptData =>
       Boolean(r && (r.merchant || r.totalAmount > 0 || (r.items && r.items.length > 0)));
 
+    lastServerOcrRefusal = null;
     let result: ExtractedReceiptData | null = await callServerOcr(inputPayload, country, customerTaxId);
 
     // Optional: a personal Gemini key saved on this device (never the shared app key)
@@ -1166,7 +1179,7 @@ export async function parseReceiptData(
       inputPayload,
       customerTaxId,
       country,
-      'Could not read this receipt automatically. Please enter merchant & total.'
+      lastServerOcrRefusal || 'Could not read this receipt automatically. Please enter merchant & total.'
     );
   }
 

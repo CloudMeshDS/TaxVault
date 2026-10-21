@@ -22,7 +22,7 @@ import { ScanLine, Loader2 } from 'lucide-react';
 
 import { activityLogService } from './services/activityLogService';
 import { usageTrackingService } from './services/usageTrackingService';
-import { apiUrl } from './services/apiBase';
+import { authedFetch } from './services/apiBase';
 
 // Screens and modals load on demand so sign-in and Home don't wait on PDF/Excel/report code
 const ExpenseList = lazy(() => import('./components/expenses/ExpenseList').then((m) => ({ default: m.ExpenseList })));
@@ -338,7 +338,7 @@ export default function App() {
     setIsSyncing(true);
     try {
       const payload = storageService.generateBackupPayload();
-      await fetch(apiUrl('/api/backup/sync'), {
+      await authedFetch('/api/backup/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ backupPayload: payload }),
@@ -908,10 +908,21 @@ export default function App() {
     // Immediate cross-device cloud sync: pull the authenticated user's expenses from Supabase Cloud
     try {
       setIsSyncing(true);
-      const cloudData = await apiClient.getExpenses(activeProfile.id, activeProfile.email);
+      const [cloudData, serverSubscription] = await Promise.all([
+        apiClient.getExpenses(activeProfile.id, activeProfile.email),
+        apiClient.getSubscription(),
+      ]);
       if (cloudData && Array.isArray(cloudData.expenses)) {
         setExpenses(cloudData.expenses);
         storageService.saveExpenses(cloudData.expenses);
+      }
+      // The plan shown is the one the server has on record, not whatever the profile carried in
+      if (serverSubscription) {
+        setProfile((prev) => {
+          const synced = { ...prev, subscription: { ...prev.subscription, ...serverSubscription } };
+          storageService.saveUserProfile(synced);
+          return synced;
+        });
       }
     } catch (err) {
       console.warn('Post-login cloud sync error:', err);
@@ -944,9 +955,19 @@ export default function App() {
   // Export Excel helper
   const handleExportExcel = async () => {
     try {
-      const { ExportService } = await import('./services/exportService');
+      const { ExportClient } = await import('./services/exportClient');
       const fy = (profile?.financialYear || 'Current').replace(/\s+/g, '_');
-      ExportService.downloadExcel(profile, expenses, taxResult, `TaxVault_Expenses_${fy}.xlsx`);
+      const result = await ExportClient.downloadProExport('xlsx', {
+        profile,
+        expenses,
+        taxResult,
+        fileName: `TaxVault_Expenses_${fy}.xlsx`,
+      });
+      if (!result.ok) {
+        if (result.reason === 'pro_required') openSubscriptionModal(result.message);
+        else window.alert(result.message);
+        return;
+      }
 
       activityLogService.logActivity({
         userId: profile.id,
@@ -1041,6 +1062,7 @@ export default function App() {
                 profile={profile}
                 expenses={expenses}
                 taxResult={taxResult}
+                onOpenSubscription={openSubscriptionModal}
               />
             )}
 
@@ -1051,6 +1073,7 @@ export default function App() {
                 taxResult={taxResult}
                 onUpdateProfile={handleUpdateProfile}
                 onSelectExpense={(exp) => setSelectedExpenseForDetail(exp)}
+                onOpenSubscription={openSubscriptionModal}
               />
             )}
 

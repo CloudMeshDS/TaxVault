@@ -352,13 +352,13 @@ export function supabaseRowToProfile(row: any): UserProfile {
     biometricEnabled: Boolean(row.biometric_enabled),
     devicePlatform: row.device_platform || 'ios',
     lastBackupDate: row.last_backup_date || new Date().toISOString(),
+    // Placeholder until GET /api/subscription answers: the plan is decided by the server only
     subscription: {
-      tier: 'pro',
+      tier: 'free',
       billingCycle: 'monthly',
       status: 'active',
       receiptsScannedThisMonth: 0,
-      monthlyReceiptLimit: 500,
-      renewsOn: '2026-11-01',
+      monthlyReceiptLimit: 10,
     },
   };
 }
@@ -986,6 +986,29 @@ class SupabaseService {
         });
       } catch {}
     }
+  }
+
+  /**
+   * Access token of the current Supabase session (refreshed by supabase-js when needed),
+   * or null when signed out / using an on-device demo account.
+   */
+  public async getAccessToken(): Promise<string | null> {
+    const client = this.getClient();
+    if (!client) return null;
+    try {
+      const { data } = await client.auth.getSession();
+      return data?.session?.access_token || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Row Level Security only returns the signed-in user's own rows, so direct table access is
+   * pointless (and would return empty lists) without a session.
+   */
+  public async hasSession(): Promise<boolean> {
+    return Boolean(await this.getAccessToken());
   }
 
   /**

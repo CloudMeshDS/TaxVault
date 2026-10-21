@@ -8,8 +8,20 @@ import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import { COUNTRY_TERMS } from './src/constants/countryTerms';
+import { ExportService } from './src/services/exportService';
 
 dotenv.config({ override: true });
+
+// Verified Supabase user attached to the request by the requireUser / optionalUser middleware
+type AuthUser = { id: string; email: string };
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+    }
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1430,9 +1442,12 @@ try {
   console.warn('Data directory creation notice:', dirErr);
 }
 
-// In-Memory cache (acts as authoritative fallback if cloud database is starting or offline)
-let inMemoryExpenses: any[] = [];
-let inMemoryProfile: any = { ...DEFAULT_PROFILES.NZ };
+// Per-user in-memory cache (fallback if the cloud database is starting or offline). Keyed by the
+// Supabase auth user id so one user's cached records are never served to another.
+const expenseCache = new Map<string, any[]>();
+const profileCache = new Map<string, any>();
+const getCachedExpenses = (userId: string): any[] => expenseCache.get(userId) || [];
+const setCachedExpenses = (userId: string, list: any[]) => expenseCache.set(userId, list);
 
 // Countrywise Terms & Conditions database store
 let inMemoryCountryTerms: Record<string, any> = { ...COUNTRY_TERMS };
@@ -1571,14 +1586,18 @@ function mapRowToExpense(row: any): any {
 
 // Persists a full expense record to Supabase, falling back to packed metadata in `notes`
 // when the dedicated multi-country columns have not been migrated yet.
-async function persistExpenseRow(supabase: any, exp: any): Promise<void> {
+// `ownerId` is the verified auth user id: it always becomes customer_tax_id, the column that
+// Row Level Security uses to decide who owns the row.
+async function persistExpenseRow(supabase: any, exp: any, ownerId: string): Promise<void> {
+  const ownerProfile = profileCache.get(ownerId) || {};
   // Attempt full insert with dedicated multi-country columns
-  const country = exp.country || inMemoryProfile.country || 'NZ';
-  const currency = exp.currency || inMemoryProfile.defaultCurrency || (country === 'IN' ? 'INR' : country === 'AU' ? 'AUD' : country === 'CA' ? 'CAD' : country === 'US' ? 'USD' : 'NZD');
+  const country = exp.country || ownerProfile.country || 'NZ';
+  const currency = exp.currency || ownerProfile.defaultCurrency || (country === 'IN' ? 'INR' : country === 'AU' ? 'AUD' : country === 'CA' ? 'CAD' : country === 'US' ? 'USD' : 'NZD');
   const vendorTaxId = exp.vendorTaxId || exp.vendorGSTIN || null;
-  // customer_tax_id is tied to profiles(id) by activity triggers; customer_gstin stores the GST registration number
-  const validProfileId = exp.userId || (exp.customerTaxId && exp.customerTaxId.startsWith('usr_') ? exp.customerTaxId : inMemoryProfile?.id) || null;
-  const customerGstin = exp.customerGSTIN || (exp.customerTaxId && !exp.customerTaxId.startsWith('usr_') ? exp.customerTaxId : null) || inMemoryProfile?.gstin || null;
+  const validProfileId = ownerId;
+  // customer_gstin stores the customer's GST registration number, never a profile id
+  const gstinCandidate = exp.customerGSTIN && exp.customerGSTIN !== ownerId ? exp.customerGSTIN : exp.customerTaxId;
+  const customerGstin = (gstinCandidate && gstinCandidate !== ownerId && !String(gstinCandidate).startsWith('usr_') ? gstinCandidate : null) || ownerProfile.gstin || null;
 
   const fullRow: any = {
     id: exp.id,
@@ -1673,6 +1692,7 @@ async function persistExpenseRow(supabase: any, exp: any): Promise<void> {
 
     const compatRow = {
       id: exp.id,
+      customer_tax_id: validProfileId,
       date: exp.date,
       merchant: exp.merchant,
       category: exp.category,
@@ -1706,7 +1726,10 @@ async function startServer() {
   const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
   const supabaseAdmin = (supabaseUrl && supabaseServiceRoleKey) ? createClient(supabaseUrl, supabaseServiceRoleKey) : null;
 
-  app.use(express.json({ limit: '20mb' }));
+  // CA zip packs carry the receipt images, so that route accepts larger bodies
+  const jsonBody = express.json({ limit: '20mb' });
+  const largeJsonBody = express.json({ limit: '60mb' });
+  app.use((req, res, next) => (req.path.startsWith('/api/exports/') ? largeJsonBody : jsonBody)(req, res, next));
 
   // CORS for the Capacitor Android/iOS builds, which call this server from their own origin.
   // Add more origins (comma separated) via CORS_ORIGINS if the web app is hosted elsewhere.
@@ -1753,13 +1776,179 @@ async function startServer() {
       next();
     };
 
+  // Verified-user middleware. The client sends its Supabase session token as
+  // `Authorization: Bearer <access_token>`; we verify it with the service-role client and set
+  // req.user. Data routes use req.user.id as the owner and ignore any userId/email the client
+  // sends, then read and write with supabaseAdmin (which bypasses RLS) scoped to that owner.
+  const tokenCache = new Map<string, { user: AuthUser; expiresAt: number }>();
+  const verifyAccessToken = async (req: express.Request): Promise<AuthUser | null> => {
+    const authHeader = String(req.headers.authorization || '');
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    if (!token || !supabaseAdmin) return null;
+    const cached = tokenCache.get(token);
+    if (cached && cached.expiresAt > Date.now()) return cached.user;
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data?.user) return null;
+    const user: AuthUser = { id: data.user.id, email: (data.user.email || '').toLowerCase() };
+    if (tokenCache.size > 1000) tokenCache.clear();
+    tokenCache.set(token, { user, expiresAt: Date.now() + 60 * 1000 });
+    return user;
+  };
+  const requireUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ success: false, error: 'Server is missing SUPABASE_SERVICE_ROLE_KEY.' });
+    }
+    try {
+      const user = await verifyAccessToken(req);
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Sign in to access your TaxVault data.', code: 'AUTH_REQUIRED' });
+      }
+      req.user = user;
+      next();
+    } catch (err: any) {
+      return res.status(401).json({ success: false, error: err?.message || 'Invalid session.', code: 'AUTH_REQUIRED' });
+    }
+  };
+  // Sets req.user when a valid token is present, but lets anonymous requests through.
+  const optionalUser = async (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+    try {
+      req.user = (await verifyAccessToken(req)) || undefined;
+    } catch {}
+    next();
+  };
+  // ---- Plan entitlement: the server is the only source of truth ----------------------------
+  // Plan tier and scan counts live in customer_subscriptions / customer_usage, which clients can
+  // read but not write (RLS). profiles.subscription and the app's local profile are display
+  // copies only and are never trusted.
+  const FREE_MONTHLY_SCANS = 10;
+  const PAID_PLAN_PRICES_INR: Record<'pro' | 'enterprise', { monthly: number; annual: number }> = {
+    pro: { monthly: 1199, annual: 11999 },
+    enterprise: { monthly: 3199, annual: 31999 },
+  };
+  // Without RAZORPAY_KEY_SECRET payments cannot be verified. Simulated upgrades are then only
+  // accepted when explicitly enabled (local testing), never by default.
+  // Overridable only from the server environment (used to test against a stub of the Razorpay API)
+  const RAZORPAY_API_BASE = (process.env.RAZORPAY_API_BASE || 'https://api.razorpay.com').replace(/\/+$/, '');
+  const simulatedPaymentsAllowed = () =>
+    !process.env.RAZORPAY_KEY_SECRET && process.env.ALLOW_SIMULATED_PAYMENTS === 'true';
+  const currentPeriodStart = () => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  };
+  type Entitlement = {
+    tier: 'free' | 'pro' | 'enterprise';
+    billingCycle: 'monthly' | 'annual';
+    status: string;
+    periodEnd: string | null;
+    scansUsed: number;
+  };
+  const getEntitlement = async (userId: string): Promise<Entitlement> => {
+    const ent: Entitlement = { tier: 'free', billingCycle: 'monthly', status: 'active', periodEnd: null, scansUsed: 0 };
+    const [{ data: sub }, { data: usage }] = await Promise.all([
+      supabaseAdmin!.from('customer_subscriptions').select('*').eq('user_id', userId)
+        .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      supabaseAdmin!.from('customer_usage').select('scans_used').eq('user_id', userId)
+        .eq('period_start', currentPeriodStart()).maybeSingle(),
+    ]);
+    const paidActive = sub
+      && (sub.plan_id === 'pro' || sub.plan_id === 'enterprise')
+      && ['active', 'trial'].includes(sub.status)
+      && (!sub.current_period_end || new Date(sub.current_period_end).getTime() > Date.now());
+    if (paidActive) {
+      ent.tier = sub.plan_id;
+      ent.billingCycle = sub.billing_cycle === 'annual' ? 'annual' : 'monthly';
+      ent.status = sub.status;
+      ent.periodEnd = sub.current_period_end || null;
+    }
+    ent.scansUsed = Number(usage?.scans_used || 0);
+    return ent;
+  };
+  // Shape used by the app's UserProfile.subscription
+  const toProfileSubscription = (ent: Entitlement) => ({
+    tier: ent.tier,
+    billingCycle: ent.billingCycle,
+    status: ent.status,
+    receiptsScannedThisMonth: ent.scansUsed,
+    monthlyReceiptLimit: ent.tier === 'free' ? FREE_MONTHLY_SCANS : 999999,
+    usagePeriod: currentPeriodStart().slice(0, 7),
+    renewsOn: ent.periodEnd ? ent.periodEnd.slice(0, 10) : undefined,
+  });
+  const incrementScanUsage = async (userId: string) => {
+    const periodStart = currentPeriodStart();
+    const { data: row } = await supabaseAdmin!.from('customer_usage').select('id, scans_used, requests_count')
+      .eq('user_id', userId).eq('period_start', periodStart).maybeSingle();
+    if (row) {
+      await supabaseAdmin!.from('customer_usage').update({
+        scans_used: Number(row.scans_used || 0) + 1,
+        requests_count: Number(row.requests_count || 0) + 1,
+        last_request_at: new Date().toISOString(),
+      }).eq('id', row.id);
+    } else {
+      const start = new Date(periodStart);
+      const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+      await supabaseAdmin!.from('customer_usage').insert({
+        user_id: userId, period_start: periodStart, period_end: end, scans_used: 1, requests_count: 1,
+        scans_limit: FREE_MONTHLY_SCANS,
+      });
+    }
+  };
+  const activatePlan = async (
+    userId: string,
+    tier: 'free' | 'pro' | 'enterprise',
+    billingCycle: 'monthly' | 'annual',
+    payment: { gateway: string; amount: number; orderId?: string; paymentId?: string; signature?: string },
+  ) => {
+    const now = new Date();
+    const periodEnd = tier === 'free'
+      ? null
+      : new Date(now.getTime() + (billingCycle === 'annual' ? 365 : 30) * 86400000).toISOString();
+    const subId = 'sub_' + userId;
+    const { error: subErr } = await supabaseAdmin!.from('customer_subscriptions').upsert({
+      id: subId,
+      user_id: userId,
+      plan_id: tier,
+      status: 'active',
+      billing_cycle: billingCycle,
+      current_period_start: now.toISOString(),
+      current_period_end: periodEnd,
+      cancel_at_period_end: false,
+      payment_method: payment.gateway,
+      updated_at: now.toISOString(),
+    });
+    if (subErr) throw new Error(subErr.message);
+    await supabaseAdmin!.from('subscription_transactions').insert({
+      id: 'tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+      subscription_id: subId,
+      user_id: userId,
+      plan_id: tier,
+      amount: payment.amount,
+      currency: 'INR',
+      status: 'succeeded',
+      billing_cycle: billingCycle,
+      payment_gateway: payment.gateway,
+      gateway_order_id: payment.orderId || null,
+      gateway_payment_id: payment.paymentId || null,
+      gateway_signature: payment.signature || null,
+    });
+    // Keep the display copy on the profile in step
+    const ent = await getEntitlement(userId);
+    await supabaseAdmin!.from('profiles').update({ subscription: toProfileSubscription(ent) }).eq('id', userId);
+    return ent;
+  };
+
+  // Returns the owner of an expense row, or null if no such row exists.
+  const getExpenseOwner = async (id: string): Promise<string | null> => {
+    const { data } = await supabaseAdmin!.from('expenses').select('customer_tax_id').eq('id', id).maybeSingle();
+    return data ? (data.customer_tax_id ?? '') : null;
+  };
+
   // 1. Health check
   app.get('/api/health', (_req, res) => {
     res.json({
       status: 'ok',
       service: 'TaxVault India API Engine',
       supabaseConfigured: Boolean(supabase),
-      inMemoryCount: inMemoryExpenses.length,
+      authConfigured: Boolean(supabaseAdmin),
       timestamp: new Date().toISOString(),
     });
   });
@@ -1800,41 +1989,32 @@ async function startServer() {
     }
   });
 
-  // 3. API: Fetch All Expenses (GET /api/expenses)
-  app.get('/api/expenses', async (req, res) => {
+  // 3. API: Fetch the signed-in user's expenses (GET /api/expenses)
+  app.get('/api/expenses', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
-      const rawUserId = (req.query as { userId?: string }).userId;
-      // Restrict to characters valid in profile ids so the value can't alter the PostgREST filter
-      const userId = rawUserId ? String(rawUserId).replace(/[^A-Za-z0-9_.@-]/g, '') : undefined;
-      if (supabase) {
-        let query = supabase
-          .from('expenses')
-          .select('*')
-          .order('date', { ascending: false });
+      const { data, error } = await supabaseAdmin!
+        .from('expenses')
+        .select('*')
+        .eq('customer_tax_id', userId)
+        .order('date', { ascending: false });
 
-        if (userId && userId !== 'usr_taxvault_admin') {
-          query = query.or(`customer_tax_id.eq.${userId},customer_gstin.eq.${userId}`);
-        }
-
-        const { data, error } = await query;
-
-        if (!error && Array.isArray(data)) {
-          const mapped = data.map(mapRowToExpense);
-          inMemoryExpenses = mapped; // sync cache
-          return res.json({ success: true, count: mapped.length, data: mapped, source: 'supabase' });
-        }
+      if (!error && Array.isArray(data)) {
+        const mapped = data.map(mapRowToExpense);
+        setCachedExpenses(userId, mapped);
+        return res.json({ success: true, count: mapped.length, data: mapped, source: 'supabase' });
       }
-      const filtered = userId && userId !== 'usr_taxvault_admin'
-        ? inMemoryExpenses.filter((e) => e.customerTaxId === userId || (e as any).userId === userId)
-        : inMemoryExpenses;
-      return res.json({ success: true, count: filtered.length, data: filtered, source: 'cache' });
+      const cached = getCachedExpenses(userId);
+      return res.json({ success: true, count: cached.length, data: cached, source: 'cache' });
     } catch (err: any) {
-      return res.json({ success: true, count: inMemoryExpenses.length, data: inMemoryExpenses, source: 'fallback' });
+      const cached = getCachedExpenses(userId);
+      return res.json({ success: true, count: cached.length, data: cached, source: 'fallback' });
     }
   });
 
   // 4. API: Create New Expense (POST /api/expenses)
-  app.post('/api/expenses', async (req, res) => {
+  app.post('/api/expenses', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
       const exp = req.body;
       const cleanMerchant = exp?.merchant?.trim();
@@ -1848,19 +2028,24 @@ async function startServer() {
       if (!exp.id) {
         exp.id = 'exp-' + Date.now().toString(36);
       }
+      // Ids are client-generated: never let an upsert overwrite (and take over) another user's row
+      const owner = await getExpenseOwner(String(exp.id));
+      if (owner !== null && owner !== userId) {
+        return res.status(409).json({ error: 'An expense with this id already exists.' });
+      }
+      exp.userId = userId;
+      exp.customerTaxId = userId;
       exp.syncStatus = 'synced';
       exp.updatedAt = new Date().toISOString();
       if (!exp.createdAt) exp.createdAt = new Date().toISOString();
 
-      // Update in-memory cache immediately
-      const existingIdx = inMemoryExpenses.findIndex(e => e.id === exp.id);
-      if (existingIdx >= 0) inMemoryExpenses[existingIdx] = exp;
-      else inMemoryExpenses.unshift(exp);
+      await persistExpenseRow(supabaseAdmin, exp, userId);
 
-      // Persist to Supabase
-      if (supabase) {
-        await persistExpenseRow(supabase, exp);
-      }
+      const cached = getCachedExpenses(userId);
+      const existingIdx = cached.findIndex(e => e.id === exp.id);
+      if (existingIdx >= 0) cached[existingIdx] = exp;
+      else cached.unshift(exp);
+      setCachedExpenses(userId, cached);
 
       return res.status(201).json({ success: true, data: exp });
     } catch (err: any) {
@@ -1869,7 +2054,8 @@ async function startServer() {
   });
 
   // 5. API: Update Existing Expense (PUT /api/expenses/:id)
-  app.put('/api/expenses/:id', async (req, res) => {
+  app.put('/api/expenses/:id', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
       const { id } = req.params;
       const cleanMerchant = req.body?.merchant?.trim();
@@ -1877,27 +2063,33 @@ async function startServer() {
       if (!cleanMerchant || isNaN(cleanAmount) || cleanAmount <= 0) {
         return res.status(400).json({ error: 'Valid non-blank merchant name and positive amount are required.' });
       }
+      const owner = await getExpenseOwner(id);
+      if (owner !== null && owner !== userId) {
+        return res.status(404).json({ error: 'Expense not found.' });
+      }
       const updatedData = {
         ...req.body,
         id,
+        userId,
+        customerTaxId: userId,
         merchant: cleanMerchant,
         amount: cleanAmount,
         syncStatus: 'synced',
         updatedAt: new Date().toISOString(),
       };
 
-      const idx = inMemoryExpenses.findIndex(e => e.id === id);
-      if (idx >= 0) inMemoryExpenses[idx] = updatedData;
-      else inMemoryExpenses.unshift(updatedData);
-
       // Persist every edited field (type, business %, taxes, CA status, notes), not just the headline values
-      if (supabase) {
-        try {
-          await persistExpenseRow(supabase, updatedData);
-        } catch (dbErr: any) {
-          console.warn('Supabase expense update error:', dbErr?.message);
-        }
+      try {
+        await persistExpenseRow(supabaseAdmin, updatedData, userId);
+      } catch (dbErr: any) {
+        console.warn('Supabase expense update error:', dbErr?.message);
       }
+
+      const cached = getCachedExpenses(userId);
+      const idx = cached.findIndex(e => e.id === id);
+      if (idx >= 0) cached[idx] = updatedData;
+      else cached.unshift(updatedData);
+      setCachedExpenses(userId, cached);
 
       return res.json({ success: true, data: updatedData });
     } catch (err: any) {
@@ -1906,16 +2098,18 @@ async function startServer() {
   });
 
   // 6. API: Soft-Delete Expense (DELETE /api/expenses/:id - marks status='deleted')
-  app.delete('/api/expenses/:id', async (req, res) => {
+  app.delete('/api/expenses/:id', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
       const { id } = req.params;
       const now = new Date().toISOString();
 
       // Soft-delete in memory cache
-      const idx = inMemoryExpenses.findIndex(e => e.id === id);
+      const cached = getCachedExpenses(userId);
+      const idx = cached.findIndex(e => e.id === id);
       if (idx >= 0) {
-        inMemoryExpenses[idx] = {
-          ...inMemoryExpenses[idx],
+        cached[idx] = {
+          ...cached[idx],
           status: 'deleted',
           isDeleted: true,
           deletedAt: now,
@@ -1926,34 +2120,33 @@ async function startServer() {
         };
       }
 
-      // Soft-delete in Supabase (preserves row record, changes status and deductibility)
-      if (supabase) {
-        const packedMeta = JSON.stringify({ __taxvault__: true, status: 'deleted', isDeleted: true, deletedAt: now });
-        try {
-          const { error } = await supabase.from('expenses').update({
-            status: 'deleted',
-            is_deleted: true,
-            deleted_at: now,
+      // Soft-delete in Supabase (preserves row record, changes status and deductibility).
+      // The customer_tax_id filter means a user can only ever touch their own rows.
+      const packedMeta = JSON.stringify({ __taxvault__: true, status: 'deleted', isDeleted: true, deletedAt: now });
+      try {
+        const { error } = await supabaseAdmin!.from('expenses').update({
+          status: 'deleted',
+          is_deleted: true,
+          deleted_at: now,
+          sync_status: 'deleted',
+          claimable_business_amount: 0,
+          is_deductible: false,
+          notes: packedMeta,
+          updated_at: now,
+        }).eq('id', id).eq('customer_tax_id', userId);
+
+        if (error) {
+          // Fallback if status/is_deleted columns have not been run in Supabase SQL editor yet
+          await supabaseAdmin!.from('expenses').update({
             sync_status: 'deleted',
             claimable_business_amount: 0,
             is_deductible: false,
             notes: packedMeta,
             updated_at: now,
-          }).eq('id', id);
-
-          if (error) {
-            // Fallback if status/is_deleted columns have not been run in Supabase SQL editor yet
-            await supabase.from('expenses').update({
-              sync_status: 'deleted',
-              claimable_business_amount: 0,
-              is_deductible: false,
-              notes: packedMeta,
-              updated_at: now,
-            }).eq('id', id);
-          }
-        } catch (dbErr: any) {
-          console.warn('Supabase soft-delete update error:', dbErr?.message);
+          }).eq('id', id).eq('customer_tax_id', userId);
         }
+      } catch (dbErr: any) {
+        console.warn('Supabase soft-delete update error:', dbErr?.message);
       }
 
       return res.json({
@@ -1969,66 +2162,66 @@ async function startServer() {
   });
 
   // 6b. API: Restore Deleted Expense (POST /api/expenses/:id/restore)
-  app.post('/api/expenses/:id/restore', async (req, res) => {
+  app.post('/api/expenses/:id/restore', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
       const { id } = req.params;
       const now = new Date().toISOString();
 
-      let restoredItem: any = null;
-      const idx = inMemoryExpenses.findIndex(e => e.id === id);
-      if (idx >= 0) {
-        const item = inMemoryExpenses[idx];
-        const bizAmt = item.expenseType === 'Business'
-          ? item.amount
-          : item.expenseType === 'Mixed'
-          ? Math.round(item.amount * ((item.businessPercentage || 50) / 100))
-          : 0;
-
-        inMemoryExpenses[idx] = {
-          ...item,
-          status: 'active',
-          isDeleted: false,
-          deletedAt: undefined,
-          syncStatus: 'synced',
-          claimableBusinessAmount: bizAmt,
-          isDeductible: item.expenseType === 'Business',
-          updatedAt: now,
-        };
-        restoredItem = inMemoryExpenses[idx];
+      // Read the row from the database (scoped to the owner) rather than trusting the cache
+      const { data: row } = await supabaseAdmin!
+        .from('expenses')
+        .select('*')
+        .eq('id', id)
+        .eq('customer_tax_id', userId)
+        .maybeSingle();
+      const cached = getCachedExpenses(userId);
+      const idx = cached.findIndex(e => e.id === id);
+      const item = row ? mapRowToExpense(row) : idx >= 0 ? cached[idx] : null;
+      if (!item) {
+        return res.status(404).json({ error: 'Expense not found.' });
       }
 
-      if (supabase) {
-        const item = inMemoryExpenses.find(e => e.id === id);
-        const bizAmt = item?.expenseType === 'Business'
-          ? (item?.amount || 0)
-          : item?.expenseType === 'Mixed'
-          ? Math.round((item?.amount || 0) * ((item?.businessPercentage || 50) / 100))
-          : 0;
-        const packedMeta = JSON.stringify({ __taxvault__: true, status: 'active', isDeleted: false });
+      const bizAmt = item.expenseType === 'Business'
+        ? (item.amount || 0)
+        : item.expenseType === 'Mixed'
+        ? Math.round((item.amount || 0) * ((item.businessPercentage || 50) / 100))
+        : 0;
+      const restoredItem = {
+        ...item,
+        status: 'active',
+        isDeleted: false,
+        deletedAt: undefined,
+        syncStatus: 'synced',
+        claimableBusinessAmount: bizAmt,
+        isDeductible: item.expenseType === 'Business',
+        updatedAt: now,
+      };
+      if (idx >= 0) cached[idx] = restoredItem;
 
-        try {
-          const { error } = await supabase.from('expenses').update({
-            status: 'active',
-            is_deleted: false,
-            deleted_at: null,
+      const packedMeta = JSON.stringify({ __taxvault__: true, status: 'active', isDeleted: false });
+      try {
+        const { error } = await supabaseAdmin!.from('expenses').update({
+          status: 'active',
+          is_deleted: false,
+          deleted_at: null,
+          sync_status: 'synced',
+          claimable_business_amount: bizAmt,
+          is_deductible: item.expenseType === 'Business',
+          notes: packedMeta,
+          updated_at: now,
+        }).eq('id', id).eq('customer_tax_id', userId);
+
+        if (error) {
+          await supabaseAdmin!.from('expenses').update({
             sync_status: 'synced',
             claimable_business_amount: bizAmt,
-            is_deductible: item?.expenseType === 'Business',
+            is_deductible: item.expenseType === 'Business',
             notes: packedMeta,
             updated_at: now,
-          }).eq('id', id);
-
-          if (error) {
-            await supabase.from('expenses').update({
-              sync_status: 'synced',
-              claimable_business_amount: bizAmt,
-              is_deductible: item?.expenseType === 'Business',
-              notes: packedMeta,
-              updated_at: now,
-            }).eq('id', id);
-          }
-        } catch {}
-      }
+          }).eq('id', id).eq('customer_tax_id', userId);
+        }
+      } catch {}
 
       return res.json({ success: true, restoredId: id, data: restoredItem });
     } catch (err: any) {
@@ -2183,256 +2376,140 @@ async function startServer() {
     }
   });
 
-  // 7. API: Fetch User Profile (GET /api/profile)
-  app.get('/api/profile', async (req, res) => {
+  // 7. API: Fetch the signed-in user's profile (GET /api/profile)
+  // The profile row id is the Supabase auth user id; ?email= / ?userId= are ignored.
+  app.get('/api/profile', requireUser, async (req, res) => {
+    const { id: userId, email: userEmail } = req.user!;
     try {
-      const email = typeof req.query.email === 'string' ? req.query.email.trim() : undefined;
-      const userId = typeof req.query.userId === 'string' ? req.query.userId.trim() : undefined;
-
-      if (supabase && (email || userId)) {
-        let query = supabase.from('profiles').select('*');
-        if (userId) {
-          query = query.eq('id', userId);
-        } else if (email) {
-          query = query.ilike('email', email);
-        }
-        const { data, error } = await query.maybeSingle();
-        if (!error && data) {
-          const country = data.country || inMemoryProfile.country || 'IN';
-          const profile = {
-            id: data.id || inMemoryProfile.id,
-            fullName: data.full_name || inMemoryProfile.fullName,
-            email: data.email || inMemoryProfile.email,
-            phone: data.phone || inMemoryProfile.phone,
-            businessName: data.business_name || inMemoryProfile.businessName,
-            businessType: data.business_type || inMemoryProfile.businessType,
-            country: country,
-            defaultCurrency: data.default_currency || inMemoryProfile.defaultCurrency || (country === 'IN' ? 'INR' : country === 'AU' ? 'AUD' : country === 'CA' ? 'CAD' : country === 'US' ? 'USD' : 'NZD'),
-            currencySymbol: data.currency_symbol || inMemoryProfile.currencySymbol || (country === 'IN' ? '₹' : '$'),
-            taxAuthority: data.tax_authority || inMemoryProfile.taxAuthority || (country === 'NZ' ? 'Inland Revenue Department (IRD)' : country === 'AU' ? 'Australian Taxation Office (ATO)' : country === 'CA' ? 'Canada Revenue Agency (CRA)' : country === 'US' ? 'Internal Revenue Service (IRS)' : 'Goods and Services Tax Network (GSTN)'),
-            taxId: data.tax_id || data.pan || '',
-            secondaryTaxId: data.secondary_tax_id || data.gstin || '',
-            pan: data.pan || data.tax_id || '',
-            gstin: data.gstin || data.secondary_tax_id || '',
-            financialYear: data.financial_year || inMemoryProfile.financialYear,
-            accountantName: data.accountant_name,
-            accountantEmail: data.accountant_email,
-            accountantPhone: data.accountant_phone,
-            biometricLock: Boolean(data.biometric_lock),
-            appPin: data.app_pin || '1234',
-            subscription: inMemoryProfile.subscription,
-          };
-          return res.json({ success: true, data: profile });
-        }
-        // If specific user/email requested but not found in DB
-        return res.json({ success: false, data: null, message: 'Profile not found' });
+      const { data, error } = await supabaseAdmin!.from('profiles').select('*').eq('id', userId).maybeSingle();
+      if (!error && data) {
+        const cachedProfile = profileCache.get(userId) || {};
+        const country = data.country || cachedProfile.country || 'IN';
+        const profile = {
+          id: data.id,
+          fullName: data.full_name || cachedProfile.fullName,
+          email: data.email || userEmail,
+          phone: data.phone || cachedProfile.phone,
+          businessName: data.business_name || cachedProfile.businessName,
+          businessType: data.business_type || cachedProfile.businessType,
+          country: country,
+          defaultCurrency: data.default_currency || cachedProfile.defaultCurrency || (country === 'IN' ? 'INR' : country === 'AU' ? 'AUD' : country === 'CA' ? 'CAD' : country === 'US' ? 'USD' : 'NZD'),
+          currencySymbol: data.currency_symbol || cachedProfile.currencySymbol || (country === 'IN' ? '₹' : '$'),
+          taxAuthority: data.tax_authority || cachedProfile.taxAuthority || (country === 'NZ' ? 'Inland Revenue Department (IRD)' : country === 'AU' ? 'Australian Taxation Office (ATO)' : country === 'CA' ? 'Canada Revenue Agency (CRA)' : country === 'US' ? 'Internal Revenue Service (IRS)' : 'Goods and Services Tax Network (GSTN)'),
+          taxId: data.tax_id || data.pan || '',
+          secondaryTaxId: data.secondary_tax_id || data.gstin || '',
+          pan: data.pan || data.tax_id || '',
+          gstin: data.gstin || data.secondary_tax_id || '',
+          financialYear: data.financial_year || cachedProfile.financialYear,
+          accountantName: data.accountant_name,
+          accountantEmail: data.accountant_email,
+          accountantPhone: data.accountant_phone,
+          biometricLock: Boolean(data.biometric_lock),
+          appPin: data.app_pin || '1234',
+          // Never profiles.subscription: it is owner-writable and its column default says "pro"
+          subscription: toProfileSubscription(await getEntitlement(userId)),
+        };
+        profileCache.set(userId, { ...cachedProfile, ...profile });
+        return res.json({ success: true, data: profile });
       }
-
-      return res.json({ success: true, data: inMemoryProfile });
+      const cachedProfile = profileCache.get(userId);
+      if (cachedProfile) return res.json({ success: true, data: cachedProfile, source: 'cache' });
+      return res.json({ success: false, data: null, message: 'Profile not found' });
     } catch (err: any) {
-      return res.json({ success: false, error: err?.message, data: inMemoryProfile });
+      return res.json({ success: false, error: err?.message, data: profileCache.get(userId) || null });
     }
   });
 
-  // 8. API: Update User Profile (PUT /api/profile)
-  app.put('/api/profile', async (req, res) => {
+  // 8. API: Update the signed-in user's profile (PUT /api/profile)
+  app.put('/api/profile', requireUser, async (req, res) => {
+    const { id: userId, email: userEmail } = req.user!;
     try {
-      const updated = req.body;
-      const targetEmail = updated.email || inMemoryProfile.email;
-      inMemoryProfile = {
-        ...inMemoryProfile,
+      const updated = req.body || {};
+      const merged = {
+        ...(profileCache.get(userId) || {}),
         ...updated,
-        email: targetEmail,
+        id: userId,
+        email: userEmail || updated.email,
       };
+      profileCache.set(userId, merged);
 
-      if (supabase) {
-        try {
-          const profileRow = {
-            id: updated.id || inMemoryProfile.id || 'usr_taxvault_user',
-            full_name: updated.fullName,
-            email: targetEmail,
-            phone: updated.phone,
-            business_name: updated.businessName,
-            business_type: updated.businessType,
-            country: updated.country,
-            default_currency: updated.defaultCurrency,
-            currency_symbol: updated.currencySymbol,
-            tax_authority: updated.taxAuthority,
-            tax_id: updated.taxId,
-            secondary_tax_id: updated.secondaryTaxId,
-            pan: updated.pan || updated.taxId,
-            gstin: updated.gstin || updated.secondaryTaxId,
-            financial_year: updated.financialYear,
-            accountant_name: updated.accountantName,
-            accountant_email: updated.accountantEmail,
-            accountantPhone: updated.accountantPhone,
-            biometric_lock: Boolean(updated.biometricLock),
-            app_pin: updated.appPin || '1234',
-            updated_at: new Date().toISOString()
-          };
-          const { error: fullProfileErr } = await supabase.from('profiles').upsert(profileRow);
-          if (fullProfileErr) {
-            await supabase.from('profiles').upsert({
-              id: profileRow.id,
-              full_name: profileRow.full_name,
-              email: profileRow.email,
-              business_name: profileRow.business_name,
-              business_type: profileRow.business_type,
-              pan: profileRow.pan,
-              gstin: profileRow.gstin,
-              updated_at: profileRow.updated_at
-            });
-          }
-        } catch {}
-      }
+      try {
+        const profileRow = {
+          id: userId,
+          full_name: updated.fullName,
+          email: merged.email,
+          phone: updated.phone,
+          business_name: updated.businessName,
+          business_type: updated.businessType,
+          country: updated.country,
+          default_currency: updated.defaultCurrency,
+          currency_symbol: updated.currencySymbol,
+          tax_authority: updated.taxAuthority,
+          tax_id: updated.taxId,
+          secondary_tax_id: updated.secondaryTaxId,
+          pan: updated.pan || updated.taxId,
+          gstin: updated.gstin || updated.secondaryTaxId,
+          financial_year: updated.financialYear,
+          accountant_name: updated.accountantName,
+          accountant_email: updated.accountantEmail,
+          accountant_phone: updated.accountantPhone,
+          biometric_lock: Boolean(updated.biometricLock),
+          app_pin: updated.appPin || '1234',
+          updated_at: new Date().toISOString()
+        };
+        const { error: fullProfileErr } = await supabaseAdmin!.from('profiles').upsert(profileRow);
+        if (fullProfileErr) {
+          await supabaseAdmin!.from('profiles').upsert({
+            id: profileRow.id,
+            full_name: profileRow.full_name,
+            email: profileRow.email,
+            business_name: profileRow.business_name,
+            business_type: profileRow.business_type,
+            pan: profileRow.pan,
+            gstin: profileRow.gstin,
+            updated_at: profileRow.updated_at
+          });
+        }
+      } catch {}
 
-      return res.json({ success: true, data: inMemoryProfile });
+      return res.json({ success: true, data: merged });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message });
     }
   });
 
-  // 9. API: Seed Realistic Expenses for any Supported Country (POST /api/seed-country/:country)
-  app.post('/api/seed-country/:country', async (req, res) => {
+  // 9. API: Seed sample expenses for any supported country into the signed-in user's account
+  // (POST /api/seed-country/:country). Rows are written with the caller as owner and ids
+  // prefixed with the caller's id, so seeding never touches another user's records.
+  app.post('/api/seed-country/:country', requireUser, async (req, res) => {
+    const { id: userId, email: userEmail } = req.user!;
     try {
       const country = (req.params.country || 'NZ').toUpperCase();
       const seedList = SEED_EXPENSES_BY_COUNTRY[country] || SEED_NZ_EXPENSES;
-      const targetProfile = DEFAULT_PROFILES[country] || DEFAULT_PROFILES.NZ;
+      const targetProfile = { ...(DEFAULT_PROFILES[country] || DEFAULT_PROFILES.NZ), id: userId, email: userEmail };
+      const ownedSeed = seedList.map((exp: any) => ({
+        ...exp,
+        id: `${userId}-${exp.id}`,
+        userId,
+        customerTaxId: userId,
+        customerGSTIN: exp.customerTaxId || exp.customerGSTIN || '',
+      }));
 
-      inMemoryExpenses = [...seedList];
-      inMemoryProfile = { ...targetProfile };
+      setCachedExpenses(userId, ownedSeed);
+      profileCache.set(userId, { ...(profileCache.get(userId) || {}), ...targetProfile });
 
-      if (supabase) {
+      for (const exp of ownedSeed) {
         try {
-          await supabase.from('profiles').upsert({
-            id: targetProfile.id,
-            full_name: targetProfile.fullName,
-            email: targetProfile.email,
-            phone: targetProfile.phone,
-            business_name: targetProfile.businessName,
-            business_type: targetProfile.businessType,
-            country: targetProfile.country,
-            default_currency: targetProfile.defaultCurrency,
-            currency_symbol: targetProfile.currencySymbol,
-            tax_authority: targetProfile.taxAuthority,
-            tax_id: targetProfile.taxId,
-            secondary_tax_id: targetProfile.secondaryTaxId,
-            pan: targetProfile.pan,
-            gstin: targetProfile.gstin,
-            financial_year: targetProfile.financialYear,
-            updated_at: new Date().toISOString(),
-          });
+          await persistExpenseRow(supabaseAdmin, exp, userId);
         } catch {}
-
-        for (const exp of seedList) {
-          const fullRow = {
-            id: exp.id,
-            date: exp.date,
-            merchant: exp.merchant,
-            category: exp.category,
-            description: exp.merchant,
-            amount: exp.amount,
-            country: exp.country || country,
-            currency: exp.currency || targetProfile.defaultCurrency,
-            currency_symbol: exp.currencySymbol || targetProfile.currencySymbol,
-            tax_type: exp.taxType || 'GST',
-            tax_rate: exp.taxRate || 15,
-            tax_amount: exp.taxAmount || exp.gstAmount || (exp.cgst || 0) + (exp.sgst || 0) + (exp.igst || 0),
-            gst_amount: exp.gstAmount || (exp.cgst || 0) + (exp.sgst || 0) + (exp.igst || 0),
-            pst_amount: exp.pstAmount || 0,
-            hst_amount: exp.hstAmount || 0,
-            sales_tax_amount: exp.salesTaxAmount || 0,
-            cgst: exp.cgst || 0,
-            sgst: exp.sgst || 0,
-            igst: exp.igst || 0,
-            cess: exp.cess || 0,
-            round_off: exp.roundOff || 0,
-            subtotal: exp.subtotal,
-            taxable_amount: exp.taxableAmount || exp.subtotal,
-            vendor_tax_id: exp.vendorTaxId || exp.vendorGSTIN || '',
-            customer_tax_id: exp.customerTaxId || exp.customerGSTIN || '',
-            vendor_gstin: exp.vendorGSTIN || exp.vendorTaxId || '',
-            customer_gstin: exp.customerGSTIN || exp.customerTaxId || '',
-            is_deductible: exp.expenseType === 'Business',
-            deductible_percentage: exp.businessPercentage ?? 100,
-            claimable_business_amount: exp.claimableBusinessAmount ?? exp.amount,
-            receipt_url: exp.receiptUrl || null,
-            receipt_file_name: exp.receiptFileName || null,
-            receipt_number: exp.invoiceNumber || exp.receiptNumber || null,
-            payment_method: exp.paymentMethod || 'Credit Card',
-            gst_treatment: exp.gstTreatment || 'Likely eligible',
-            ca_review_status: exp.caReviewStatus || 'Reviewed',
-            ca_notes: exp.caNotes || null,
-            notes: JSON.stringify({
-              __taxvault__: true,
-              country: exp.country || country,
-              currency: exp.currency || targetProfile.defaultCurrency,
-              vendorTaxId: exp.vendorTaxId,
-              customerTaxId: exp.customerTaxId,
-              subtotal: exp.subtotal,
-              taxType: exp.taxType,
-              taxRate: exp.taxRate,
-              taxAmount: exp.taxAmount,
-              gstAmount: exp.gstAmount,
-              pstAmount: exp.pstAmount,
-              hstAmount: exp.hstAmount,
-              salesTaxAmount: exp.salesTaxAmount,
-              cgst: exp.cgst,
-              sgst: exp.sgst,
-              igst: exp.igst,
-              cess: exp.cess,
-              roundOff: exp.roundOff,
-              vendorGSTIN: exp.vendorTaxId,
-              customerGSTIN: exp.customerTaxId,
-              invoiceNumber: exp.invoiceNumber,
-              items: exp.items,
-              confidenceScores: exp.confidenceScores,
-              expenseType: exp.expenseType,
-              businessPercentage: exp.businessPercentage,
-              claimableBusinessAmount: exp.claimableBusinessAmount,
-              gstTreatment: exp.gstTreatment,
-              caReviewStatus: exp.caReviewStatus,
-              caNotes: exp.caNotes,
-            }),
-            sync_status: 'synced',
-            created_at: exp.createdAt,
-            updated_at: exp.updatedAt,
-          };
-
-          const { error: fullErr } = await supabase.from('expenses').upsert(fullRow);
-          if (fullErr) {
-            const compatRow = {
-              id: exp.id,
-              date: exp.date,
-              merchant: exp.merchant,
-              category: exp.category,
-              description: exp.merchant,
-              amount: exp.amount,
-              gst_amount: exp.gstAmount || (exp.cgst || 0) + (exp.sgst || 0) + (exp.igst || 0),
-              is_deductible: exp.expenseType === 'Business',
-              deductible_percentage: exp.businessPercentage ?? 100,
-              receipt_url: exp.receiptUrl || null,
-              receipt_file_name: exp.receiptFileName || null,
-              receipt_number: exp.invoiceNumber || exp.receiptNumber || null,
-              payment_method: exp.paymentMethod || 'Credit Card',
-              notes: fullRow.notes,
-              sync_status: 'synced',
-              created_at: exp.createdAt,
-              updated_at: exp.updatedAt,
-            };
-            try {
-              await supabase.from('expenses').upsert(compatRow);
-            } catch {}
-          }
-        }
       }
 
       return res.json({
         success: true,
-        count: inMemoryExpenses.length,
+        count: ownedSeed.length,
         country,
-        profile: inMemoryProfile,
-        expenses: inMemoryExpenses,
+        profile: targetProfile,
+        expenses: ownedSeed,
         message: `Successfully loaded realistic sample vouchers for ${country}`,
       });
     } catch (err: any) {
@@ -2441,36 +2518,27 @@ async function startServer() {
   });
 
   // Alias for backward compatibility
-  app.post('/api/seed-indian', async (_req, res) => {
-    inMemoryExpenses = [...SEED_INDIAN_EXPENSES];
-    inMemoryProfile = { ...DEFAULT_PROFILES.IN };
-    return res.json({ success: true, count: inMemoryExpenses.length, message: 'Seeded Indian vouchers' });
-  });
+  app.post('/api/seed-indian', (_req, res) => res.redirect(307, '/api/seed-country/IN'));
 
-  // 10. API: Reset All Data (POST /api/reset-data)
-  app.post('/api/reset-data', rateLimit('reset-data', 5, 15 * 60 * 1000), async (req, res) => {
-    // Clears only the requesting user's expenses. It previously deleted every row in the table,
-    // so one user tapping "Clear data" wiped all users' records.
-    const userId = String(req.body?.userId || '').replace(/[^A-Za-z0-9_.@-]/g, '');
-    if (!userId || userId === 'usr_taxvault_admin') {
-      return res.status(400).json({ success: false, error: 'userId is required to clear data.' });
-    }
-    inMemoryExpenses = inMemoryExpenses.filter((e) => e.customerTaxId !== userId && e.userId !== userId);
-    if (supabase) {
-      try {
-        await supabase.from('expenses').delete().eq('customer_tax_id', userId);
-      } catch {}
-    }
+  // 10. API: Reset the signed-in user's data (POST /api/reset-data)
+  app.post('/api/reset-data', rateLimit('reset-data', 5, 15 * 60 * 1000), requireUser, async (req, res) => {
+    // Clears only the caller's expenses; any userId in the body is ignored.
+    const userId = req.user!.id;
+    setCachedExpenses(userId, []);
+    try {
+      await supabaseAdmin!.from('expenses').delete().eq('customer_tax_id', userId);
+    } catch {}
     return res.json({ success: true, message: 'Your expense data was cleared.' });
   });
 
-  // 11. API: Calculated Reports Position (GET /api/reports)
-  app.get('/api/reports', (_req, res) => {
-    const totalExpenses = inMemoryExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const businessExpenses = inMemoryExpenses.filter(e => e.expenseType === 'Business').reduce((sum, e) => sum + e.amount, 0);
-    const personalExpenses = inMemoryExpenses.filter(e => e.expenseType === 'Personal').reduce((sum, e) => sum + e.amount, 0);
-    const claimableBusinessTotal = inMemoryExpenses.reduce((sum, e) => sum + (e.claimableBusinessAmount || 0), 0);
-    const totalGstIdentified = inMemoryExpenses.reduce((sum, e) => sum + ((e.cgst || 0) + (e.sgst || 0) + (e.igst || 0) + (e.cess || 0)), 0);
+  // 11. API: Calculated Reports Position for the signed-in user (GET /api/reports)
+  app.get('/api/reports', requireUser, (req, res) => {
+    const list = getCachedExpenses(req.user!.id);
+    const totalExpenses = list.reduce((sum, e) => sum + e.amount, 0);
+    const businessExpenses = list.filter(e => e.expenseType === 'Business').reduce((sum, e) => sum + e.amount, 0);
+    const personalExpenses = list.filter(e => e.expenseType === 'Personal').reduce((sum, e) => sum + e.amount, 0);
+    const claimableBusinessTotal = list.reduce((sum, e) => sum + (e.claimableBusinessAmount || 0), 0);
+    const totalGstIdentified = list.reduce((sum, e) => sum + ((e.cgst || 0) + (e.sgst || 0) + (e.igst || 0) + (e.cess || 0)), 0);
 
     return res.json({
       success: true,
@@ -2480,13 +2548,70 @@ async function startServer() {
         personalExpenses,
         claimableBusinessTotal,
         totalGstIdentified,
-        count: inMemoryExpenses.length,
+        count: list.length,
       }
     });
   });
 
+  // 11b. API: Pro exports (POST /api/exports/pdf | xlsx | zip)
+  // Generated here, not in the app, so the plan check can't be skipped by editing local data.
+  // The free plan exports CSV only (done in the app). The document content is the caller's own
+  // on-screen data (current period filter, profile details), passed in the body.
+  app.post('/api/exports/:kind', rateLimit('exports', 30, 10 * 60 * 1000), requireUser, async (req, res) => {
+    try {
+      const kind = req.params.kind;
+      if (!['pdf', 'xlsx', 'zip'].includes(kind)) {
+        return res.status(404).json({ error: 'Unknown export type.' });
+      }
+      const ent = await getEntitlement(req.user!.id);
+      if (ent.tier === 'free') {
+        return res.status(402).json({
+          error: 'PDF reports, Excel registers and CA audit packs require Tax Compliance Pro.',
+          code: 'PRO_REQUIRED',
+        });
+      }
+
+      const { profile, expenses, taxResult, options = {} } = req.body || {};
+      if (!profile || !Array.isArray(expenses) || !taxResult) {
+        return res.status(400).json({ error: 'profile, expenses and taxResult are required.' });
+      }
+
+      let body: Buffer;
+      let contentType: string;
+      if (kind === 'pdf') {
+        const doc = ExportService.generateIndianCAPDF(profile, expenses, taxResult, {
+          includeExpenses: options.includeExpenses,
+          includeGst: options.includeGst,
+          includeVendors: options.includeVendors,
+          dateRangeLabel: options.dateRangeLabel,
+        });
+        body = Buffer.from(doc.output('arraybuffer'));
+        contentType = 'application/pdf';
+      } else if (kind === 'xlsx') {
+        body = Buffer.from(ExportService.generateIndianExcelWorkbook(profile, expenses, taxResult));
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      } else {
+        const zipBlob = await ExportService.generateCAZipPackage(profile, expenses, taxResult, {
+          includeReceiptImages: options.includeReceiptImages,
+          dateRangeLabel: options.dateRangeLabel,
+        });
+        body = Buffer.from(await zipBlob.arrayBuffer());
+        contentType = 'application/zip';
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', String(body.length));
+      return res.send(body);
+    } catch (err: any) {
+      console.warn('Export generation error:', err?.message);
+      return res.status(500).json({ error: 'Failed to generate the report. Please try again.' });
+    }
+  });
+
   // 12. API: Automated Multi-Jurisdiction Receipt OCR & GST Extraction
-  app.post('/api/receipt-ocr', rateLimit('ocr', 40, 10 * 60 * 1000), async (req, res) => {
+  // AI reading costs Gemini quota, so it needs a signed-in user and counts against the plan's
+  // monthly scan limit, which is enforced here (the app's own counter is display only).
+  app.post('/api/receipt-ocr', rateLimit('ocr', 40, 10 * 60 * 1000), requireUser, async (req, res) => {
     try {
       const { input, customerGstin = '', customerTaxId = '', country = 'NZ' } = req.body;
       // The Gemini key is read only on the server; it is never sent to or bundled into clients.
@@ -2494,6 +2619,15 @@ async function startServer() {
 
       if (!input) {
         return res.status(400).json({ error: 'Input receipt payload required' });
+      }
+
+      const ent = await getEntitlement(req.user!.id);
+      if (ent.tier === 'free' && ent.scansUsed >= FREE_MONTHLY_SCANS) {
+        return res.status(402).json({
+          error: `You have used all ${FREE_MONTHLY_SCANS} free AI scans this month.`,
+          code: 'SCAN_LIMIT',
+          subscription: toProfileSubscription(ent),
+        });
       }
 
       const isPdf = String(input).startsWith('data:application/pdf');
@@ -2590,10 +2724,16 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
               const usage: any = (response as any).usageMetadata || {};
+              try {
+                await incrementScanUsage(req.user!.id);
+              } catch (usageErr: any) {
+                console.warn('Scan usage update notice:', usageErr?.message);
+              }
               parsed._meta = {
                 model,
                 promptTokens: usage.promptTokenCount || 0,
                 completionTokens: usage.candidatesTokenCount || 0,
+                scansUsed: ent.scansUsed + 1,
               };
               return res.json(parsed);
             }
@@ -2731,38 +2871,45 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
   });
 
   // 14. API: Cloud Backup Sync
-  app.post('/api/backup/sync', (req, res) => {
+  app.post('/api/backup/sync', requireUser, (req, res) => {
+    const userId = req.user!.id;
     const { backupPayload } = req.body;
     if (backupPayload?.expenses && Array.isArray(backupPayload.expenses)) {
-      inMemoryExpenses = backupPayload.expenses;
+      setCachedExpenses(userId, backupPayload.expenses);
     }
     return res.json({
       success: true,
       backupId: 'TXV-IN-' + Date.now().toString(36).toUpperCase(),
-      syncedRecords: inMemoryExpenses.length,
+      syncedRecords: getCachedExpenses(userId).length,
       timestamp: new Date().toISOString(),
       encryptionStandard: 'AES-256-GCM',
     });
   });
 
   // 15. Razorpay: Create Order API (Server-to-Server)
-  app.post('/api/razorpay/create-order', async (req, res) => {
+  // The price comes from the server's plan table, never from the client, and the order is tagged
+  // with the buyer's user id and plan so the payment can only activate that plan for that user.
+  app.post('/api/razorpay/create-order', requireUser, async (req, res) => {
     try {
-      const { amount, currency = 'INR', receipt, notes } = req.body;
+      const tier = req.body?.tier === 'enterprise' ? 'enterprise' : 'pro';
+      const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
+      const amount = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100; // paise
       const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
       if (!keyId || !keySecret || keyId === 'rzp_test_TaxVaultLiveKey') {
-        // Fallback / Sandbox Simulated Order
+        if (!simulatedPaymentsAllowed()) {
+          return res.status(503).json({ success: false, error: 'Payments are not configured on the server.' });
+        }
         const rand = Math.random().toString(36).substring(2, 9).toUpperCase();
         return res.json({
           success: true,
           isSimulated: true,
           order: {
-            id: `order_RZP${Date.now().toString().slice(-6)}${rand.slice(0, 4)}`,
-            amount: amount || 119900,
-            currency,
-            receipt: receipt || `rcpt_${Date.now()}`,
+            id: `order_SIM${Date.now().toString().slice(-6)}${rand.slice(0, 4)}`,
+            amount,
+            currency: 'INR',
+            receipt: `rcpt_${tier}_${Date.now()}`,
             status: 'created',
           },
           keyId: keyId || 'rzp_test_TaxVaultLiveKey',
@@ -2771,17 +2918,17 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
 
       // Official Razorpay API Order Generation
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+      const rzpRes = await fetch(`${RAZORPAY_API_BASE}/v1/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Basic ${auth}`,
         },
         body: JSON.stringify({
-          amount: Math.round(amount), // Amount in paise (e.g. 119900 = ₹1,199)
-          currency,
-          receipt: receipt || `rcpt_sub_${Date.now()}`,
-          notes: notes || {},
+          amount,
+          currency: 'INR',
+          receipt: `rcpt_${tier}_${Date.now()}`,
+          notes: { user_id: req.user!.id, tier, billing_cycle: billingCycle },
         }),
       });
 
@@ -2802,15 +2949,39 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
     }
   });
 
-  // 16. Razorpay: Verify Payment Signature API
-  app.post('/api/razorpay/verify-payment', async (req, res) => {
+  // 16. Razorpay: Verify payment and activate the plan (POST /api/razorpay/verify-payment)
+  // Checks the HMAC signature, then fetches the order from Razorpay to confirm it is paid, was
+  // created for this user, and which plan it bought. Only then is customer_subscriptions written.
+  app.post('/api/razorpay/verify-payment', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (!razorpay_order_id || !razorpay_payment_id) {
+        return res.status(400).json({ verified: false, error: 'Missing payment details.' });
+      }
 
-      if (!keySecret) {
-        // In test mode without secret
-        return res.json({ verified: true, isSimulated: true });
+      // A payment id can only ever activate one plan
+      const { data: used } = await supabaseAdmin!.from('subscription_transactions').select('id')
+        .eq('gateway_payment_id', String(razorpay_payment_id)).limit(1);
+      if (used && used.length > 0) {
+        return res.status(409).json({ verified: false, error: 'This payment has already been used.' });
+      }
+
+      if (!keySecret || !keyId) {
+        if (!simulatedPaymentsAllowed()) {
+          return res.status(503).json({ verified: false, error: 'Payments are not configured on the server.' });
+        }
+        const tier = req.body?.tier === 'enterprise' ? 'enterprise' : 'pro';
+        const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
+        const ent = await activatePlan(userId, tier, billingCycle, {
+          gateway: 'simulated',
+          amount: PAID_PLAN_PRICES_INR[tier][billingCycle],
+          orderId: String(razorpay_order_id),
+          paymentId: String(razorpay_payment_id),
+        });
+        return res.json({ verified: true, isSimulated: true, subscription: toProfileSubscription(ent) });
       }
 
       const crypto = await import('crypto');
@@ -2818,15 +2989,62 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         .createHmac('sha256', keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest('hex');
+      const given = String(razorpay_signature || '');
+      const signatureOk = given.length === expectedSignature.length
+        && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expectedSignature));
+      if (!signatureOk) {
+        return res.status(400).json({ verified: false, error: 'Payment signature is invalid.' });
+      }
 
-      const isSignatureValid = expectedSignature === razorpay_signature;
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+      const orderRes = await fetch(`${RAZORPAY_API_BASE}/v1/orders/${encodeURIComponent(String(razorpay_order_id))}`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      const order: any = await orderRes.json();
+      const tier = order?.notes?.tier === 'enterprise' ? 'enterprise' : order?.notes?.tier === 'pro' ? 'pro' : null;
+      const billingCycle = order?.notes?.billing_cycle === 'annual' ? 'annual' : 'monthly';
+      if (!orderRes.ok || order?.notes?.user_id !== userId || !tier) {
+        return res.status(403).json({ verified: false, error: 'This payment does not belong to your account.' });
+      }
+      const price = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100;
+      if (order.status !== 'paid' || Number(order.amount_paid || 0) < price) {
+        return res.status(402).json({ verified: false, error: 'Payment has not been completed.' });
+      }
+
+      const ent = await activatePlan(userId, tier, billingCycle, {
+        gateway: 'razorpay',
+        amount: price / 100,
+        orderId: String(razorpay_order_id),
+        paymentId: String(razorpay_payment_id),
+        signature: given,
+      });
       return res.json({
-        verified: isSignatureValid,
+        verified: true,
         paymentId: razorpay_payment_id,
         orderId: razorpay_order_id,
+        subscription: toProfileSubscription(ent),
       });
     } catch (err: any) {
-      return res.status(500).json({ error: err?.message || 'Server error verifying payment' });
+      return res.status(500).json({ verified: false, error: err?.message || 'Server error verifying payment' });
+    }
+  });
+
+  // 16b. Current plan and scan usage for the signed-in user (GET /api/subscription)
+  app.get('/api/subscription', requireUser, async (req, res) => {
+    try {
+      return res.json({ success: true, data: toProfileSubscription(await getEntitlement(req.user!.id)) });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err?.message });
+    }
+  });
+
+  // 16c. Switch the signed-in user to the free plan (POST /api/subscription/downgrade)
+  app.post('/api/subscription/downgrade', requireUser, async (req, res) => {
+    try {
+      const ent = await activatePlan(req.user!.id, 'free', 'monthly', { gateway: 'manual', amount: 0 });
+      return res.json({ success: true, data: toProfileSubscription(ent) });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err?.message });
     }
   });
 
@@ -2918,7 +3136,12 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
   });
 
   // 19. API: Update Country Terms in Database (PUT /api/terms/:country)
-  app.put('/api/terms/:country', async (req, res) => {
+  // Reading terms is public; editing them is limited to emails listed in TERMS_ADMIN_EMAILS.
+  app.put('/api/terms/:country', requireUser, async (req, res) => {
+    const termsAdmins = (process.env.TERMS_ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+    if (!termsAdmins.includes(req.user!.email)) {
+      return res.status(403).json({ success: false, error: 'Only TaxVault administrators can edit Terms & Conditions.' });
+    }
     try {
       const country = (req.params.country || 'NZ').toUpperCase();
       const updated = req.body;
@@ -2936,9 +3159,9 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         console.warn('Failed writing updated terms to file:', fErr);
       }
 
-      if (supabase) {
+      if (supabaseAdmin) {
         try {
-          await supabase.from('country_terms').upsert({
+          await supabaseAdmin.from('country_terms').upsert({
             country,
             country_name: inMemoryCountryTerms[country].countryName,
             tax_authority: inMemoryCountryTerms[country].taxAuthority,
@@ -2963,12 +3186,13 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
   });
 
   // 20. API: Save Customer Agreement in Database (POST /api/agreements)
-  app.post('/api/agreements', async (req, res) => {
+  // Consent is recorded during sign-up, possibly before the user has a session (email
+  // confirmation pending), so this route accepts anonymous calls. When a valid token is sent the
+  // agreement is bound to that user and the client-supplied userId/email are ignored.
+  app.post('/api/agreements', rateLimit('agreements', 20, 15 * 60 * 1000), optionalUser, async (req, res) => {
     try {
       const {
         id: customId,
-        userId,
-        userEmail,
         userName,
         country,
         taxAuthority,
@@ -2977,6 +3201,8 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         devicePlatform = 'web',
         metadata = {},
       } = req.body;
+      const userId: string | null = req.user?.id || null;
+      const userEmail = req.user?.email || req.body?.userEmail;
 
       if (!userEmail || !country) {
         return res.status(400).json({
@@ -3021,10 +3247,10 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
       }
 
       // 2. Persist to Supabase database (customer_agreements table + activity_logs audit ledger)
-      if (supabase) {
+      if (supabaseAdmin) {
         try {
           // Attempt insert into customer_agreements table
-          await supabase.from('customer_agreements').upsert({
+          await supabaseAdmin.from('customer_agreements').insert({
             id: agreementRecord.id,
             user_id: agreementRecord.userId,
             user_email: agreementRecord.userEmail,
@@ -3043,7 +3269,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
 
         try {
           // Activity logs audit trail
-          await supabase.rpc('record_activity_log', {
+          await supabaseAdmin.rpc('record_activity_log', {
             p_user_id: agreementRecord.userId || null,
             p_entity_type: 'customer_agreement',
             p_entity_id: agreementRecord.id,
@@ -3067,7 +3293,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         try {
           // Update profiles table if profile exists
           if (agreementRecord.userId) {
-            await supabase.from('profiles').update({
+            await supabaseAdmin.from('profiles').update({
               updated_at: new Date().toISOString(),
             }).eq('id', agreementRecord.userId);
           }
@@ -3089,61 +3315,46 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
     }
   });
 
-  // 21. API: Fetch Customer Agreements from Database (GET /api/agreements)
-  app.get('/api/agreements', async (req, res) => {
+  // 21. API: Fetch the signed-in user's own agreements (GET /api/agreements)
+  // Agreements hold emails, IP addresses and user agents, so they are never listed for other users.
+  app.get('/api/agreements', requireUser, async (req, res) => {
+    const { id: userId, email: userEmail } = req.user!;
+    const isMine = (a: any) => a.userId === userId || (a.userEmail || '').toLowerCase() === userEmail;
+    let list = inMemoryCustomerAgreements.filter(isMine);
     try {
-      const query = typeof req.query.query === 'string' ? req.query.query.trim().toLowerCase() : undefined;
-      const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : undefined;
-      const target = query || email;
-
-      let list = inMemoryCustomerAgreements;
-
-      // If Supabase has customer_agreements table, merge
-      if (supabase) {
-        try {
-          let sQuery = supabase.from('customer_agreements').select('*').order('agreed_at', { ascending: false });
-          if (target) {
-            sQuery = sQuery.or(`user_email.ilike.%${target}%,user_id.eq.${target}`);
-          }
-          const { data, error } = await sQuery;
-          if (!error && Array.isArray(data) && data.length > 0) {
-            const mapped = data.map((row: any) => ({
-              id: row.id,
-              userId: row.user_id,
-              userEmail: row.user_email,
-              userName: row.user_name,
-              country: row.country,
-              taxAuthority: row.tax_authority,
-              termsVersion: row.terms_version,
-              agreedAt: row.agreed_at,
-              ipAddress: row.ip_address,
-              userAgent: row.user_agent,
-              devicePlatform: row.device_platform,
-              metadata: row.metadata,
-              createdAt: row.created_at,
-            }));
-            const mapById = new Map();
-            [...mapped, ...list].forEach(a => mapById.set(a.id, a));
-            list = Array.from(mapById.values());
-          }
-        } catch {}
+      const { data, error } = await supabaseAdmin!
+        .from('customer_agreements')
+        .select('*')
+        .or(`user_id.eq.${userId},user_email.eq.${userEmail}`)
+        .order('agreed_at', { ascending: false });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((row: any) => ({
+          id: row.id,
+          userId: row.user_id,
+          userEmail: row.user_email,
+          userName: row.user_name,
+          country: row.country,
+          taxAuthority: row.tax_authority,
+          termsVersion: row.terms_version,
+          agreedAt: row.agreed_at,
+          ipAddress: row.ip_address,
+          userAgent: row.user_agent,
+          devicePlatform: row.device_platform,
+          metadata: row.metadata,
+          createdAt: row.created_at,
+        }));
+        const mapById = new Map();
+        [...mapped, ...list].forEach(a => mapById.set(a.id, a));
+        list = Array.from(mapById.values()).filter(isMine);
       }
+    } catch {}
 
-      if (target) {
-        list = list.filter(
-          (a) => a.userEmail.toLowerCase().includes(target) || (a.userId && a.userId === target)
-        );
-      }
-
-      return res.json({
-        success: true,
-        count: list.length,
-        data: list,
-        source: 'database',
-      });
-    } catch (err: any) {
-      return res.json({ success: true, count: inMemoryCustomerAgreements.length, data: inMemoryCustomerAgreements, source: 'cache_fallback' });
-    }
+    return res.json({
+      success: true,
+      count: list.length,
+      data: list,
+      source: 'database',
+    });
   });
 
   // 22. Dynamic Android APK download (avoids storing binary inside public/ directory which bloats the APK build)

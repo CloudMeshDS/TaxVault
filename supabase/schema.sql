@@ -10,7 +10,7 @@
 --   6. Customer Token & Request Usage (Quota Tracking per Period)
 --   7. Token Request Logs (Granular AI/API Request & Latency Ledger)
 --   8. Activity Logs (Audit Trail of All User & System Activities)
---   9. Automatic Triggers & RLS Security Policies
+--   9. Automatic Triggers & per-user RLS Security Policies (section 18)
 -- ==============================================================================
 -- Instructions:
 -- 1. Open your Supabase Project Dashboard (https://supabase.com/dashboard)
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   accountant_phone TEXT,
   biometric_lock BOOLEAN DEFAULT FALSE,
   app_pin TEXT DEFAULT '1234',
-  subscription JSONB DEFAULT '{"tier":"pro","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":15,"monthlyReceiptLimit":500}'::jsonb,
+  subscription JSONB DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb,
   last_backup_date TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
@@ -78,7 +78,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pan TEXT DEFAULT 'AAAPS1234
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gstin TEXT DEFAULT '27AABCU9603R1ZM';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS biometric_lock BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS app_pin TEXT DEFAULT '1234';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription JSONB DEFAULT '{"tier":"pro","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":15,"monthlyReceiptLimit":500}'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription JSONB DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb;
 
 
 -- ==============================================================================
@@ -222,6 +222,7 @@ ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.incomes (
   id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
   date DATE NOT NULL,
   client TEXT NOT NULL,
   description TEXT,
@@ -231,6 +232,7 @@ CREATE TABLE IF NOT EXISTS public.incomes (
   invoice_number TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE public.incomes ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL;
 
 
 -- ==============================================================================
@@ -691,7 +693,10 @@ BEGIN
   END IF;
   RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+-- Runs as its owner so audit rows (some with user_id NULL) are written despite the caller's RLS.
+-- Trigger functions cannot be called through the REST API.
+SECURITY DEFINER SET search_path = public, pg_temp;
 
 DROP TRIGGER IF EXISTS trg_audit_expenses ON public.expenses;
 CREATE TRIGGER trg_audit_expenses AFTER INSERT OR UPDATE OR DELETE ON public.expenses
@@ -699,80 +704,9 @@ FOR EACH ROW EXECUTE FUNCTION public.fn_log_expense_activity();
 
 
 -- ==============================================================================
--- 12. ENABLE ROW LEVEL SECURITY (RLS) & OPEN POLICIES
+-- 12. ROW LEVEL SECURITY: see section 18 at the end of this file (it also covers
+--     country_terms and customer_agreements, which are created below).
 -- ==============================================================================
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.incomes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customer_subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subscription_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customer_usage ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.token_request_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.mileage_trips ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.client_invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bank_transactions ENABLE ROW LEVEL SECURITY;
-
--- 1. Profiles policy
-DROP POLICY IF EXISTS "Public access to profiles" ON public.profiles;
-CREATE POLICY "Public access to profiles" ON public.profiles
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 2. Expenses policy
-DROP POLICY IF EXISTS "Public access to expenses" ON public.expenses;
-CREATE POLICY "Public access to expenses" ON public.expenses
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 3. Incomes policy
-DROP POLICY IF EXISTS "Public access to incomes" ON public.incomes;
-CREATE POLICY "Public access to incomes" ON public.incomes
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 4. Subscription Plans policy (Read for all, write for authenticated/admin)
-DROP POLICY IF EXISTS "Public read subscription plans" ON public.subscription_plans;
-CREATE POLICY "Public read subscription plans" ON public.subscription_plans
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 5. Customer Subscriptions policy
-DROP POLICY IF EXISTS "Public access customer subscriptions" ON public.customer_subscriptions;
-CREATE POLICY "Public access customer subscriptions" ON public.customer_subscriptions
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 6. Subscription Transactions policy
-DROP POLICY IF EXISTS "Public access subscription transactions" ON public.subscription_transactions;
-CREATE POLICY "Public access subscription transactions" ON public.subscription_transactions
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 7. Customer Usage policy
-DROP POLICY IF EXISTS "Public access customer usage" ON public.customer_usage;
-CREATE POLICY "Public access customer usage" ON public.customer_usage
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 8. Token Request Logs policy
-DROP POLICY IF EXISTS "Public access token request logs" ON public.token_request_logs;
-CREATE POLICY "Public access token request logs" ON public.token_request_logs
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 9. Activity Logs policy
-DROP POLICY IF EXISTS "Public access activity logs" ON public.activity_logs;
-CREATE POLICY "Public access activity logs" ON public.activity_logs
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 10. Mileage Trips policy
-DROP POLICY IF EXISTS "Public access mileage trips" ON public.mileage_trips;
-CREATE POLICY "Public access mileage trips" ON public.mileage_trips
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 11. Client Invoices policy
-DROP POLICY IF EXISTS "Public access client invoices" ON public.client_invoices;
-CREATE POLICY "Public access client invoices" ON public.client_invoices
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
-
--- 12. Bank Transactions policy
-DROP POLICY IF EXISTS "Public access bank transactions" ON public.bank_transactions;
-CREATE POLICY "Public access bank transactions" ON public.bank_transactions
-  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 
 -- ==============================================================================
@@ -980,3 +914,83 @@ CREATE INDEX IF NOT EXISTS idx_cust_agr_user ON public.customer_agreements(user_
 CREATE INDEX IF NOT EXISTS idx_cust_agr_country ON public.customer_agreements(country);
 CREATE INDEX IF NOT EXISTS idx_cust_agr_date ON public.customer_agreements(agreed_at DESC);
 
+-- ==============================================================================
+-- 18. ROW LEVEL SECURITY (per-user ownership)
+-- ==============================================================================
+-- profiles.id = auth.uid(); expenses.customer_tax_id = auth.uid(); other tables' user_id = auth.uid().
+-- The anon role has no policy on user tables, so the public anon key cannot read any user's rows.
+-- The TaxVault server verifies the caller's token and uses the service role (bypasses RLS).
+ALTER TABLE public.expenses ALTER COLUMN customer_tax_id SET DEFAULT (auth.uid())::text;
+ALTER TABLE public.incomes ALTER COLUMN user_id SET DEFAULT (auth.uid())::text;
+ALTER TABLE public.mileage_trips ALTER COLUMN user_id SET DEFAULT (auth.uid())::text;
+ALTER TABLE public.client_invoices ALTER COLUMN user_id SET DEFAULT (auth.uid())::text;
+ALTER TABLE public.bank_transactions ALTER COLUMN user_id SET DEFAULT (auth.uid())::text;
+ALTER TABLE public.activity_logs ALTER COLUMN user_id SET DEFAULT (auth.uid())::text;
+CREATE INDEX IF NOT EXISTS idx_expenses_customer_tax_id ON public.expenses(customer_tax_id);
+CREATE INDEX IF NOT EXISTS idx_incomes_user ON public.incomes(user_id);
+
+-- Enable RLS and drop every existing policy (permissive policies are OR'ed, so any leftover
+-- `USING (true)` policy would keep a table public).
+DO $$
+DECLARE
+  t TEXT;
+  p RECORD;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'profiles', 'expenses', 'incomes', 'subscription_plans', 'customer_subscriptions',
+    'subscription_transactions', 'customer_usage', 'token_request_logs', 'activity_logs',
+    'mileage_trips', 'client_invoices', 'bank_transactions', 'country_terms', 'customer_agreements'
+  ] LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = t LOOP
+      EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, t);
+    END LOOP;
+  END LOOP;
+END $$;
+
+CREATE POLICY "Owner access to profiles" ON public.profiles FOR ALL TO authenticated
+  USING (id = (SELECT auth.uid())::text) WITH CHECK (id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner access to expenses" ON public.expenses FOR ALL TO authenticated
+  USING (customer_tax_id = (SELECT auth.uid())::text) WITH CHECK (customer_tax_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner access to incomes" ON public.incomes FOR ALL TO authenticated
+  USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner access to mileage trips" ON public.mileage_trips FOR ALL TO authenticated
+  USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner access to client invoices" ON public.client_invoices FOR ALL TO authenticated
+  USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner access to bank transactions" ON public.bank_transactions FOR ALL TO authenticated
+  USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
+-- Plan, payments and scan quota: read-only for owners; written by the server (service role).
+CREATE POLICY "Owner read customer subscriptions" ON public.customer_subscriptions FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner read customer usage" ON public.customer_usage FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
+
+-- Ledgers / audit trails: read and append own rows only.
+CREATE POLICY "Owner read subscription transactions" ON public.subscription_transactions FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner read token request logs" ON public.token_request_logs FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner insert token request logs" ON public.token_request_logs FOR INSERT TO authenticated
+  WITH CHECK (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner read activity logs" ON public.activity_logs FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner insert activity logs" ON public.activity_logs FOR INSERT TO authenticated
+  WITH CHECK (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner read customer agreements" ON public.customer_agreements FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text OR lower(user_email) = lower((SELECT auth.jwt() ->> 'email')));
+CREATE POLICY "Owner insert customer agreements" ON public.customer_agreements FOR INSERT TO authenticated
+  WITH CHECK (user_id = (SELECT auth.uid())::text);
+
+-- Public catalogues: readable by everyone, writable only by the service role.
+CREATE POLICY "Public read subscription plans" ON public.subscription_plans FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public read country terms" ON public.country_terms FOR SELECT TO anon, authenticated USING (true);
+
+REVOKE EXECUTE ON FUNCTION public.fn_log_expense_activity() FROM PUBLIC, anon, authenticated;
+
+-- Logging helpers run with the caller's rights (RLS applies) and are not callable by anon.
+REVOKE EXECUTE ON FUNCTION public.record_activity_log(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, TEXT, JSONB) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_activity_log(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, TEXT, JSONB) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.record_token_usage(TEXT, TEXT, TEXT, INT, INT, INT, NUMERIC, TEXT, TEXT, JSONB) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_token_usage(TEXT, TEXT, TEXT, INT, INT, INT, NUMERIC, TEXT, TEXT, JSONB) TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon;

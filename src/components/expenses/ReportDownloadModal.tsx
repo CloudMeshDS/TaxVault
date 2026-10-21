@@ -21,7 +21,7 @@ import {
 } from '../../services/periodFilterService';
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { calculateTaxPosition, formatCurrency } from '../../services/taxRules';
-import { ExportService } from '../../services/exportService';
+import { ExportClient } from '../../services/exportClient';
 import { DEFAULT_INDIAN_PROFILE, DEFAULT_PROFILES } from '../../services/storageService';
 
 interface ReportDownloadModalProps {
@@ -84,17 +84,23 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
 
       if (format === 'excel') {
         const fileName = `TaxVault_Register_${safeBadge}.xlsx`;
-        ExportService.downloadExcel(userProfile, filteredList, taxResult, fileName);
+        const result = await ExportClient.downloadProExport('xlsx', { profile: userProfile, expenses: filteredList, taxResult, fileName });
+        if (!result.ok) throw new Error(result.message);
         setSuccessMessage(`Excel workbook "${fileName}" downloaded successfully!`);
       } else if (format === 'pdf') {
         const fileName = `TaxVault_Report_${safeBadge}.pdf`;
-        ExportService.downloadPDF(userProfile, filteredList, taxResult, fileName, {
-          dateRangeLabel: badgeLabel,
+        const result = await ExportClient.downloadProExport('pdf', {
+          profile: userProfile,
+          expenses: filteredList,
+          taxResult,
+          fileName,
+          options: { dateRangeLabel: badgeLabel },
         });
+        if (!result.ok) throw new Error(result.message);
         setSuccessMessage(`PDF Audit Report "${fileName}" downloaded successfully!`);
       } else if (format === 'csv') {
         const fileName = `TaxVault_Expenses_${safeBadge}.csv`;
-        ExportService.downloadCSV(filteredList, fileName);
+        ExportClient.downloadCSV(filteredList, fileName);
         setSuccessMessage(`CSV spreadsheet "${fileName}" downloaded successfully!`);
       }
 

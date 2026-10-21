@@ -26,7 +26,7 @@ import { SupportedCountry, UserProfile } from '../../types';
 import { TAX_CONFIGS } from '../../services/taxRules';
 import { supabaseService } from '../../services/supabaseService';
 import { emailJsService } from '../../services/emailJsService';
-import { DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE, createCleanUserProfile } from '../../services/storageService';
+import { DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE, createCleanUserProfile, savePendingSignupProfile, takePendingSignupProfile } from '../../services/storageService';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
@@ -239,7 +239,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
       }
 
       if (!userProfile) {
-        userProfile = createCleanUserProfile(
+        // First sign-in after confirming the email: use the details entered at sign-up
+        userProfile = takePendingSignupProfile(authenticatedEmail, authenticatedUserId) || createCleanUserProfile(
           authenticatedEmail,
           undefined,
           'IN',
@@ -359,7 +360,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
         console.warn('Customer agreement database save notice:', agrErr);
       }
 
-      await supabaseService.upsertProfile(newProfile).catch(() => {});
+      // Without a session yet (email confirmation pending) RLS rejects this; keep the details
+      // on the device and save them on the first sign-in instead.
+      const savedProfile = await supabaseService.upsertProfile(newProfile).catch(() => ({ success: false }));
+      if (!savedProfile.success) savePendingSignupProfile(newProfile);
 
       setSuccessMessage('Account created successfully! Welcome to TaxVault.');
 
@@ -502,7 +506,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
       
       let authenticatedProfile = profileRes.profile;
       if (!authenticatedProfile) {
-        authenticatedProfile = createCleanUserProfile(targetEmail, targetEmail.split('@')[0], currentProfile?.country || 'IN', uid);
+        authenticatedProfile = takePendingSignupProfile(targetEmail, uid) || createCleanUserProfile(targetEmail, targetEmail.split('@')[0], currentProfile?.country || 'IN', uid);
         await supabaseService.upsertProfile(authenticatedProfile).catch(() => {});
       }
 

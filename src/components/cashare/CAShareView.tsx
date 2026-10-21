@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../../types';
 import { formatINR } from '../../services/taxRules';
-import { ExportService } from '../../services/exportService';
+import { ExportClient, ProExportResult } from '../../services/exportClient';
 
 interface CAShareViewProps {
   profile: UserProfile;
@@ -25,6 +25,7 @@ interface CAShareViewProps {
   taxResult: TaxCalculationResult;
   onUpdateProfile: (updated: UserProfile) => void;
   onSelectExpense: (expense: ExpenseRecord) => void;
+  onOpenSubscription?: (reason?: string) => void;
 }
 
 export const CAShareView: React.FC<CAShareViewProps> = ({
@@ -33,6 +34,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
   taxResult,
   onUpdateProfile,
   onSelectExpense,
+  onOpenSubscription,
 }) => {
   const [selectedFY, setSelectedFY] = useState(profile.financialYear || 'FY 2026-27');
   const [selectedPeriod, setSelectedPeriod] = useState<'Full Year' | 'Q1 (Apr-Jun)' | 'Q2 (Jul-Sep)' | 'Q3 (Oct-Dec)' | 'Q4 (Jan-Mar)'>('Full Year');
@@ -70,20 +72,30 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
     setTimeout(() => setFeedbackMessage(null), 3000);
   };
 
+  // PDF, Excel and the zip pack are Pro exports built by the server after a plan check
+  const reportProExport = (result: ProExportResult, successMessage: string) => {
+    if (result.ok) {
+      setFeedbackMessage(successMessage);
+    } else {
+      if (result.reason === 'pro_required') onOpenSubscription?.(result.message);
+      setFeedbackMessage(result.message);
+    }
+    setTimeout(() => setFeedbackMessage(null), 4500);
+  };
+
   // 1. Download ZIP package
   const handleDownloadZip = async () => {
     setIsGeneratingZip(true);
     setFeedbackMessage('Packaging PDF, Excel and receipt files into ZIP...');
     try {
-      const zipBlob = await ExportService.generateCAZipPackage(profile, expenses, taxResult, {
-        includeReceiptImages: includeReceipts,
+      const result = await ExportClient.downloadProExport('zip', {
+        profile,
+        expenses,
+        taxResult,
+        fileName: `TaxVault_CA_Audit_Pack_${(profile.businessName || 'Business').replace(/\s+/g, '_')}_${selectedFY}.zip`,
+        options: { includeReceiptImages: includeReceipts },
       });
-      ExportService.triggerDownload(
-        zipBlob,
-        `TaxVault_CA_Audit_Pack_${profile.businessName.replace(/\s+/g, '_')}_${selectedFY}.zip`
-      );
-      setFeedbackMessage('ZIP package downloaded successfully!');
-      setTimeout(() => setFeedbackMessage(null), 3500);
+      reportProExport(result, 'ZIP package downloaded successfully!');
     } finally {
       setIsGeneratingZip(false);
     }
@@ -91,34 +103,37 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
 
   // 2. Share via WhatsApp
   const handleShareWhatsApp = () => {
-    const url = ExportService.getWhatsAppShareUrl(profile, taxResult, caPhone);
+    const url = ExportClient.getWhatsAppShareUrl(profile, taxResult, caPhone);
     window.open(url, '_blank');
   };
 
   // 3. Share via Email
   const handleShareEmail = () => {
-    const url = ExportService.getEmailShareUrl(profile, taxResult, caEmail);
+    const url = ExportClient.getEmailShareUrl(profile, taxResult, caEmail);
     window.open(url, '_blank');
   };
 
   // 4. Download PDF
-  const handleDownloadPDF = () => {
-    const doc = ExportService.generateIndianCAPDF(profile, expenses, taxResult, {
-      includeExpenses,
-      includeGst,
-      includeVendors,
-      dateRangeLabel: `${selectedPeriod} (${selectedFY})`,
+  const handleDownloadPDF = async () => {
+    const result = await ExportClient.downloadProExport('pdf', {
+      profile,
+      expenses,
+      taxResult,
+      fileName: `TaxVault_CA_Audit_Report_${selectedFY}.pdf`,
+      options: { includeExpenses, includeGst, includeVendors, dateRangeLabel: `${selectedPeriod} (${selectedFY})` },
     });
-    doc.save(`TaxVault_CA_Audit_Report_${selectedFY}.pdf`);
+    reportProExport(result, 'PDF report downloaded successfully!');
   };
 
   // 5. Download Excel
-  const handleDownloadExcel = () => {
-    const buffer = ExportService.generateIndianExcelWorkbook(profile, expenses, taxResult);
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  const handleDownloadExcel = async () => {
+    const result = await ExportClient.downloadProExport('xlsx', {
+      profile,
+      expenses,
+      taxResult,
+      fileName: `TaxVault_Expense_Register_${selectedFY}.xlsx`,
     });
-    ExportService.triggerDownload(blob, `TaxVault_Expense_Register_${selectedFY}.xlsx`);
+    reportProExport(result, 'Excel register downloaded successfully!');
   };
 
   return (
