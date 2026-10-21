@@ -51,11 +51,11 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
         <button
           onClick={handleRefreshRates}
           disabled={isRefreshing}
-          className="p-2 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-300 hover:text-emerald-400 flex items-center gap-1.5 text-xs transition-colors cursor-pointer"
+          className="px-2.5 py-1.5 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-300 hover:text-emerald-400 flex items-center gap-1.5 text-xs transition-colors cursor-pointer"
           title="Refresh Exchange Rates"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
+          <span className="inline font-medium">Refresh</span>
         </button>
       </div>
 

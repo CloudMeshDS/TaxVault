@@ -66,5 +66,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>TaxVault requires access to your camera to scan and digitize expense receipts and tax invoices.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TaxVault requires access to your photo library to select receipt images and PDF documents.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>TaxVault requires permission to save receipt images to your photo library.</string>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDarkContent</string>
 </dict>
 </plist>

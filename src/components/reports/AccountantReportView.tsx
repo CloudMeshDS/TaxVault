@@ -133,42 +133,48 @@ export const AccountantReportView: React.FC<AccountantReportViewProps> = ({
         <span className="text-[10px] text-emerald-400 font-medium">IRD Compliant</span>
       </div>
 
-      {/* Export Options Grid */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Export Options Grid (Adaptive for portrait and landscape) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <button
           onClick={handleDownloadPDF}
-          className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 transition-colors cursor-pointer group relative overflow-hidden"
+          className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl flex sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center gap-2.5 sm:gap-1.5 transition-colors cursor-pointer group relative overflow-hidden"
         >
-          <div className="absolute top-1.5 right-1.5 text-[8px] font-bold font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <div className="absolute top-2 right-2 text-[8px] font-bold font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
             PRO
           </div>
-          <FileText className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-semibold text-neutral-200">Audit PDF</span>
-          <span className="text-[10px] text-neutral-500">Official CA Signoff</span>
+          <FileText className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform shrink-0" />
+          <div>
+            <span className="text-xs font-semibold text-neutral-200 block">Audit PDF</span>
+            <span className="text-[10px] text-neutral-500 block">Official CA Signoff</span>
+          </div>
         </button>
 
         <button
           onClick={handleDownloadExcel}
-          className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 transition-colors cursor-pointer group relative overflow-hidden"
+          className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl flex sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center gap-2.5 sm:gap-1.5 transition-colors cursor-pointer group relative overflow-hidden"
         >
-          <div className="absolute top-1.5 right-1.5 text-[8px] font-bold font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <div className="absolute top-2 right-2 text-[8px] font-bold font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
             PRO
           </div>
-          <FileSpreadsheet className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-semibold text-neutral-200">Excel (.xlsx)</span>
-          <span className="text-[10px] text-neutral-500">Full Multi-Sheet</span>
+          <FileSpreadsheet className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" />
+          <div>
+            <span className="text-xs font-semibold text-neutral-200 block">Excel (.xlsx)</span>
+            <span className="text-[10px] text-neutral-500 block">Full Multi-Sheet</span>
+          </div>
         </button>
 
         <button
           onClick={handleDownloadCSV}
-          className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 transition-colors cursor-pointer group relative overflow-hidden"
+          className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded-xl flex sm:flex-col items-center justify-start sm:justify-center text-left sm:text-center gap-2.5 sm:gap-1.5 transition-colors cursor-pointer group relative overflow-hidden"
         >
-          <div className="absolute top-1.5 right-1.5 text-[8px] font-bold font-mono px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <div className="absolute top-2 right-2 text-[8px] font-bold font-mono px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
             FREE
           </div>
-          <Download className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
-          <span className="text-xs font-semibold text-neutral-200">CSV Export</span>
-          <span className="text-[10px] text-neutral-500">Xero / MYOB Sync</span>
+          <Download className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
+          <div>
+            <span className="text-xs font-semibold text-neutral-200 block">CSV Export</span>
+            <span className="text-[10px] text-neutral-500 block">Xero / MYOB Sync</span>
+          </div>
         </button>
       </div>
 
@@ -275,8 +281,8 @@ export const AccountantReportView: React.FC<AccountantReportViewProps> = ({
 
       {/* Share with CA Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 animate-in fade-in duration-200">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-5 space-y-4 text-neutral-100 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 modal-backdrop-animation">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-5 space-y-4 text-neutral-100 shadow-2xl modal-enter-animation">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
                 <Lock className="w-5 h-5 text-emerald-400" />

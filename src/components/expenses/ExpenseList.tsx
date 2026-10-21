@@ -3,203 +3,493 @@ import {
   Search,
   Filter,
   Plus,
-  Trash2,
-  FileText,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
   Receipt,
   Download,
-  Calendar
+  Calendar,
+  Sparkles,
+  X,
+  SlidersHorizontal,
+  ChevronDown,
+  Building2,
+  CheckCircle2,
+  ArrowUpDown,
+  PenTool,
 } from 'lucide-react';
-import { CountryTaxConfig, ExpenseCategory, ExpenseRecord } from '../../types';
+import { ExpenseCategory, ExpenseRecord, ExpenseType, UserProfile } from '../../types';
+import { ALL_CATEGORIES, CATEGORY_MAP, formatCurrency, formatINR, getQuarterBounds, FiscalQuarter } from '../../services/taxRules';
+import {
+  PeriodFilterState,
+  createDefaultPeriodFilterState,
+  getPeriodFilterBadgeLabel,
+  parseDateToISO,
+  getMonthBounds,
+  getFYBounds,
+  getCYBounds,
+} from '../../services/periodFilterService';
+import { PeriodFilterControls } from '../common/PeriodFilterControls';
+import { ReportDownloadModal } from './ReportDownloadModal';
 
 interface ExpenseListProps {
   expenses: ExpenseRecord[];
-  taxConfig: CountryTaxConfig;
+  profile?: UserProfile;
   onOpenScanner: () => void;
-  onDeleteExpense: (id: string) => void;
-  onExportCSV: () => void;
+  onOpenManualEntry?: () => void;
+  onSelectExpense: (expense: ExpenseRecord) => void;
+  onExportExcel?: () => void;
 }
 
 export const ExpenseList: React.FC<ExpenseListProps> = ({
   expenses,
-  taxConfig,
+  profile,
   onOpenScanner,
-  onDeleteExpense,
-  onExportCSV,
+  onOpenManualEntry,
+  onSelectExpense,
+  onExportExcel,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<'All' | ExpenseType | 'Deleted'>('All');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [onlyDeductible, setOnlyDeductible] = useState(false);
-  const [previewReceipt, setPreviewReceipt] = useState<ExpenseRecord | null>(null);
+  const [onlyGst, setOnlyGst] = useState<boolean>(false);
+  const [amountRange, setAmountRange] = useState<'all' | 'under2k' | '2kto10k' | 'above10k'>('all');
+  const [showFiltersModal, setShowFiltersModal] = useState<boolean>(false);
 
-  const categories = ['All', 'Tools & Equipment', 'Utilities & Phone', 'Client Entertainment', 'Vehicle & Mileage', 'Software & Tech', 'Travel & Accommodation', 'Office & Admin'];
+  // Date Filter & Report Download State
+  const [isReportDownloadOpen, setIsReportDownloadOpen] = useState(false);
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilterState>(() =>
+    createDefaultPeriodFilterState(profile?.country, profile?.financialYear)
+  );
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
+  const deletedCount = useMemo(() => {
+    return expenses.filter((e) => e.status === 'deleted' || e.isDeleted).length;
+  }, [expenses]);
+
+  const currCode = profile?.defaultCurrency || expenses[0]?.currency || (profile?.country === 'IN' ? 'INR' : 'NZD');
+  const currSymbol = profile?.currencySymbol || expenses[0]?.currencySymbol || (profile?.country === 'IN' ? '₹' : '$');
+  const fmt = (val: number) => formatCurrency(val, currCode, currSymbol, false);
+
+  // Natural Language Search quick query suggestions
+  const sampleSearchQueries = [
+    'Fuel expenses',
+    'Software subscriptions',
+    `Expenses above ${currSymbol}500`,
+    'Business expenses',
+    profile?.country === 'US' ? 'Sales tax' : 'GST expenses',
+  ];
+
+  // Natural Language Query Engine
+  const parsedFilters = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return null;
+
+    const result: {
+      category?: ExpenseCategory;
+      merchant?: string;
+      minAmount?: number;
+      maxAmount?: number;
+      type?: ExpenseType;
+      hasGst?: boolean;
+    } = {};
+
+    // Category detection
+    if (q.includes('fuel') || q.includes('petrol') || q.includes('diesel')) result.category = 'Fuel';
+    else if (q.includes('travel') || q.includes('flight')) result.category = 'Travel';
+    else if (q.includes('food') || q.includes('lunch') || q.includes('meal')) result.category = 'Food & Meals';
+    else if (q.includes('software') || q.includes('subscription')) result.category = 'Software & Subscriptions';
+    else if (q.includes('internet') || q.includes('broadband')) result.category = 'Internet & Mobile';
+    else if (q.includes('office')) result.category = 'Office Expenses';
+
+    // Merchant detection
+    if (q.includes('amazon')) result.merchant = 'amazon';
+    if (q.includes('swiggy')) result.merchant = 'swiggy';
+    if (q.includes('indigo')) result.merchant = 'indigo';
+    if (q.includes('adobe')) result.merchant = 'adobe';
+    if (q.includes('airtel')) result.merchant = 'airtel';
+    if (q.includes('croma')) result.merchant = 'croma';
+
+    // Amount thresholds (e.g., "above 5000", "> 5000", "over 10000")
+    const aboveMatch = q.match(/(?:above|greater than|>|more than|over)\s*(?:₹|rs\.?)?\s*(\d+[\d,]*)/i);
+    if (aboveMatch) {
+      result.minAmount = parseFloat(aboveMatch[1].replace(/,/g, ''));
+    }
+
+    const underMatch = q.match(/(?:below|under|<|less than)\s*(?:₹|rs\.?)?\s*(\d+[\d,]*)/i);
+    if (underMatch) {
+      result.maxAmount = parseFloat(underMatch[1].replace(/,/g, ''));
+    }
+
+    if (q.includes('business')) result.type = 'Business';
+    if (q.includes('personal')) result.type = 'Personal';
+    if (q.includes('mixed')) result.type = 'Mixed';
+    if (q.includes('gst')) result.hasGst = true;
+
+    return Object.keys(result).length > 0 ? result : null;
+  }, [searchQuery]);
+
+  // Filtering Logic
   const filteredExpenses = useMemo(() => {
-    return expenses.filter(exp => {
-      const matchesSearch =
-        exp.merchant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (exp.receiptNumber && exp.receiptNumber.toLowerCase().includes(searchTerm.toLowerCase()));
+    return expenses.filter((exp) => {
+      // 0. Date Period Filter (Matches HomeScreen & Report Download)
+      if (periodFilter.mode !== 'all') {
+        if (!exp.date) return false;
+        const expIso = parseDateToISO(exp.date);
+        if (!expIso) return false;
 
-      const matchesCategory = selectedCategory === 'All' || exp.category === selectedCategory;
-      const matchesDeductible = !onlyDeductible || (exp.isDeductible && exp.deductiblePercentage > 0);
+        if (periodFilter.mode === 'month') {
+          const bounds = getMonthBounds(periodFilter.selectedYear, periodFilter.selectedMonth);
+          if (expIso < bounds.start || expIso > bounds.end) return false;
+        } else if (periodFilter.mode === 'quarter') {
+          const bounds = getQuarterBounds(periodFilter.selectedQuarter, periodFilter.selectedQuarterFY, profile?.country || 'NZ');
+          if (expIso < bounds.start || expIso > bounds.end) return false;
+        } else if (periodFilter.mode === 'fy') {
+          const bounds = getFYBounds(periodFilter.selectedFY, profile?.country || 'NZ');
+          if (expIso < bounds.start || expIso > bounds.end) return false;
+        } else if (periodFilter.mode === 'cy') {
+          const bounds = getCYBounds(periodFilter.selectedCY);
+          if (expIso < bounds.start || expIso > bounds.end) return false;
+        } else if (periodFilter.mode === 'range') {
+          if (periodFilter.customStartDate && expIso < periodFilter.customStartDate) return false;
+          if (periodFilter.customEndDate && expIso > periodFilter.customEndDate) return false;
+        }
+      }
 
-      return matchesSearch && matchesCategory && matchesDeductible;
+      // 1. Text & Natural language search
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+
+        if (parsedFilters) {
+          // Check parsed natural language conditions
+          if (parsedFilters.category && exp.category !== parsedFilters.category) return false;
+          if (parsedFilters.merchant && !exp.merchant.toLowerCase().includes(parsedFilters.merchant)) return false;
+          if (parsedFilters.minAmount !== undefined && exp.amount < parsedFilters.minAmount) return false;
+          if (parsedFilters.maxAmount !== undefined && exp.amount > parsedFilters.maxAmount) return false;
+          if (parsedFilters.type && exp.expenseType !== parsedFilters.type) return false;
+          if (parsedFilters.hasGst && !(exp.cgst > 0 || exp.igst > 0 || exp.vendorGSTIN)) return false;
+        } else {
+          // Fallback direct text match
+          const matchesText =
+            exp.merchant.toLowerCase().includes(query) ||
+            exp.category.toLowerCase().includes(query) ||
+            (exp.invoiceNumber && exp.invoiceNumber.toLowerCase().includes(query)) ||
+            (exp.vendorGSTIN && exp.vendorGSTIN.toLowerCase().includes(query));
+          if (!matchesText) return false;
+        }
+      }
+
+      // 2. Type filter
+      if (selectedType === 'Deleted') {
+        if (exp.status !== 'deleted' && !exp.isDeleted) return false;
+      } else if (selectedType !== 'All') {
+        if (exp.status === 'deleted' || exp.isDeleted) return false;
+        if (exp.expenseType !== selectedType) return false;
+      }
+
+      // 3. Category filter
+      if (selectedCategory !== 'All' && exp.category !== selectedCategory) return false;
+
+      // 4. GST filter
+      if (onlyGst && !(exp.cgst > 0 || exp.igst > 0 || exp.vendorGSTIN)) return false;
+
+      // 5. Amount range filter
+      if (amountRange === 'under2k' && exp.amount >= 2000) return false;
+      if (amountRange === '2kto10k' && (exp.amount < 2000 || exp.amount > 10000)) return false;
+      if (amountRange === 'above10k' && exp.amount <= 10000) return false;
+
+      return true;
     });
-  }, [expenses, searchTerm, selectedCategory, onlyDeductible]);
+  }, [expenses, searchQuery, parsedFilters, selectedType, selectedCategory, onlyGst, amountRange, periodFilter, profile?.country]);
 
+  // Total filtered amount (excludes soft-deleted from total unless viewing Deleted tab)
   const totalFilteredAmount = useMemo(() => {
-    return filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
-  }, [filteredExpenses]);
+    return filteredExpenses
+      .filter((item) => selectedType === 'Deleted' ? true : (item.status !== 'deleted' && !item.isDeleted))
+      .reduce((sum, item) => sum + item.amount, 0);
+  }, [filteredExpenses, selectedType]);
 
   return (
-    <div className="p-4 space-y-4 pb-20">
-      {/* Header and Summary Bar */}
+    <div className="p-4 space-y-4 pb-24 max-w-xl mx-auto select-none">
+      {/* Header & Record Count */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-white tracking-tight">Receipts & Expenses</h2>
-          <p className="text-xs text-neutral-400">
-            {filteredExpenses.length} records · Total {taxConfig.currencySymbol}
-            {totalFilteredAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <h1 className="text-lg font-black text-white tracking-tight">Expense Records</h1>
+          <p className="text-xs text-neutral-400 font-medium">
+            {filteredExpenses.length} receipts
+            {deletedCount > 0 && selectedType !== 'Deleted' && (
+              <span className="text-rose-400/90 font-medium ml-1">({deletedCount} deleted)</span>
+            )}
+            {' · '}
+            Total{' '}
+            <strong className="text-white font-mono">{fmt(totalFilteredAmount)}</strong>
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={onExportCSV}
-            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors"
-            title="Download CSV for Xero/Excel"
+            onClick={() => setIsReportDownloadOpen(true)}
+            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white transition-colors cursor-pointer shrink-0"
+            title="Download Report (Excel / PDF / CSV)"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 shrink-0" />
           </button>
+
+          {onOpenManualEntry && (
+            <button
+              onClick={onOpenManualEntry}
+              className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap shrink-0"
+              title="Add Expense Manually"
+            >
+              <PenTool className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="whitespace-nowrap">Manual</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenScanner}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            className="bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap shrink-0"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Receipt</span>
+            <Plus className="w-4 h-4 stroke-[3] shrink-0" />
+            <span className="whitespace-nowrap">Scan</span>
           </button>
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          placeholder="Search merchant, invoice #, or description..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
-        />
+      {/* Natural Language Search Input */}
+      <div className="space-y-1.5">
+        <div className="relative">
+          <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by merchant, invoice # or ask AI..."
+            className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-9 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Natural Language Filter Feedback Tag */}
+        {parsedFilters && (
+          <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg">
+            <Sparkles className="w-3 h-3 shrink-0" />
+            <span>
+              AI Filter applied: {parsedFilters.category ? `Category: ${parsedFilters.category} ` : ''}
+              {parsedFilters.merchant ? `Vendor: ${parsedFilters.merchant} ` : ''}
+              {parsedFilters.minAmount ? `Above ₹${parsedFilters.minAmount} ` : ''}
+              {parsedFilters.type ? `Type: ${parsedFilters.type}` : ''}
+            </span>
+          </div>
+        )}
+
+        {/* Quick Sample Search Suggestions */}
+        {!searchQuery && (
+          <div
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-[11px]"
+          >
+            <span className="text-neutral-500 text-[10px] uppercase font-bold shrink-0">Try:</span>
+            {sampleSearchQueries.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSearchQuery(s)}
+                className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-200 px-2 py-0.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Interactive Category Filter Tabs (Zero-pill compliant button controls) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-        {categories.map(cat => (
+      {/* Filter Tabs: All, Business, Personal, Mixed + Pinned Date & Filters for Portrait & Landscape */}
+      <div className="flex items-center justify-between gap-1.5">
+        {/* Scrollable type pills */}
+        <div
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex items-center gap-1 overflow-x-auto no-scrollbar text-xs flex-1 min-w-0 pr-1"
+        >
+          {([
+            'All',
+            'Business',
+            'Personal',
+            'Mixed',
+            ...(deletedCount > 0 ? ['Deleted'] : []),
+          ] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setSelectedType(t as any)}
+              className={`px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                selectedType === t
+                  ? t === 'Deleted'
+                    ? 'bg-rose-950 text-rose-300 border border-rose-800/80 shadow-xs'
+                    : 'bg-neutral-800 text-emerald-400 border border-emerald-500/30 shadow-xs'
+                  : 'bg-neutral-900/80 text-neutral-400 hover:text-neutral-200 border border-neutral-800'
+              }`}
+            >
+              {t} {t === 'Deleted' && `(${deletedCount})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Pinned Action Controls: Always visible without sideways scrolling */}
+        <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-neutral-800/80">
           <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
-              selectedCategory === cat
-                ? 'bg-neutral-800 text-emerald-400 border border-emerald-500/30'
-                : 'bg-neutral-900/60 text-neutral-400 hover:text-neutral-200 border border-neutral-800'
+            type="button"
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+              periodFilter.mode !== 'all' || showDateFilter
+                ? 'bg-emerald-950 border-emerald-500 text-emerald-400 font-bold shadow-xs'
+                : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
+            }`}
+            title="Filter by Date (Same as Home Screen)"
+          >
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">
+              {periodFilter.mode !== 'all' ? getPeriodFilterBadgeLabel(periodFilter, profile?.country) : 'Date'}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setShowFiltersModal(true)}
+            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+              onlyGst || selectedCategory !== 'All' || amountRange !== 'all'
+                ? 'bg-emerald-950 border-emerald-500 text-emerald-400 font-bold shadow-xs'
+                : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
             }`}
           >
-            {cat}
+            <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">Filters</span>
           </button>
-        ))}
+        </div>
       </div>
 
-      {/* Expense List Items */}
+      {/* Date Filter Card (Same as HomeScreen) */}
+      {showDateFilter && (
+        <div className="animate-in fade-in duration-200">
+          <PeriodFilterControls
+            filter={periodFilter}
+            onChange={setPeriodFilter}
+            country={profile?.country || 'NZ'}
+            title="Date Filter"
+            recordCount={filteredExpenses.length}
+            showBadge={true}
+          />
+        </div>
+      )}
+
+      {/* Expense List Records */}
       <div className="space-y-2">
         {filteredExpenses.length === 0 ? (
-          <div className="p-8 text-center bg-neutral-900/50 border border-neutral-800/80 rounded-2xl">
-            <Receipt className="w-10 h-10 text-neutral-600 mx-auto mb-2" />
-            <div className="text-sm font-medium text-neutral-300">No expense records found</div>
-            <p className="text-xs text-neutral-500 mt-1">Try clearing filters or scan a new receipt.</p>
+          <div className="p-8 text-center bg-neutral-900/50 border border-neutral-800/80 rounded-3xl space-y-3">
+            <Receipt className="w-12 h-12 text-neutral-600 mx-auto" />
+            <div>
+              <p className="text-sm font-bold text-neutral-300">No matching expenses found</p>
+              <p className="text-xs text-neutral-500 mt-1">Try clearing filters or search query</p>
+            </div>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedType('All');
+                setSelectedCategory('All');
+                setOnlyGst(false);
+                setAmountRange('all');
+              }}
+              className="text-xs font-semibold text-emerald-400 hover:underline cursor-pointer"
+            >
+              Reset all filters
+            </button>
           </div>
         ) : (
-          filteredExpenses.map(exp => {
-            const is50Percent = exp.deductiblePercentage === 50;
-
+          filteredExpenses.map((exp) => {
+            const catInfo = CATEGORY_MAP[exp.category] || CATEGORY_MAP['Other'];
+            const isDeleted = exp.status === 'deleted' || Boolean(exp.isDeleted);
             return (
               <div
                 key={exp.id}
-                className="p-3 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-xl flex items-center justify-between gap-3 transition-colors group"
+                onClick={() => onSelectExpense(exp)}
+                className={`border rounded-2xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99] group shadow-sm ${
+                  isDeleted
+                    ? 'bg-neutral-900/40 hover:bg-neutral-900/70 border-rose-950/60 opacity-80'
+                    : 'bg-neutral-900/80 hover:bg-neutral-850 border-neutral-800/80'
+                }`}
               >
-                {/* Left: Icon & Merchant details */}
-                <div className="flex items-start gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-3 min-w-0">
                   <div
-                    onClick={() => exp.receiptUrl && setPreviewReceipt(exp)}
-                    className="w-10 h-10 rounded-lg bg-neutral-800 border border-neutral-700/60 flex items-center justify-center shrink-0 text-neutral-400 cursor-pointer overflow-hidden group/img"
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-inner ${
+                      isDeleted ? 'bg-neutral-900 border border-rose-950/60 opacity-60' : 'bg-neutral-800'
+                    }`}
                   >
-                    {exp.receiptUrl ? (
-                      <img src={exp.receiptUrl} alt="receipt" className="w-full h-full object-cover group-hover/img:scale-110 transition-transform" />
-                    ) : (
-                      <Receipt className="w-5 h-5 text-emerald-400/80" />
-                    )}
+                    {catInfo.icon}
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-xs text-neutral-100 truncate">
-                        {exp.merchant}
-                      </span>
-                      {exp.syncStatus === 'pending' && (
-                        <span className="text-[10px] text-amber-400 font-mono" title="Saved locally, pending cloud sync">
-                          (Offline)
-                        </span>
-                      )}
+                  <div className="min-w-0">
+                    <div
+                      className={`font-extrabold text-sm truncate transition-colors ${
+                        isDeleted ? 'line-through text-neutral-400 group-hover:text-rose-400' : 'text-white group-hover:text-emerald-400'
+                      }`}
+                    >
+                      {exp.merchant}
                     </div>
 
-                    {/* Unboxed metadata line with typographic bullet separators */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 mt-0.5">
-                      <span>{exp.category}</span>
-                      <span aria-hidden="true">·</span>
+                    <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
                       <span>{exp.date}</span>
-                      {exp.receiptNumber && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-mono text-neutral-500">{exp.receiptNumber}</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Deductibility Note */}
-                    <div className="text-[10px] text-neutral-500 mt-0.5">
-                      {is50Percent ? (
-                        <span className="text-amber-400/90 font-mono">IRD 50% Rule Claimed</span>
-                      ) : exp.deductiblePercentage < 100 ? (
-                        <span className="text-blue-400/90 font-mono">{exp.deductiblePercentage}% Logbook Claimed</span>
-                      ) : (
-                        <span className="text-neutral-500 font-mono">100% Tax Deductible</span>
-                      )}
+                      <span>·</span>
+                      <span className="truncate">{exp.category}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Right: Amounts & Actions */}
-                <div className="text-right shrink-0 flex items-center gap-3">
-                  <div>
-                    <div className="font-mono font-bold text-xs text-white">
-                      {taxConfig.currencySymbol}
-                      {exp.amount.toFixed(2)}
-                    </div>
-                    <div className="text-[10px] font-mono text-neutral-400">
-                      GST {taxConfig.currencySymbol}{exp.gstAmount.toFixed(2)}
-                    </div>
+                <div className="text-right shrink-0">
+                  <div
+                    className={`font-extrabold text-sm font-mono ${
+                      isDeleted ? 'line-through text-neutral-400' : 'text-white'
+                    }`}
+                  >
+                    {formatCurrency(exp.amount, exp.currency || currCode, exp.currencySymbol || currSymbol, false)}
                   </div>
 
-                  <button
-                    onClick={() => onDeleteExpense(exp.id)}
-                    className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-400 p-1 rounded transition-all cursor-pointer"
-                    title="Delete record"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1.5 mt-1">
+                    {isDeleted ? (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.2 rounded-md bg-rose-950 text-rose-300 border border-rose-800/80">
+                        Deleted
+                      </span>
+                    ) : (
+                      <>
+                        {/* Business/Personal badge */}
+                        <span
+                          className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-md ${
+                            exp.expenseType === 'Business'
+                              ? 'bg-blue-950/80 text-blue-300 border border-blue-800/50'
+                              : exp.expenseType === 'Mixed'
+                              ? 'bg-amber-950/80 text-amber-300 border border-amber-800/50'
+                              : 'bg-purple-950/80 text-purple-300 border border-purple-800/50'
+                          }`}
+                        >
+                          {exp.expenseType === 'Mixed' ? `${exp.businessPercentage}% Biz` : exp.expenseType}
+                        </span>
+
+                        {/* Tax indicator */}
+                        {(exp.cgst > 0 || exp.igst > 0 || (exp.taxAmount && exp.taxAmount > 0) || (exp.gstAmount && exp.gstAmount > 0) || exp.vendorGSTIN || exp.vendorTaxId) && (
+                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/50">
+                            {exp.taxType || (profile?.country === 'US' ? 'TAX' : 'GST')}
+                          </span>
+                        )}
+
+                        {/* Review flag */}
+                        {exp.caReviewStatus === 'Needs CA Review' && (
+                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-950/80 text-amber-400 border border-amber-800/60">
+                            {profile?.country === 'US' ? 'CPA' : profile?.country === 'AU' ? 'TAX' : 'CA'}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -207,32 +497,128 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
         )}
       </div>
 
-      {/* Receipt Image Preview Modal */}
-      {previewReceipt && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-sm w-full p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-              <div className="text-xs font-semibold text-white">{previewReceipt.merchant}</div>
+      {/* Advanced Filter Modal */}
+      {showFiltersModal && (
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop-animation">
+          <div className="bg-neutral-900 border border-neutral-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto modal-enter-animation pb-8 sm:pb-6">
+            <div className="flex items-center justify-between text-white border-b border-neutral-800 pb-3">
+              <h3 className="font-extrabold text-base whitespace-nowrap">Filter Expenses</h3>
               <button
-                onClick={() => setPreviewReceipt(null)}
-                className="text-neutral-400 hover:text-white text-xs cursor-pointer"
+                onClick={() => setShowFiltersModal(false)}
+                className="p-1.5 rounded-xl bg-neutral-800 text-neutral-400 hover:text-white shrink-0 cursor-pointer"
               >
-                Close
+                <X className="w-4 h-4 shrink-0" />
               </button>
             </div>
-            {previewReceipt.receiptUrl && (
-              <div className="max-h-80 overflow-hidden rounded-xl border border-neutral-800">
-                <img src={previewReceipt.receiptUrl} alt="receipt" className="w-full h-auto object-contain" />
+
+            {/* Category Filter */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-neutral-300">Category</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white"
+              >
+                <option value="All">All 20 Categories</option>
+                {ALL_CATEGORIES.map((c) => (
+                  <option key={c.category} value={c.category}>
+                    {c.icon} {c.category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Amount Range Filter */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-neutral-300">Amount Range</label>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <button
+                  onClick={() => setAmountRange('all')}
+                  className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
+                    amountRange === 'all'
+                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  Any Amount
+                </button>
+                <button
+                  onClick={() => setAmountRange('under2k')}
+                  className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
+                    amountRange === 'under2k'
+                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  {currSymbol}0 – {currSymbol}2,000
+                </button>
+                <button
+                  onClick={() => setAmountRange('2kto10k')}
+                  className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
+                    amountRange === '2kto10k'
+                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  {currSymbol}2,000 – {currSymbol}10,000
+                </button>
+                <button
+                  onClick={() => setAmountRange('above10k')}
+                  className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
+                    amountRange === 'above10k'
+                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  Above {currSymbol}10,000
+                </button>
               </div>
-            )}
-            <div className="text-[11px] text-neutral-400 space-y-1">
-              <div>Voucher #{previewReceipt.receiptNumber || 'N/A'} · {previewReceipt.date}</div>
-              <div>Amount: {taxConfig.currencySymbol}{previewReceipt.amount.toFixed(2)} (GST: {taxConfig.currencySymbol}{previewReceipt.gstAmount.toFixed(2)})</div>
-              {previewReceipt.notes && <div className="text-neutral-300">Note: {previewReceipt.notes}</div>}
+            </div>
+
+            {/* GST Filter Checkbox */}
+            <div className="pt-2 border-t border-neutral-800 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-white whitespace-nowrap">Tax Invoices Only</div>
+                <div className="text-[11px] text-neutral-400">Show only expenses with identified tax number & tax</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={onlyGst}
+                onChange={(e) => setOnlyGst(e.target.checked)}
+                className="w-5 h-5 accent-emerald-500 cursor-pointer shrink-0"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="pt-3 flex gap-2">
+              <button
+                onClick={() => {
+                  setSelectedCategory('All');
+                  setAmountRange('all');
+                  setOnlyGst(false);
+                }}
+                className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setShowFiltersModal(false)}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         </div>
       )}
+      {/* Report Download Modal with Same Date Filters as Home Screen */}
+      <ReportDownloadModal
+        isOpen={isReportDownloadOpen}
+        onClose={() => setIsReportDownloadOpen(false)}
+        expenses={expenses}
+        profile={profile}
+        initialFilter={periodFilter}
+      />
     </div>
   );
 };

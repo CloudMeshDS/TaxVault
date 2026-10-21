@@ -1,7 +1,24 @@
 @import "tailwindcss";
 
 @layer base {
-  body {
+  :root {
+    --color-neutral-950: #f8fafc; /* page base: slate-50 */
+    --color-neutral-900: #ffffff; /* cards/surfaces: pure white */
+    --color-neutral-850: #f8fafc; 
+    --color-neutral-800: #f1f5f9; /* inner card / secondary container: slate-100 */
+    --color-neutral-700: #e2e8f0; /* hover / divider: slate-200 */
+    --color-neutral-600: #cbd5e1; /* borders: slate-300 */
+    --color-neutral-500: #94a3b8; /* subtle icons / placeholders: slate-400 */
+    --color-neutral-400: #64748b; /* muted labels: slate-500 */
+    --color-neutral-300: #475569; /* body text: slate-600 */
+    --color-neutral-200: #334155; /* secondary text: slate-700 */
+    --color-neutral-100: #0f172a; /* deep primary text: slate-900 */
+    --color-neutral-50:  #020617;
+  }
+
+  html, body {
+    background-color: #f8fafc;
+    color: #0f172a;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
   
@@ -9,22 +26,344 @@
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-feature-settings: "tnum" 1;
   }
+
+  input, select, textarea {
+    color: #0f172a;
+    background-color: #ffffff;
+    border-color: #cbd5e1;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #94a3b8;
+  }
 }
 
-/* Custom subtle scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* =========================================================
+   TAXVAULT MODERN LIGHT THEME ENGINE
+   Transforms cards, typography, badges, inputs & overlays
+   ========================================================= */
+
+/* 1. Global Page & Card Surfaces */
+body, #root {
+  background-color: #f8fafc !important;
+  color: #0f172a;
 }
+
+/* Surface backgrounds */
+.bg-neutral-950 {
+  background-color: #f8fafc !important;
+}
+
+.bg-neutral-900,
+[class*="bg-neutral-900/"] {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Inner containers & secondary button surfaces */
+.bg-neutral-800,
+[class*="bg-neutral-800/"] {
+  background-color: #f1f5f9 !important;
+}
+
+.bg-neutral-700 {
+  background-color: #e2e8f0 !important;
+}
+
+/* 2. Global Borders & Dividers */
+.border-neutral-950,
+.border-neutral-900,
+.border-neutral-800,
+[class*="border-neutral-800"] {
+  border-color: #e2e8f0 !important;
+}
+
+.border-neutral-700,
+[class*="border-neutral-700"] {
+  border-color: #cbd5e1 !important;
+}
+
+.border-neutral-600 {
+  border-color: #94a3b8 !important;
+}
+
+[class*="divide-neutral-800"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* 3. Typography & Text Hierarchy */
+.text-neutral-950 {
+  color: #0f172a !important;
+}
+
+.text-neutral-100 {
+  color: #0f172a !important;
+}
+
+.text-neutral-200 {
+  color: #1e293b !important;
+}
+
+.text-neutral-300 {
+  color: #334155 !important;
+}
+
+.text-neutral-400 {
+  color: #64748b !important;
+}
+
+.text-neutral-500 {
+  color: #94a3b8 !important;
+}
+
+/* Convert default dark text-white to slate-900, EXCEPT on solid colored buttons & badges */
+.text-white {
+  color: #0f172a;
+}
+
+/* Retain pure white text on filled action buttons, icons, and hero elements */
+button.bg-emerald-600,
+button.bg-emerald-500,
+button[class*="bg-emerald-600"],
+button[class*="bg-emerald-500"],
+button[class*="bg-blue-600"],
+button[class*="bg-blue-500"],
+button[class*="bg-rose-600"],
+button[class*="bg-red-600"],
+button[class*="bg-purple-600"],
+button[class*="bg-indigo-600"],
+button[class*="bg-amber-500"],
+.bg-emerald-600 .text-white,
+.bg-emerald-500 .text-white,
+.bg-blue-600 .text-white,
+.bg-blue-500 .text-white,
+.bg-rose-600 .text-white,
+.bg-red-600 .text-white,
+.bg-purple-600 .text-white,
+.bg-indigo-600 .text-white,
+.bg-amber-500 .text-white,
+[class*="bg-gradient-to"] .text-white,
+[class*="from-emerald-"] .text-white,
+.keep-white,
+.text-pure-white,
+.razorpay-dark,
+.razorpay-dark *,
+.razorpay-header,
+.razorpay-pay-btn,
+.razorpay-pay-btn * {
+  color: #ffffff !important;
+}
+
+.razorpay-header .text-accent-emerald {
+  color: #34d399 !important;
+}
+
+.razorpay-header .text-accent-muted {
+  color: #cbd5e1 !important;
+}
+
+.razorpay-header .text-accent-cyan {
+  color: #67e8f9 !important;
+}
+
+/* 4. Action Buttons & Micro-Interactions */
+button.bg-emerald-500,
+button.bg-emerald-600,
+button[class*="bg-emerald-500"],
+button[class*="bg-emerald-600"] {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(5, 150, 105, 0.25);
+}
+
+button.bg-emerald-500:hover,
+button.bg-emerald-600:hover {
+  background-color: #047857 !important;
+}
+
+/* Invert emerald pill buttons that had dark text */
+.bg-emerald-500.text-neutral-950,
+.bg-emerald-600.text-neutral-950 {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+/* Secondary neutral buttons */
+button.bg-neutral-800,
+button.bg-neutral-950 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+button.bg-neutral-800:hover,
+button.bg-neutral-950:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 5. Light Badge & Status Pill Palette */
+/* Emerald / Success */
+[class*="bg-emerald-950"] {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #047857 !important;
+}
+
+.text-emerald-400,
+.text-emerald-300 {
+  color: #059669 !important;
+}
+
+/* Amber / Warning */
+[class*="bg-amber-950"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+.text-amber-400,
+.text-amber-300,
+.text-amber-200 {
+  color: #b45309 !important;
+}
+
+/* Blue / Info */
+[class*="bg-blue-950"] {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+.text-blue-400,
+.text-blue-300 {
+  color: #1d4ed8 !important;
+}
+
+/* Purple / Enterprise */
+[class*="bg-purple-950"] {
+  background-color: #faf5ff !important;
+  border-color: #e9d5ff !important;
+  color: #7e22ce !important;
+}
+
+.text-purple-400,
+.text-purple-300 {
+  color: #7e22ce !important;
+}
+
+/* Rose / Red / Danger */
+[class*="bg-rose-950"],
+[class*="bg-red-950"] {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #be123c !important;
+}
+
+.text-rose-400,
+.text-red-400,
+.text-rose-300,
+.text-red-300 {
+  color: #be123c !important;
+}
+
+/* Cyan / Teal */
+[class*="bg-cyan-950"],
+[class*="bg-teal-950"] {
+  background-color: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  color: #0f766e !important;
+}
+
+.text-cyan-400,
+.text-teal-400 {
+  color: #0f766e !important;
+}
+
+/* 6. Form Controls & Inputs */
+input, select, textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #10b981 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* 7. Modal & Dialog Overlays (Translucent Dimmed Overlay) */
+.bg-black,
+.bg-black\/95,
+.bg-black\/90,
+.bg-black\/85,
+.bg-black\/80,
+.bg-black\/60 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Modal dialogue container cards */
+[role="dialog"],
+.fixed .bg-neutral-900,
+.fixed [class*="bg-neutral-900"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 8. Light Custom Scrollbars & No-Scrollbar Utility */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 0px !important; /* Completely hide horizontal scrollbar lines across all containers */
+}
+::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0px !important;
+  width: 0px !important;
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb:horizontal {
+  display: none !important;
+  background: transparent !important;
+}
+::-webkit-scrollbar-track:horizontal {
+  display: none !important;
+  background: transparent !important;
+}
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(163, 163, 163, 0.2);
+  background: rgba(100, 116, 139, 0.25);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(163, 163, 163, 0.4);
+  background: rgba(100, 116, 139, 0.45);
+}
+
+/* Hide scrollbar line while keeping smooth touch, mouse and drag scroll active */
+.no-scrollbar,
+.scrollbar-none,
+.overflow-x-auto,
+.overflow-x-scroll,
+[class*="overflow-x-"] {
+  scrollbar-width: none !important; /* Firefox and modern Chromium */
+  -ms-overflow-style: none !important; /* IE and old Edge */
+  -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-x-scroll::-webkit-scrollbar,
+[class*="overflow-x-"]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 @media print {
@@ -39,3 +378,114 @@
     display: block !important;
   }
 }
+
+/* =========================================================
+   iOS WebKit & Native Device Enhancements
+   ========================================================= */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Eliminate 300ms tap delay and touch jitter on iOS */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* iOS Safari Auto-Zoom Fix: Form controls with font-size < 16px trigger
+   disruptive automatic screen zoom upon tap. Enforce min 16px on iOS. */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* =========================================================
+   SILKY SMOOTH SCREEN & MODAL TRANSITIONS
+   Fluid 60fps Native-App Style Screen Transitions
+   ========================================================= */
+
+@keyframes screenFadeInGlide {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes screenSlideFromRight {
+  0% {
+    opacity: 0;
+    transform: translate3d(14px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes screenSlideFromLeft {
+  0% {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalContentSlideUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Screen transition classes with Apple fluid spring curve */
+.screen-enter-glide {
+  animation: screenFadeInGlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.screen-slide-right {
+  animation: screenSlideFromRight 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.screen-slide-left {
+  animation: screenSlideFromLeft 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.modal-enter-animation {
+  animation: modalContentSlideUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.modal-backdrop-animation {
+  animation: modalBackdropFadeIn 0.2s ease-out both;
+}
+
+

@@ -80,19 +80,49 @@ export const COMPARISON_FEATURES: PlanFeature[] = [
   { name: 'Direct Xero / MYOB API Sync', includedInFree: false, includedInPro: false, includedInEnterprise: true },
 ];
 
+export interface ScanUsage {
+  used: number;
+  limit: number;
+  remaining: number;
+  unlimited: boolean;
+}
+
 export class SubscriptionService {
-  public static canScanReceipt(profile: UserProfile): { allowed: boolean; remaining: number; limit: number } {
-    const sub = profile.subscription;
-    if (sub.tier === 'pro' || sub.tier === 'enterprise') {
-      return { allowed: true, remaining: Infinity, limit: Infinity };
-    }
-    const limit = sub.monthlyReceiptLimit || 10;
-    const used = sub.receiptsScannedThisMonth || 0;
-    const remaining = Math.max(0, limit - used);
+  public static currentUsagePeriod(now: Date = new Date()): string {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /**
+   * Returns the profile with its scan counter rolled over to the current month.
+   * Profiles saved before usagePeriod existed are treated as stale and reset.
+   */
+  public static withCurrentUsagePeriod(profile: UserProfile): UserProfile {
+    const sub = profile?.subscription;
+    if (!sub) return profile;
+    const period = SubscriptionService.currentUsagePeriod();
+    if (sub.usagePeriod === period) return profile;
     return {
-      allowed: remaining > 0,
-      remaining,
-      limit,
+      ...profile,
+      subscription: { ...sub, receiptsScannedThisMonth: 0, usagePeriod: period },
+    };
+  }
+
+  public static getScanUsage(profile: UserProfile): ScanUsage {
+    const sub = profile?.subscription;
+    if (!sub || sub.tier === 'pro' || sub.tier === 'enterprise') {
+      return { used: sub?.receiptsScannedThisMonth || 0, limit: Infinity, remaining: Infinity, unlimited: true };
+    }
+    const limit = sub.monthlyReceiptLimit || SUBSCRIPTION_PLANS.free.monthlyReceiptLimit;
+    const used = sub.usagePeriod === SubscriptionService.currentUsagePeriod() ? sub.receiptsScannedThisMonth || 0 : 0;
+    return { used, limit, remaining: Math.max(0, limit - used), unlimited: false };
+  }
+
+  public static canScanReceipt(profile: UserProfile): { allowed: boolean; remaining: number; limit: number } {
+    const usage = SubscriptionService.getScanUsage(profile);
+    return {
+      allowed: usage.unlimited || usage.remaining > 0,
+      remaining: usage.remaining,
+      limit: usage.limit,
     };
   }
 

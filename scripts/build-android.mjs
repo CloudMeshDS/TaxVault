@@ -51,4 +51,18 @@ if (result.error) {
   console.error(`Could not start Gradle: ${result.error.message}`);
   process.exit(1);
 }
+
+if (result.status === 0) {
+  const generatedApk = path.join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+  if (existsSync(generatedApk)) {
+    const { copyFileSync, rmSync } = await import('node:fs');
+    copyFileSync(generatedApk, path.resolve('TaxVault-debug.apk'));
+    const stalePublicApk = path.resolve('public', 'app-debug.apk');
+    if (existsSync(stalePublicApk)) {
+      rmSync(stalePublicApk, { force: true });
+    }
+    console.log('Successfully copied fresh app-debug.apk to TaxVault-debug.apk (excluded from public assets)');
+  }
+}
+
 process.exit(result.status ?? 1);

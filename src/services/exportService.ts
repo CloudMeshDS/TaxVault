@@ -1,294 +1,627 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { AccountantShareToken, ExpenseRecord, IncomeRecord, TaxCalculationResult, UserProfile } from '../types';
-import { TAX_CONFIGS } from './taxRules';
+import JSZip from 'jszip';
+import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../types';
+import { formatCurrency, formatINR, TAX_CONFIGS, calculateQuarterlyBreakdown } from './taxRules';
 
 export class ExportService {
   /**
-   * Generates an official, publication-grade Chartered Accountant Tax Audit Report in PDF format
+   * Generates a Tax Audit Report in PDF format adapting to NZ, AU, CA, US, and IN
    */
-  public static generateAccountantTaxPDF(
+  public static generateIndianCAPDF(
     profile: UserProfile,
     expenses: ExpenseRecord[],
-    incomes: IncomeRecord[],
-    taxResult: TaxCalculationResult
-  ) {
-    const config = TAX_CONFIGS[profile.country] || TAX_CONFIGS.NZ;
+    taxResult: TaxCalculationResult,
+    options: {
+      includeExpenses?: boolean;
+      includeGst?: boolean;
+      includeVendors?: boolean;
+      dateRangeLabel?: string;
+    } = {}
+  ): jsPDF {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
+    const country = profile?.country || 'NZ';
+    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
+    const curr = profile?.defaultCurrency || config.currencyCode;
+    const sym = profile?.currencySymbol || config.currencySymbol;
+    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
+
     const primaryColor: [number, number, number] = [15, 23, 42]; // Slate 900
-    const accentGreen: [number, number, number] = [5, 150, 105]; // Emerald 600
+    const emeraldAccent: [number, number, number] = [16, 185, 129]; // Emerald 500
 
-    // Header Background
+    // Top Header Banner
     doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, 210, 40, 'F');
+    doc.rect(0, 0, 210, 38, 'F');
 
-    // Title & Brand
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
+    doc.setFontSize(15);
     doc.setTextColor(255, 255, 255);
-    doc.text('TAX COMPLIANCE & FINANCIAL AUDIT PACK', 14, 18);
+    doc.text(`TAXVAULT · ${profile?.taxAuthority || config.taxAuthority} REPORT`, 14, 16);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(203, 213, 225);
-    doc.text(`Prepared for Chartered Accountant Tax Filing · ${config.taxAuthority}`, 14, 25);
-    doc.text(`Financial Year End: ${profile.financialYearEnding} · Generated: ${new Date().toLocaleDateString('en-GB')}`, 14, 31);
+    doc.text(`Prepared for ${config.countryName} Compliance · Tax Year: ${profile?.financialYear || config.taxYearLabel}`, 14, 23);
+    doc.text(`Period: ${options.dateRangeLabel || 'Full Period'} · Generated: ${new Date().toLocaleDateString()}`, 14, 29);
 
-    // Entity & Taxpayer Information Box
+    // Business & Taxpayer Details Box
     doc.setTextColor(30, 41, 59);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('1. TAXPAYER & REGULATORY REGISTRATION', 14, 49);
+    doc.setFontSize(10);
+    doc.text('1. TAXPAYER & REGISTRATION PARTICULARS', 14, 46);
 
-    const taxpayerInfo = [
-      ['Taxpayer / Trading Entity:', profile.fullName, 'Entity Classification:', profile.entityType.toUpperCase().replace('_', ' ')],
-      ['Tax ID Number (IRD/TFN):', profile.taxNumber || 'Not Stated', 'GST / VAT Registered:', profile.gstRegistered ? `YES (GST No: ${profile.gstNumber || profile.taxNumber})` : 'NO'],
-      ['Reporting Jurisdiction:', `${config.countryName} (${config.countryCode})`, 'Base Accounting Currency:', `${config.currencyCode} (${config.currencySymbol})`],
-      ['Accountant / CA Advisor:', profile.accountantName || 'Assigned Reviewer', 'Advisor Email:', profile.accountantEmail || 'ca@review.tax'],
+    const primaryTaxLabel =
+      country === 'NZ' ? 'IRD Number:' :
+      country === 'AU' ? 'ABN Number:' :
+      country === 'CA' ? 'CRA Business No:' :
+      country === 'US' ? 'EIN / SSN:' :
+      'PAN Number:';
+    const secondaryTaxLabel =
+      country === 'NZ' ? 'GST Number:' :
+      country === 'AU' ? 'TFN Number:' :
+      country === 'CA' ? 'Provincial ID:' :
+      country === 'US' ? 'State Tax ID:' :
+      'GSTIN:';
+
+    const taxpayerDetails = [
+      ['Taxpayer / Business Name:', profile?.businessName || profile?.fullName || 'Business Entity', 'Entity Type:', profile?.businessType || 'Proprietorship'],
+      ['Proprietor / Signatory:', profile?.fullName || 'Primary Account Holder', primaryTaxLabel, profile?.taxId || profile?.pan || 'Not Provided'],
+      [secondaryTaxLabel, profile?.secondaryTaxId || profile?.gstin || 'Unregistered', 'Jurisdiction:', config.countryName],
+      ['Tax Advisor / Accountant:', profile?.accountantName || 'Assigned Reviewer', 'Advisor Contact:', profile?.accountantPhone || profile?.accountantEmail || '-'],
     ];
 
     autoTable(doc, {
-      startY: 53,
-      body: taxpayerInfo,
+      startY: 50,
+      body: taxpayerDetails,
       theme: 'plain',
-      styles: { fontSize: 8.5, cellPadding: 1.5, textColor: [51, 65, 85] },
+      styles: { fontSize: 8, cellPadding: 1.5, textColor: [51, 65, 85] },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 50 },
+        0: { fontStyle: 'bold', cellWidth: 48 },
         1: { cellWidth: 55 },
-        2: { fontStyle: 'bold', cellWidth: 45 },
-        3: { cellWidth: 40 },
+        2: { fontStyle: 'bold', cellWidth: 42 },
+        3: { cellWidth: 45 },
       },
     });
 
-    // Tax Position & IRD Compliance Summary
-    const finalY1 = (doc as any).lastAutoTable.finalY + 6;
+    // Financial Year Summary Position
+    const finalY1 = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 6 : 82;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
-    doc.text(`2. FINANCIAL YEAR POSITION (${config.currencyCode})`, 14, finalY1);
+    doc.text('2. EXPENSE & TAX DEDUCTION METRICS', 14, finalY1);
 
-    const summaryData = [
-      ['Gross Operating Revenue (excl. GST)', `${config.currencySymbol}${taxResult.totalGrossIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`],
-      ['Total Allowable Deductible Expenses', `(${config.currencySymbol}${taxResult.totalDeductibleExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })})`],
-      ['Net Taxable Income / Profit', `${config.currencySymbol}${taxResult.netTaxableIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`],
-      ['Estimated Progressive Income Tax', `${config.currencySymbol}${taxResult.estimatedIncomeTax.toLocaleString('en-US', { minimumFractionDigits: 2 })}`],
-      ['Effective Tax Rate', `${(taxResult.effectiveTaxRate * 100).toFixed(1)}%`],
-      ['GST / VAT Collected on Sales', `${config.currencySymbol}${taxResult.totalGstCollected.toLocaleString('en-US', { minimumFractionDigits: 2 })}`],
-      ['GST / VAT Paid on Business Purchases', `${config.currencySymbol}${taxResult.totalGstPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}`],
-      [
-        taxResult.netGstPayableOrRefund >= 0 ? 'Net GST Payable to Revenue' : 'Net GST Refund Due from Revenue',
-        `${config.currencySymbol}${Math.abs(taxResult.netGstPayableOrRefund).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-      ],
+    const taxLabelName = country === 'US' ? 'Sales Tax' : country === 'CA' ? 'GST/HST/PST' : 'GST';
+
+    const metricsData = [
+      ['Total Gross Expenses Incurred', fmt(taxResult?.totalExpenses || 0)],
+      ['100% Direct Business Expenses', fmt(taxResult?.businessExpenses || 0)],
+      ['Mixed Usage Expenses (Apportioned)', fmt(taxResult?.mixedExpenses || 0)],
+      ['Total Allowable Business Tax Deduction', fmt(taxResult?.claimableBusinessTotal || 0)],
+      ['Personal / Non-Deductible Expenses', fmt(taxResult?.personalExpenses || 0)],
+      [`Total ${taxLabelName} Identified`, fmt(taxResult?.totalGstIdentified || 0)],
+      [`Eligible ${country === 'US' ? 'Tax Deduction' : 'Input Tax Credit (ITC)'}`, fmt(taxResult?.eligibleGstItc || 0)],
+      [`Tax Marked "Needs Review" / Ineligible`, fmt(taxResult?.needsReviewGst || 0)],
     ];
 
     autoTable(doc, {
       startY: finalY1 + 3,
-      head: [['Statutory Reporting Metric', 'Amount']],
-      body: summaryData,
+      head: [['Financial Position Metric', `Amount (${curr})`]],
+      body: metricsData,
       theme: 'striped',
-      headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
-      styles: { fontSize: 8.5, cellPadding: 2 },
+      headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 1.8 },
       columnStyles: {
         0: { cellWidth: 130 },
         1: { cellWidth: 50, halign: 'right', fontStyle: 'bold' },
       },
     });
 
-    // Categorized Schedule of Deductible Expenses
-    const finalY2 = (doc as any).lastAutoTable.finalY + 6;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(30, 41, 59);
-    doc.text('3. ITEMISED EXPENSES & AUDIT TRAIL', 14, finalY2);
-
-    const expenseRows = expenses.map(exp => [
-      exp.date,
-      exp.merchant,
-      exp.category,
-      exp.receiptNumber || 'None',
-      `${config.currencySymbol}${exp.amount.toFixed(2)}`,
-      `${config.currencySymbol}${exp.gstAmount.toFixed(2)}`,
-      `${exp.deductiblePercentage}%`,
-      `${config.currencySymbol}${((exp.amount - (profile.gstRegistered ? exp.gstAmount : 0)) * (exp.deductiblePercentage / 100)).toFixed(2)}`,
-    ]);
-
-    autoTable(doc, {
-      startY: finalY2 + 3,
-      head: [['Date', 'Merchant / Payee', 'Category', 'Receipt #', 'Gross Total', 'GST', 'Deduct %', 'Tax Claim']],
-      body: expenseRows,
-      theme: 'striped',
-      headStyles: { fillColor: [51, 65, 85], textColor: 255, fontSize: 8 },
-      styles: { fontSize: 7.5, cellPadding: 1.8 },
-      columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 42 },
-        2: { cellWidth: 34 },
-        3: { cellWidth: 24 },
-        4: { cellWidth: 20, halign: 'right' },
-        5: { cellWidth: 16, halign: 'right' },
-        6: { cellWidth: 16, halign: 'center' },
-        7: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
-      },
-    });
-
-    // CA Sign-off Block on footer or last page
-    const finalY3 = (doc as any).lastAutoTable.finalY + 8;
-    if (finalY3 < 250) {
+    // Itemized Expense Records Table
+    if (options.includeExpenses !== false && expenses.length > 0) {
+      const finalY2 = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 8 : 150;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('CHARTERED ACCOUNTANT COMPLIANCE VERIFICATION', 14, finalY3);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.text('I confirm that I have reviewed the supporting receipt vouchers and statutory calculations in accordance with local Tax Acts.', 14, finalY3 + 4);
-      doc.line(14, finalY3 + 14, 90, finalY3 + 14);
-      doc.text('Authorized CA Signature', 14, finalY3 + 18);
-      doc.line(120, finalY3 + 14, 180, finalY3 + 14);
-      doc.text('Practicing Certificate / Member No.', 120, finalY3 + 18);
+      doc.setFontSize(10);
+      doc.text('3. DETAILED EXPENSE & INVOICE SCHEDULE', 14, finalY2);
+
+      const tableRows = expenses.map(e => {
+        const cgst = Number(e.cgst) || 0;
+        const sgst = Number(e.sgst) || 0;
+        const igst = Number(e.igst) || 0;
+        const cess = Number(e.cess) || 0;
+        const taxAmt = (cgst + sgst + igst + cess) || Number(e.taxAmount) || Number(e.gstAmount) || Number(e.salesTaxAmount) || 0;
+        const amt = Number(e.amount) || 0;
+        const claimable = Number(e.claimableBusinessAmount) || amt;
+
+        return [
+          e.date || '-',
+          (e.merchant || 'Unknown Vendor').substring(0, 22),
+          e.invoiceNumber || '-',
+          e.vendorTaxId || e.vendorGSTIN || '-',
+          (e.category || 'Other').substring(0, 16),
+          e.expenseType || 'Business',
+          (e.businessPercentage ?? 100) + '%',
+          fmt(taxAmt),
+          fmt(amt),
+          fmt(claimable),
+        ];
+      });
+
+      const taxHeader = country === 'US' ? 'Tax' : 'GST';
+      const idHeader = country === 'US' ? 'EIN' : country === 'IN' ? 'GSTIN' : country === 'AU' ? 'ABN' : country === 'NZ' ? 'IRD' : 'BN';
+
+      autoTable(doc, {
+        startY: finalY2 + 3,
+        head: [['Date', 'Vendor', 'Inv #', idHeader, 'Category', 'Type', 'Biz %', taxHeader, 'Total', 'Claimable']],
+        body: tableRows,
+        theme: 'striped',
+        headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 7, fontStyle: 'bold' },
+        styles: { fontSize: 6.8, cellPadding: 1.5 },
+        columnStyles: {
+          0: { cellWidth: 16 },
+          1: { cellWidth: 32 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 26 },
+          4: { cellWidth: 24 },
+          5: { cellWidth: 14 },
+          6: { cellWidth: 12, halign: 'center' },
+          7: { cellWidth: 15, halign: 'right' },
+          8: { cellWidth: 16, halign: 'right' },
+          9: { cellWidth: 17, halign: 'right', fontStyle: 'bold' },
+        },
+      });
     }
 
-    doc.save(`TaxVault_${profile.country}_TaxReport_${new Date().toISOString().split('T')[0]}.pdf`);
+    // Footer with statutory disclaimer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        `TaxVault · Generated for compliance review. Compiled from digitized vouchers. Page ${i} of ${pageCount}`,
+        14,
+        288
+      );
+    }
+
+    return doc;
   }
 
   /**
-   * Generates a multi-sheet Microsoft Excel (.xlsx) workbook for Chartered Accountants
+   * Generates a multi-sheet Microsoft Excel (.xlsx) workbook for CA audit
    */
-  public static generateAccountantExcel(
+  public static generateIndianExcelWorkbook(
     profile: UserProfile,
     expenses: ExpenseRecord[],
-    incomes: IncomeRecord[],
     taxResult: TaxCalculationResult
-  ) {
-    const config = TAX_CONFIGS[profile.country] || TAX_CONFIGS.NZ;
+  ): ArrayBuffer {
     const wb = XLSX.utils.book_new();
+    const country = profile?.country || 'NZ';
+    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
+    const curr = profile?.defaultCurrency || config.currencyCode;
+    const sym = profile?.currencySymbol || config.currencySymbol;
+    const taxLabel = country === 'US' ? 'Sales Tax' : 'GST';
 
-    // 1. Tax Summary Sheet
-    const summarySheetData = [
-      ['TAX COMPLIANCE REPORT', ''],
-      ['Tax Authority:', config.taxAuthority],
-      ['Taxpayer Name:', profile.fullName],
-      ['Tax / IRD Number:', profile.taxNumber],
-      ['GST Registered:', profile.gstRegistered ? 'YES' : 'NO'],
-      ['Financial Year End:', profile.financialYearEnding],
-      ['Base Currency:', config.currencyCode],
-      ['', ''],
-      ['FINANCIAL SUMMARY', 'AMOUNT (' + config.currencyCode + ')'],
-      ['Gross Operating Revenue (excl GST)', taxResult.totalGrossIncome],
-      ['Total Allowable Deductible Expenses', taxResult.totalDeductibleExpenses],
-      ['Net Taxable Income / Profit', taxResult.netTaxableIncome],
-      ['Estimated Income Tax Liability', taxResult.estimatedIncomeTax],
-      ['Effective Tax Rate', `${(taxResult.effectiveTaxRate * 100).toFixed(2)}%`],
-      ['Total GST Collected on Sales', taxResult.totalGstCollected],
-      ['Total GST Paid on Expenses', taxResult.totalGstPaid],
-      ['Net GST Position (Payable/Refund)', taxResult.netGstPayableOrRefund],
+    // Sheet 1: Detailed Expense Register
+    const expenseRows = expenses.map(e => {
+      const cgst = Number(e.cgst) || 0;
+      const sgst = Number(e.sgst) || 0;
+      const igst = Number(e.igst) || 0;
+      const cess = Number(e.cess) || 0;
+      const taxAmt = (cgst + sgst + igst + cess) || Number(e.taxAmount) || Number(e.gstAmount) || Number(e.salesTaxAmount) || 0;
+      const totalAmt = Number(e.amount) || 0;
+      const claimable = Number(e.claimableBusinessAmount) || totalAmt;
+      const taxable = Number(e.taxableAmount) || Number(e.subtotal) || totalAmt;
+
+      return {
+        'Expense ID': e.id || '',
+        'Status': (e.status === 'deleted' || e.isDeleted) ? 'Deleted / Void' : 'Active',
+        'Invoice Date': e.date || '',
+        'Merchant / Vendor': e.merchant || 'Unknown Vendor',
+        'Invoice Number': e.invoiceNumber || '',
+        'Vendor Tax ID': e.vendorTaxId || e.vendorGSTIN || '',
+        'State / Region': e.state || '',
+        'Category': e.category || 'Other',
+        'Expense Type': e.expenseType || 'Business',
+        'Business Usage %': `${e.businessPercentage ?? 100}%`,
+        [`Taxable Subtotal (${sym})`]: taxable,
+        'Tax Rate %': Number(e.taxRate) || 0,
+        [`Tax Amount (${sym})`]: taxAmt,
+        [`Total Amount (${sym})`]: totalAmt,
+        [`Claimable Business Deduction (${sym})`]: claimable,
+        'Tax Treatment': e.gstTreatment || 'Likely eligible',
+        'Review Status': e.caReviewStatus || 'Reviewed',
+        'Reviewer Notes': e.caNotes || '',
+        'Payment Method': e.paymentMethod || 'Other',
+      };
+    });
+    const wsExpenses = XLSX.utils.json_to_sheet(expenseRows.length > 0 ? expenseRows : [{ 'Notice': 'No expenses recorded for this period' }]);
+    XLSX.utils.book_append_sheet(wb, wsExpenses, 'Expense Register');
+
+    // Sheet 2: Tax / GST ITC Summary
+    const gstSummaryRows = [
+      { 'Statutory Metric': 'Total Invoices Count', 'Value': expenses.length },
+      { 'Statutory Metric': `Total Gross Value (${sym})`, 'Value': Number(taxResult?.totalExpenses) || 0 },
+      { 'Statutory Metric': `Direct Business Expenses (${sym})`, 'Value': Number(taxResult?.businessExpenses) || 0 },
+      { 'Statutory Metric': `Mixed Expenses (Apportioned) (${sym})`, 'Value': Number(taxResult?.mixedExpenses) || 0 },
+      { 'Statutory Metric': `Total Allowable Tax Deduction (${sym})`, 'Value': Number(taxResult?.claimableBusinessTotal) || 0 },
+      { 'Statutory Metric': `Total ${taxLabel} Paid (${sym})`, 'Value': Number(taxResult?.totalGstIdentified) || 0 },
+      { 'Statutory Metric': `Eligible ${country === 'US' ? 'Tax Deduction' : 'Input Tax Credit'} (${sym})`, 'Value': Number(taxResult?.eligibleGstItc) || 0 },
+      { 'Statutory Metric': `Tax Under Review / Ineligible (${sym})`, 'Value': Number(taxResult?.needsReviewGst) || 0 },
     ];
-    const wsSummary = XLSX.utils.aoa_to_sheet(summarySheetData);
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Tax Summary');
+    const wsGst = XLSX.utils.json_to_sheet(gstSummaryRows);
+    XLSX.utils.book_append_sheet(wb, wsGst, `${taxLabel} Summary`);
 
-    // 2. Expenses Schedule Sheet
-    const expensesSheetData = [
-      [
-        'ID',
-        'Date',
-        'Merchant',
-        'Category',
-        'Description',
-        `Gross Total (${config.currencyCode})`,
-        `GST Included (${config.currencyCode})`,
-        'Net (excl GST)',
-        'Deductible %',
-        'Allowable Tax Claim',
-        'Payment Method',
-        'Receipt Voucher #',
-        'Original Foreign Currency',
-        'Notes',
-      ],
-      ...expenses.map(e => {
-        const net = profile.gstRegistered ? e.amount - e.gstAmount : e.amount;
-        const claim = net * (e.deductiblePercentage / 100);
-        return [
-          e.id,
-          e.date,
-          e.merchant,
-          e.category,
-          e.description,
-          e.amount,
-          e.gstAmount,
-          net,
-          `${e.deductiblePercentage}%`,
-          claim,
-          e.paymentMethod,
-          e.receiptNumber || '',
-          e.originalCurrency ? `${e.originalCurrency} ${e.originalAmount}` : '',
-          e.notes || '',
-        ];
-      }),
-    ];
-    const wsExpenses = XLSX.utils.aoa_to_sheet(expensesSheetData);
-    XLSX.utils.book_append_sheet(wb, wsExpenses, 'All Expenses Audit');
+    // Sheet 3: Category Breakdown
+    const catMap: Record<string, { total: number; business: number; gst: number; count: number }> = {};
+    for (const e of expenses) {
+      const cat = e.category || 'Other';
+      if (!catMap[cat]) catMap[cat] = { total: 0, business: 0, gst: 0, count: 0 };
+      const cgst = Number(e.cgst) || 0;
+      const sgst = Number(e.sgst) || 0;
+      const igst = Number(e.igst) || 0;
+      const cess = Number(e.cess) || 0;
+      const taxAmt = (cgst + sgst + igst + cess) || Number(e.taxAmount) || Number(e.gstAmount) || Number(e.salesTaxAmount) || 0;
+      const totalAmt = Number(e.amount) || 0;
+      const claimable = Number(e.claimableBusinessAmount) || totalAmt;
 
-    // 3. Revenue Sheet
-    const incomeSheetData = [
-      ['Date', 'Client / Payer', 'Description', `Gross Revenue (${config.currencyCode})`, 'GST Collected', 'Invoice Ref #'],
-      ...incomes.map(inc => [inc.date, inc.client, inc.description, inc.amount, inc.gstAmount, inc.invoiceNumber || '']),
-    ];
-    const wsIncome = XLSX.utils.aoa_to_sheet(incomeSheetData);
-    XLSX.utils.book_append_sheet(wb, wsIncome, 'Revenue Schedule');
+      catMap[cat].total += totalAmt;
+      catMap[cat].business += claimable;
+      catMap[cat].gst += taxAmt;
+      catMap[cat].count += 1;
+    }
+    const catRows = Object.keys(catMap).map(cat => ({
+      'Category': cat,
+      'Invoices Count': catMap[cat].count,
+      [`Total Spent (${sym})`]: catMap[cat].total,
+      [`Claimable Business (${sym})`]: catMap[cat].business,
+      [`${taxLabel} Included (${sym})`]: catMap[cat].gst,
+    }));
+    const wsCategory = XLSX.utils.json_to_sheet(catRows.length > 0 ? catRows : [{ 'Notice': 'No category spend recorded' }]);
+    XLSX.utils.book_append_sheet(wb, wsCategory, 'Category Breakdown');
 
-    // Write file
-    XLSX.writeFile(wb, `TaxVault_CA_Audit_${profile.country}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    // Sheet 4: Vendor Summary
+    const vendorMap: Record<string, { total: number; taxId: string; count: number }> = {};
+    for (const e of expenses) {
+      const v = e.merchant || 'Unknown Vendor';
+      if (!vendorMap[v]) vendorMap[v] = { total: 0, taxId: e.vendorTaxId || e.vendorGSTIN || '', count: 0 };
+      vendorMap[v].total += Number(e.amount) || 0;
+      vendorMap[v].count += 1;
+    }
+    const vendorRows = Object.keys(vendorMap).map(v => ({
+      'Vendor': v,
+      'Tax ID': vendorMap[v].taxId,
+      'Bills Count': vendorMap[v].count,
+      [`Total Spend (${sym})`]: vendorMap[v].total,
+    }));
+    const wsVendor = XLSX.utils.json_to_sheet(vendorRows.length > 0 ? vendorRows : [{ 'Notice': 'No vendor spend recorded' }]);
+    XLSX.utils.book_append_sheet(wb, wsVendor, 'Vendor Summary');
+
+    // Sheet 5: Quarterly Summary
+    try {
+      const quarterly = calculateQuarterlyBreakdown(expenses, profile?.financialYear || 'FY 2026-27', country);
+      const quarterRows = quarterly.quarters.map(q => ({
+        'Quarter': q.quarter,
+        'Date Range': `${q.info.start} to ${q.info.end}`,
+        'Months': q.info.monthsLabel,
+        'Receipts Count': q.expenseCount || 0,
+        [`Total Spend (${sym})`]: q.totalExpenses || 0,
+        [`Claimable Business (${sym})`]: q.claimableBusinessTotal || 0,
+        [`${taxLabel} Identified (${sym})`]: q.totalTaxIdentified || 0,
+        [`Eligible ITC (${sym})`]: q.eligibleGstItc || 0,
+        '% of Annual Spend': `${Number(q.percentageOfAnnual || 0).toFixed(1)}%`,
+      }));
+      const wsQuarter = XLSX.utils.json_to_sheet(quarterRows);
+      XLSX.utils.book_append_sheet(wb, wsQuarter, 'Quarterly Summary');
+    } catch (err) {
+      console.warn('Quarterly sheet generation skipped:', err);
+    }
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    return wbout;
   }
 
   /**
-   * Generates standard CSV for Xero, MYOB, or IRD upload
+   * Safe helper to trigger file download of a Blob across all modern browsers and WebViews
    */
-  public static generateCSV(expenses: ExpenseRecord[]) {
-    const headers = ['Date', 'Merchant', 'Category', 'Description', 'Amount', 'GST', 'DeductiblePercent', 'ReceiptNumber', 'PaymentMethod'];
-    const rows = expenses.map(e => [
-      e.date,
-      `"${e.merchant.replace(/"/g, '""')}"`,
-      `"${e.category}"`,
-      `"${(e.description || '').replace(/"/g, '""')}"`,
-      e.amount.toFixed(2),
-      e.gstAmount.toFixed(2),
-      e.deductiblePercentage,
-      `"${e.receiptNumber || ''}"`,
-      `"${e.paymentMethod}"`,
-    ]);
+  public static triggerDownload(blob: Blob, fileName: string): void {
+    try {
+      // 1. Standard Object URL creation
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `TaxVault_Expenses_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Delay revoking URL by 60 seconds to allow Chromium/Safari background download threads to finish reading the stream
+      setTimeout(() => {
+        try {
+          if (document.body.contains(a)) {
+            document.body.removeChild(a);
+          }
+          URL.revokeObjectURL(url);
+        } catch {}
+      }, 60000);
+    } catch (err) {
+      console.error('Standard blob download failed, trying data-URL fallback:', err);
+      // 2. Data URL fallback using FileReader for restricted WebViews
+      try {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const a = document.createElement('a');
+          a.href = reader.result as string;
+          a.download = fileName;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            try {
+              if (document.body.contains(a)) {
+                document.body.removeChild(a);
+              }
+            } catch {}
+          }, 10000);
+        };
+        reader.readAsDataURL(blob);
+      } catch (fallbackErr) {
+        console.error('All download attempts failed:', fallbackErr);
+        throw fallbackErr;
+      }
+    }
   }
 
   /**
-   * Creates a secure sharing token with access PIN for chartered accountants
+   * One-stop helper to download PDF report safely
    */
-  public static createAccountantShareToken(): AccountantShareToken {
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const token = 'CA-' + Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + 30); // 30 days access
+  public static downloadPDF(
+    profile: UserProfile,
+    expenses: ExpenseRecord[],
+    taxResult: TaxCalculationResult,
+    fileName?: string,
+    options: { dateRangeLabel?: string } = {}
+  ): void {
+    const doc = this.generateIndianCAPDF(profile, expenses, taxResult, options);
+    const pdfBlob = doc.output('blob');
+    const safeName = fileName || `TaxVault_Report_${(profile?.financialYear || 'Current').replace(/\s+/g, '_')}.pdf`;
+    this.triggerDownload(pdfBlob, safeName);
+  }
 
+  /**
+   * One-stop helper to download Excel workbook safely
+   */
+  public static downloadExcel(
+    profile: UserProfile,
+    expenses: ExpenseRecord[],
+    taxResult: TaxCalculationResult,
+    fileName?: string
+  ): void {
+    const buffer = this.generateIndianExcelWorkbook(profile, expenses, taxResult);
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const safeName = fileName || `TaxVault_Register_${(profile?.financialYear || 'Current').replace(/\s+/g, '_')}.xlsx`;
+    this.triggerDownload(blob, safeName);
+  }
+
+  /**
+   * One-stop helper to download CSV safely
+   */
+  public static downloadCSV(
+    expenses: ExpenseRecord[],
+    fileName?: string
+  ): void {
+    const blob = this.generateCSV(expenses);
+    const safeName = fileName || `TaxVault_Expenses_${new Date().toISOString().split('T')[0]}.csv`;
+    this.triggerDownload(blob, safeName);
+  }
+
+  /**
+   * Generates a complete ZIP archive containing:
+   * - Official Tax Audit PDF
+   * - Itemized Excel spreadsheet
+   * - Original receipt files or vouchers
+   * - Readme instructions for the Tax Advisor / Accountant
+   */
+  public static async generateCAZipPackage(
+    profile: UserProfile,
+    expenses: ExpenseRecord[],
+    taxResult: TaxCalculationResult,
+    options: {
+      includeReceiptImages?: boolean;
+      dateRangeLabel?: string;
+    } = {}
+  ): Promise<Blob> {
+    const zip = new JSZip();
+    const country = profile?.country || 'NZ';
+    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
+    const curr = profile?.defaultCurrency || config.currencyCode;
+    const sym = profile?.currencySymbol || config.currencySymbol;
+    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
+
+    // 1. Add PDF Report
+    const pdfDoc = this.generateIndianCAPDF(profile, expenses, taxResult, {
+      includeExpenses: true,
+      includeGst: true,
+      includeVendors: true,
+      dateRangeLabel: options.dateRangeLabel,
+    });
+    const pdfBlob = pdfDoc.output('blob');
+    zip.file(`TaxVault_Tax_Report_${(profile?.financialYear || 'Current').replace(/\s+/g, '_')}.pdf`, pdfBlob);
+
+    // 2. Add Excel Workbook
+    const excelBuffer = this.generateIndianExcelWorkbook(profile, expenses, taxResult);
+    zip.file(`TaxVault_Expense_Register_${(profile?.financialYear || 'Current').replace(/\s+/g, '_')}.xlsx`, excelBuffer);
+
+    // 3. Add Readme for Advisor
+    const readmeContent = `TAXVAULT COMPLIANCE PACK (${config.countryName.toUpperCase()})
+=====================================================
+Client: ${profile?.businessName || profile?.fullName || 'Business Entity'}
+Primary Tax ID: ${profile?.taxId || profile?.pan || 'N/A'}
+Secondary Tax ID: ${profile?.secondaryTaxId || profile?.gstin || 'N/A'}
+Tax Authority: ${config.taxAuthority}
+Financial / Tax Year: ${profile?.financialYear || config.taxYearLabel}
+Period: ${options.dateRangeLabel || 'Full Period'}
+Total Expenses: ${fmt(taxResult?.totalExpenses || 0)}
+Business Claimable: ${fmt(taxResult?.claimableBusinessTotal || 0)}
+Total ${country === 'US' ? 'Sales Tax' : 'GST/HST'} Identified: ${fmt(taxResult?.totalGstIdentified || 0)}
+Eligible ${country === 'US' ? 'Tax Deduction' : 'Input Tax Credit'}: ${fmt(taxResult?.eligibleGstItc || 0)}
+
+Files Included in this archive:
+1. TaxVault_Tax_Report.pdf - Executive summary, category schedules, and itemized invoice list
+2. TaxVault_Expense_Register.xlsx - Detailed multi-tab workbook
+3. Receipts/ - Original digitized high-resolution vouchers (if attached)
+=====================================================
+Generated by TaxVault Universal Accounting Engine (${config.countryName})`;
+
+    zip.file('README_TAX_ADVISOR.txt', readmeContent);
+
+    // 4. Add Receipt Images folder
+    if (options.includeReceiptImages !== false) {
+      const receiptsFolder = zip.folder('Receipts');
+      if (receiptsFolder) {
+        for (let idx = 0; idx < expenses.length; idx++) {
+          const exp = expenses[idx];
+          const fileName = exp.receiptFileName || `Receipt_${idx + 1}_${(exp.merchant || 'Merchant').replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+
+          if (exp.receiptUrl && exp.receiptUrl.startsWith('data:image')) {
+            const base64Data = exp.receiptUrl.split(',')[1];
+            receiptsFolder.file(fileName, base64Data, { base64: true });
+          } else {
+            const vCurr = exp.currency || curr;
+            const vSym = exp.currencySymbol || sym;
+            const taxAmt = (Number(exp.cgst) || 0) + (Number(exp.sgst) || 0) + (Number(exp.igst) || 0) || Number(exp.taxAmount) || Number(exp.gstAmount) || Number(exp.salesTaxAmount) || 0;
+            const voucherText = `VOUCHER #${exp.invoiceNumber || exp.id}
+Date: ${exp.date || '-'}
+Merchant: ${exp.merchant || 'Unknown'}
+Tax ID: ${exp.vendorTaxId || exp.vendorGSTIN || 'N/A'}
+Total Amount: ${formatCurrency(Number(exp.amount) || 0, vCurr, vSym, true)}
+Tax Total: ${formatCurrency(taxAmt, vCurr, vSym, true)}
+Category: ${exp.category || 'Other'}
+Expense Type: ${exp.expenseType || 'Business'} (${exp.businessPercentage ?? 100}%)
+Claimable Amount: ${formatCurrency(Number(exp.claimableBusinessAmount) || Number(exp.amount) || 0, vCurr, vSym, true)}
+Review Status: ${exp.caReviewStatus || 'Reviewed'}
+Notes: ${exp.caNotes || 'No notes'}`;
+            receiptsFolder.file(`${fileName}.txt`, voucherText);
+          }
+        }
+      }
+    }
+
+    return await zip.generateAsync({ type: 'blob' });
+  }
+
+  /**
+   * Generates WhatsApp share URL with prefilled text
+   */
+  public static getWhatsAppShareUrl(
+    profile: UserProfile,
+    taxResult: TaxCalculationResult,
+    phone?: string
+  ): string {
+    const targetPhone = (phone || profile?.accountantPhone || '').replace(/[^0-9]/g, '');
+    const country = profile?.country || 'NZ';
+    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
+    const curr = profile?.defaultCurrency || config.currencyCode;
+    const sym = profile?.currencySymbol || config.currencySymbol;
+    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
+    const taxLabel = country === 'US' ? 'Sales Tax' : 'GST/HST';
+    const taxIdName = country === 'NZ' ? 'IRD' : country === 'AU' ? 'ABN' : country === 'CA' ? 'CRA BN' : country === 'US' ? 'EIN' : 'GSTIN';
+    const taxId = profile?.taxId || profile?.pan || profile?.gstin || 'Unregistered';
+
+    const greeting = country === 'IN' ? 'Namaste CA Sahab,' : `Hello ${profile?.accountantName || 'Tax Advisor'},`;
+    const message = `${greeting}
+
+Here is my business expense and ${taxLabel} summary from TaxVault for ${profile?.financialYear || config.taxYearLabel}:
+
+Client: ${profile?.businessName || profile?.fullName || 'Business Entity'}
+${taxIdName}: ${taxId}
+Total Invoices: ${taxResult?.expenseCount || 0}
+Total Expenses: ${fmt(taxResult?.totalExpenses || 0)}
+Business Claimable: ${fmt(taxResult?.claimableBusinessTotal || 0)}
+${taxLabel} Identified: ${fmt(taxResult?.totalGstIdentified || 0)}
+Eligible Credit / Deduction: ${fmt(taxResult?.eligibleGstItc || 0)}
+
+I have compiled the PDF report, Excel register, and all digitized receipts. Please let me know if any further clarification is required.`;
+
+    const encoded = encodeURIComponent(message);
+    return targetPhone
+      ? `https://wa.me/${targetPhone}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`;
+  }
+
+  /**
+   * Generates Email mailto URL for CA / CPA / Tax Agent
+   */
+  public static getEmailShareUrl(
+    profile: UserProfile,
+    taxResult: TaxCalculationResult,
+    email?: string
+  ): string {
+    const country = profile?.country || 'NZ';
+    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
+    const curr = profile?.defaultCurrency || config.currencyCode;
+    const sym = profile?.currencySymbol || config.currencySymbol;
+    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
+    const taxLabel = country === 'US' ? 'Sales Tax' : 'GST/HST';
+
+    const targetEmail = email || profile?.accountantEmail || '';
+    const subject = encodeURIComponent(`TaxVault Expense & ${taxLabel} Compliance Pack - ${profile?.businessName || profile?.fullName || 'Business'} (${profile?.financialYear || config.taxYearLabel})`);
+    const body = encodeURIComponent(`Dear ${profile?.accountantName || 'Tax Advisor / Accountant'},
+
+Please find attached the compiled expense records, ${taxLabel} calculation, and audit vouchers for ${profile?.businessName || profile?.fullName || 'Business'} for ${profile?.financialYear || config.taxYearLabel}.
+
+Key Summary Metrics:
+- Total Incurred Expenses: ${fmt(taxResult?.totalExpenses || 0)}
+- Allowable Business Deductions: ${fmt(taxResult?.claimableBusinessTotal || 0)}
+- Total ${taxLabel} Paid: ${fmt(taxResult?.totalGstIdentified || 0)}
+- Eligible Input Tax Credit / Deductions: ${fmt(taxResult?.eligibleGstItc || 0)}
+- Invoices Count: ${taxResult?.expenseCount || 0}
+
+Looking forward to your review and filing confirmation.
+
+Regards,
+${profile?.fullName || 'Taxpayer'}
+${profile?.phone || ''}`);
+
+    return `mailto:${targetEmail}?subject=${subject}&body=${body}`;
+  }
+
+  // Legacy compatibility helpers
+  public static createAccountantShareToken(options: any = {}) {
     return {
-      token,
-      pin,
-      expiryDate: expiry.toISOString().split('T')[0],
+      token: 'TXV-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+      pin: String(Math.floor(1000 + Math.random() * 9000)),
+      expiryDate: new Date(Date.now() + (options.validityDays || 30) * 86400000).toISOString(),
       createdAt: new Date().toISOString(),
-      readOnly: true,
-      includeReceiptImages: true,
+      readOnly: options.readOnly ?? true,
+      includeReceiptImages: options.includeReceiptImages ?? true,
     };
+  }
+
+  public static generateAccountantTaxPDF(profile: any, expenses: any, _incomes: any, taxResult: any) {
+    const doc = this.generateIndianCAPDF(profile, expenses, taxResult);
+    return doc.output('blob');
+  }
+
+  public static generateAccountantExcel(profile: any, expenses: any, _incomes: any, taxResult: any) {
+    const buffer = this.generateIndianExcelWorkbook(profile, expenses, taxResult);
+    return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+
+  public static generateCSV(expenses: any) {
+    const headers = 'ID,Date,Merchant,Category,Amount,Tax,BusinessPercentage\n';
+    const rows = expenses.map((e: any) => {
+      const taxAmt = (Number(e.cgst) || 0) + (Number(e.sgst) || 0) + (Number(e.igst) || 0) || Number(e.taxAmount) || Number(e.gstAmount) || Number(e.salesTaxAmount) || 0;
+      return `"${e.id || ''}","${e.date || ''}","${(e.merchant || '').replace(/"/g, '""')}","${e.category || ''}",${Number(e.amount) || 0},${taxAmt},${e.businessPercentage ?? 100}`;
+    }).join('\n');
+    return new Blob([headers + rows], { type: 'text/csv' });
   }
 }

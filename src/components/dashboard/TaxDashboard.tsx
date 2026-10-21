@@ -59,7 +59,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
       const existing = map.get(exp.category) || { total: 0, count: 0, deductibleTotal: 0 };
       existing.total += exp.amount;
       existing.count += 1;
-      const deductiblePortion = (exp.amount - (profile.gstRegistered ? exp.gstAmount : 0)) * (exp.deductiblePercentage / 100);
+      const deductiblePortion = (exp.amount - (profile?.gstRegistered ? (exp.gstAmount || 0) : 0)) * ((exp.deductiblePercentage ?? exp.businessPercentage ?? 100) / 100);
       existing.deductibleTotal += deductiblePortion;
       map.set(exp.category, existing);
     }
@@ -355,7 +355,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
           <span>{taxConfig.countryName} Compliance Rules</span>
         </div>
         <ul className="space-y-1 text-[11px] text-neutral-400 list-disc list-inside">
-          {taxConfig.regulatoryNotes.slice(0, 3).map((note, idx) => (
+          {(taxConfig.regulatoryNotes || []).slice(0, 3).map((note, idx) => (
             <li key={idx} className="leading-relaxed">{note}</li>
           ))}
         </ul>

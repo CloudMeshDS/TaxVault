@@ -1,620 +1,879 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Camera,
   Upload,
   X,
+  RotateCw,
   Sparkles,
+  Crop,
   CheckCircle2,
+  FileText,
   AlertCircle,
-  Receipt,
-  RotateCcw,
+  ScanLine,
+  Layers,
   ArrowRight,
-  ShieldCheck,
-  Percent,
-  Database,
   Eye,
-  FileCheck,
-  TrendingDown,
-  Info,
-  Lock
+  RefreshCw,
+  Image as ImageIcon,
+  ShieldCheck,
+  PenTool,
+  Loader2,
 } from 'lucide-react';
-import { CountryTaxConfig, ExpenseCategory, ExpenseRecord, UserProfile } from '../../types';
-import { parseReceiptData, SAMPLE_RECEIPTS, ExtractedReceiptData } from '../../services/receiptOcr';
-import { currencyService } from '../../services/currencyService';
+import { ExtractedReceiptData, parseReceiptData, getGeminiApiKey } from '../../services/receiptOcr';
+import { UserProfile } from '../../types';
+import { GeminiApiKeyModal } from '../common/GeminiApiKeyModal';
+import { Capacitor } from '@capacitor/core';
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { SubscriptionService } from '../../services/subscriptionService';
+import { ScanLimitModal } from '../subscription/ScanLimitModal';
 
 interface ReceiptScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  taxConfig: CountryTaxConfig;
   profile: UserProfile;
-  onSaveExpense: (expense: ExpenseRecord) => void;
-  onOpenSubscription: () => void;
-  isOnline: boolean;
+  onReceiptProcessed: (extracted: ExtractedReceiptData) => void;
+  onBatchReceiptsProcessed?: (extractedList: ExtractedReceiptData[]) => void;
+  initialMode?: 'camera' | 'upload' | 'picker';
+  onOpenManualEntry?: () => void;
+  onOpenSubscription?: (reason?: string) => void;
 }
 
 export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   isOpen,
   onClose,
-  taxConfig,
   profile,
-  onSaveExpense,
+  onReceiptProcessed,
+  onBatchReceiptsProcessed,
+  initialMode = 'camera',
+  onOpenManualEntry,
   onOpenSubscription,
-  isOnline,
 }) => {
-  const [step, setStep] = useState<'capture' | 'scanning' | 'review'>('capture');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null);
-  const [scanStatusMessage, setScanStatusMessage] = useState('Analyzing receipt with backend API...');
-  const [showVoucherFull, setShowVoucherFull] = useState(false);
+  const [mode, setMode] = useState<'camera' | 'preview' | 'processing' | 'batch_queue'>('camera');
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [rotation, setRotation] = useState<number>(0);
+  const [imageFilter, setImageFilter] = useState<'none' | 'enhanced' | 'high_contrast' | 'grayscale'>('none');
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState<boolean>(false);
+  const [isScanningBatch, setIsScanningBatch] = useState<boolean>(false);
+  const [batchCount, setBatchCount] = useState<number>(0);
+  const [batchQueue, setBatchQueue] = useState<ExtractedReceiptData[]>([]);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [processingStatus, setProcessingStatus] = useState<string>('Reading invoice text...');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isVideoStreaming, setIsVideoStreaming] = useState<boolean>(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const cameraCaptureInputRef = useRef<HTMLInputElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  // Set when the user leaves mid-scan, so a late OCR result is discarded
+  const cancelledRef = useRef<boolean>(false);
 
-  const scanCheck = SubscriptionService.canScanReceipt(profile);
-
-  // Review form editable state
-  const [merchant, setMerchant] = useState('');
-  const [date, setDate] = useState('');
-  const [amount, setAmount] = useState<number>(0);
-  const [selectedCurrency, setSelectedCurrency] = useState(taxConfig.currencyCode);
-  const [gstAmount, setGstAmount] = useState<number>(0);
-  const [category, setCategory] = useState<ExpenseCategory>('Office & Admin');
-  const [isDeductible, setIsDeductible] = useState(true);
-  const [deductiblePercentage, setDeductiblePercentage] = useState<number>(100);
-  const [paymentMethod, setPaymentMethod] = useState<'Credit Card' | 'Debit Card' | 'Bank Transfer' | 'Cash' | 'EFTPOS'>('Credit Card');
-  const [receiptNumber, setReceiptNumber] = useState('');
-  const [notes, setNotes] = useState('');
-
-  if (!isOpen) return null;
-
-  const categories: ExpenseCategory[] = [
-    'Office & Admin',
-    'Tools & Equipment',
-    'Vehicle & Mileage',
-    'Travel & Accommodation',
-    'Client Entertainment',
-    'Software & Tech',
-    'Utilities & Phone',
-    'Professional Services',
-    'Cost of Goods',
-    'Advertising & Marketing',
-    'Other Business',
-  ];
-
-  const handleProcessReceipt = async (content: string, sampleData?: ExtractedReceiptData) => {
-    setStep('scanning');
-    setScanStatusMessage(isOnline ? 'Transmitting to backend OCR engine...' : 'Offline mode: Processing on-device neural parser...');
-
-    try {
-      let data: ExtractedReceiptData;
-      if (sampleData) {
-        // slight pause to simulate high-accuracy neural extraction
-        await new Promise(r => setTimeout(r, 650));
-        data = sampleData;
-      } else {
-        data = await parseReceiptData(content, taxConfig.countryCode);
-      }
-
-      setExtractedData(data);
-      setMerchant(data.merchant);
-      setDate(data.date);
-      setAmount(data.totalAmount);
-      setSelectedCurrency(data.currency || taxConfig.currencyCode);
-      setGstAmount(data.gstAmount);
-      setCategory(data.category);
-      setIsDeductible(data.isDeductible);
-      setDeductiblePercentage(data.deductiblePercentage);
-      setPaymentMethod(data.paymentMethod);
-      setReceiptNumber(data.receiptNumber || `INV-${Date.now().toString().slice(-6)}`);
-      setNotes(data.regulatoryNote || '');
-
-      setStep('review');
-    } catch {
-      setStep('review');
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  // Helper to read file as Data URL
+  const readFileAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        setPreviewImage(result);
-        handleProcessReceipt(result);
-      };
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
       reader.readAsDataURL(file);
-    }
+    });
   };
 
-  const handleSelectSample = (sample: (typeof SAMPLE_RECEIPTS)[0]) => {
-    setPreviewImage(sample.image);
-    handleProcessReceipt(sample.text, sample.parsed as any);
-  };
-
-  const handleSave = () => {
-    // If entered in foreign currency, convert to base
-    let baseAmount = amount;
-    let originalAmount: number | undefined = undefined;
-    let originalCurrency: string | undefined = undefined;
-    let exchangeRate: number | undefined = undefined;
-
-    if (selectedCurrency !== taxConfig.currencyCode) {
-      originalAmount = amount;
-      originalCurrency = selectedCurrency;
-      exchangeRate = currencyService.getExchangeRate(selectedCurrency, taxConfig.currencyCode);
-      baseAmount = currencyService.convert(amount, selectedCurrency, taxConfig.currencyCode);
-    }
-
-    const newExpense: ExpenseRecord = {
-      id: 'exp_' + Date.now().toString(36),
-      date: date || new Date().toISOString().split('T')[0],
-      merchant: merchant || 'Unknown Merchant',
-      category,
-      description: `${merchant} - ${category}`,
-      amount: baseAmount,
-      originalAmount,
-      originalCurrency,
-      exchangeRate,
-      gstAmount: gstAmount || 0,
-      isDeductible,
-      deductiblePercentage,
-      receiptUrl: previewImage || undefined,
-      receiptFileName: receiptNumber ? `${receiptNumber}.jpg` : `receipt_${Date.now()}.jpg`,
-      receiptNumber,
-      paymentMethod,
-      notes,
-      syncStatus: isOnline ? 'synced' : 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    onSaveExpense(newExpense);
-    handleReset();
+  // Helper to cleanly close and reset all scanner state
+  const handleClose = () => {
+    cancelledRef.current = true;
+    stopCamera();
+    setMode('camera');
+    setCapturedImage(null);
+    setRotation(0);
+    setImageFilter('none');
+    setProcessingStatus('Reading invoice text...');
+    setCameraError(null);
+    setIsVideoStreaming(false);
+    setBatchQueue([]);
+    setBatchCount(0);
+    setIsScanningBatch(false);
     onClose();
   };
 
-  const handleReset = () => {
-    setStep('capture');
-    setPreviewImage(null);
-    setExtractedData(null);
+  // Initialize camera stream when open
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+      setMode('camera');
+      setCapturedImage(null);
+      setRotation(0);
+      setImageFilter('none');
+      setProcessingStatus('Reading invoice text...');
+      setCameraError(null);
+      setIsVideoStreaming(false);
+      return;
+    }
+
+    // Modal was opened: ALWAYS start in clean 'camera' mode
+    cancelledRef.current = false;
+    setMode('camera');
+    setCapturedImage(null);
+    setRotation(0);
+    setImageFilter('none');
+    setProcessingStatus('Reading invoice text...');
+    setCameraError(null);
+    setIsVideoStreaming(false);
+    setBatchQueue([]);
+    setBatchCount(0);
+    setIsScanningBatch(false);
+
+    if (initialMode === 'upload') {
+      const scanCheck = SubscriptionService.canScanReceipt(profile);
+      if (!scanCheck.allowed) {
+        setIsLimitModalOpen(true);
+      } else {
+        fileInputRef.current?.click();
+      }
+    } else if (initialMode === 'picker') {
+      // Opened after a camera error: show clean fallback options without re-prompting
+      setCameraError('Camera access was not granted. Tap below to retry, choose from your gallery, or upload a PDF.');
+    } else if (Capacitor.isNativePlatform()) {
+      takePhotoNative();
+    } else {
+      startCamera();
+    }
+
+    return () => {
+      stopCamera();
+    };
+  }, [isOpen, initialMode]);
+
+  const startCamera = async () => {
+    setCameraError(null);
+    setIsVideoStreaming(false);
+
+    // On native mobile platform, native camera plugin is used instead of WebView getUserMedia
+    if (Capacitor.isNativePlatform()) {
+      setCameraError('Tap "Take Photo with Camera" below to scan your receipt.');
+      return;
+    }
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+        let stream: MediaStream | null = null;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false,
+          });
+        } catch {
+          // Fast fallback to any available camera feed
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        }
+
+        if (stream) {
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().then(() => {
+              setIsVideoStreaming(true);
+            }).catch(() => {});
+          }
+          return;
+        }
+      }
+      setCameraError('Direct camera feed unavailable. Tap below to select an image or PDF.');
+    } catch (e: any) {
+      console.warn('Camera stream error:', e);
+      if (e?.name === 'NotAllowedError' || e?.name === 'PermissionDeniedError') {
+        setCameraError('Camera access was not allowed in browser permissions. You can choose a photo from your gallery below.');
+      } else {
+        setCameraError('Live video viewfinder unavailable. Tap "Take Photo with Camera" or choose from gallery.');
+      }
+    }
   };
 
-  // Financial calculations for the review card
-  const netBeforeGst = Math.max(0, amount - gstAmount);
-  const allowableClaim = Math.round(netBeforeGst * (deductiblePercentage / 100) * 100) / 100;
-  // Estimated tax saving at marginal ~33%
-  const estimatedTaxSaved = Math.round(allowableClaim * 0.33 * 100) / 100;
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsVideoStreaming(false);
+  };
+
+  const takePhotoNative = async () => {
+    const scanCheck = SubscriptionService.canScanReceipt(profile);
+    if (!scanCheck.allowed) {
+      setIsLimitModalOpen(true);
+      return;
+    }
+
+    try {
+      const photo = await CapCamera.getPhoto({
+        quality: 92,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      });
+      if (photo?.dataUrl) {
+        setCapturedImage(photo.dataUrl);
+        setRotation(0);
+        setImageFilter('none');
+        setMode('preview');
+        stopCamera();
+        return;
+      }
+    } catch (err: any) {
+      const msg = String(err?.message || err || '').toLowerCase();
+      if (msg.includes('cancel') || msg.includes('user cancelled') || msg.includes('cancelled')) {
+        return;
+      }
+      console.warn('Capacitor native camera error:', err);
+      // Do NOT trigger fallback HTML input automatically (it causes a second redundant permission prompt)
+      setCameraError('Camera access was not granted. Tap below to retry, choose from your gallery, or upload a PDF.');
+    }
+  };
+
+  const pickPhotoFromGallery = async () => {
+    const scanCheck = SubscriptionService.canScanReceipt(profile);
+    if (!scanCheck.allowed) {
+      setIsLimitModalOpen(true);
+      return;
+    }
+
+    try {
+      const photo = await CapCamera.getPhoto({
+        quality: 92,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos,
+      });
+      if (photo?.dataUrl) {
+        setCapturedImage(photo.dataUrl);
+        setRotation(0);
+        setImageFilter('none');
+        setMode('preview');
+        stopCamera();
+        return;
+      }
+    } catch {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Capture frame from video feed or trigger native camera
+  const handleCapturePhoto = () => {
+    const scanCheck = SubscriptionService.canScanReceipt(profile);
+    if (!scanCheck.allowed) {
+      setIsLimitModalOpen(true);
+      return;
+    }
+
+    if (videoRef.current && streamRef.current && videoRef.current.videoWidth > 0) {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 800;
+      canvas.height = video.videoHeight || 1000;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        setCapturedImage(dataUrl);
+        setRotation(0);
+        setImageFilter('none');
+        setMode('preview');
+        stopCamera();
+      }
+    } else {
+      // Direct native camera capture
+      takePhotoNative();
+    }
+  };
+
+  // Handle uploaded file (image or PDF, single or multiple)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const scanCheck = SubscriptionService.canScanReceipt(profile);
+    if (!scanCheck.allowed) {
+      setIsLimitModalOpen(true);
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    if (files.length > 1) {
+      // Multi-file batch upload queue
+      setMode('processing');
+      setProcessingStatus(`Queued ${files.length} receipts for AI scan...`);
+      const extractedList: ExtractedReceiptData[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setBatchProgress({ current: i + 1, total: files.length });
+        setProcessingStatus(`Reading receipt ${i + 1} of ${files.length} (${file.name})...`);
+        try {
+          const dataUrl = await readFileAsDataUrl(file);
+          const data = await parseReceiptData(
+            dataUrl,
+            profile.taxId || profile.gstin || '',
+            profile.country || 'NZ'
+          );
+          data.originalImage = dataUrl;
+          data.receiptFileName = file.name;
+          extractedList.push(data);
+        } catch {
+          // ignore error
+        }
+      }
+
+      if (cancelledRef.current) return;
+      setBatchQueue(extractedList);
+      setMode('batch_queue');
+      stopCamera();
+      return;
+    }
+
+    const file = files[0];
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      if (isPdf) {
+        // PDF invoice extraction
+        setProcessingStatus(`Parsing invoice ${file.name}...`);
+        setMode('processing');
+        const data = await parseReceiptData(
+          dataUrl,
+          profile.taxId || profile.gstin || '',
+          profile.country || 'NZ'
+        );
+        if (cancelledRef.current) return;
+        data.originalImage = dataUrl;
+        data.receiptFileName = file.name;
+        stopCamera();
+        setMode('camera');
+        setCapturedImage(null);
+        onReceiptProcessed(data);
+        onClose();
+      } else {
+        setCapturedImage(dataUrl);
+        setRotation(0);
+        setImageFilter('none');
+        setMode('preview');
+        stopCamera();
+      }
+    } catch {
+      setMode('camera');
+    }
+  };
+
+  // Rotate preview 90 deg clockwise
+  const handleRotate = () => {
+    setRotation((prev) => (prev + 90) % 360);
+  };
+
+  // Toggle image enhancement filter
+  const handleImproveImage = () => {
+    const filters: ('none' | 'enhanced' | 'high_contrast' | 'grayscale')[] = [
+      'none',
+      'enhanced',
+      'high_contrast',
+      'grayscale',
+    ];
+    const nextIdx = (filters.indexOf(imageFilter) + 1) % filters.length;
+    setImageFilter(filters[nextIdx]);
+  };
+
+  // Process the captured/uploaded image with OCR + AI
+  const handleConfirmAndProcess = async () => {
+    if (!capturedImage) return;
+
+    setMode('processing');
+    setProcessingStatus('Reading receipt and detecting tax details...');
+
+    try {
+      const extracted = await parseReceiptData(
+        capturedImage,
+        profile.taxId || profile.gstin || '',
+        profile.country || 'NZ'
+      );
+      if (cancelledRef.current) return;
+      extracted.originalImage = capturedImage;
+
+      if (isScanningBatch) {
+        setBatchCount((prev) => prev + 1);
+        onReceiptProcessed(extracted);
+        // Continue scanning next receipt
+        setCapturedImage(null);
+        setMode('camera');
+        startCamera();
+      } else {
+        stopCamera();
+        setMode('camera');
+        setCapturedImage(null);
+        onReceiptProcessed(extracted);
+        onClose();
+      }
+    } catch (err) {
+      setMode('preview');
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto flex flex-col text-neutral-100 shadow-2xl">
-        {/* Header with Step Indicator */}
-        <div className="p-4 border-b border-neutral-800 flex items-center justify-between sticky top-0 bg-neutral-900 z-20">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              {step === 'review' ? <FileCheck className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-white">
-                  {step === 'review' ? 'Review & Verify Receipt Data' : 'Receipt Scanner & OCR'}
-                </h3>
-                {step === 'review' && (
-                  <span className="text-[10px] font-mono bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-1.5 py-0.5 rounded">
-                    Pre-Save Review
-                  </span>
-                )}
-              </div>
-              <p className="text-[10px] text-neutral-400">
-                {step === 'review'
-                  ? 'Verify extracted fields and tax deductibility before database commit'
-                  : `Automated categorization · ${taxConfig.countryName} (${taxConfig.taxAuthority.split('(')[0].trim()})`}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1.5 rounded-lg hover:bg-neutral-800 cursor-pointer transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between overflow-x-hidden select-none modal-backdrop-animation">
+      {/* Top Header Bar */}
+      <div className="px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] flex items-center justify-between gap-2 text-white border-b border-neutral-800/80 bg-neutral-950/80 z-20">
+        <div className="flex items-center gap-2 min-w-0">
+          <ScanLine className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="font-extrabold text-sm tracking-tight truncate">Scan Receipt</span>
         </div>
 
-        {/* STEP 1: CAPTURE */}
-        {step === 'capture' && (
-          <div className="p-4 space-y-4">
-            {/* Free Tier Limit Reached Warning if applicable */}
-            {!scanCheck.allowed ? (
-              <div className="p-4 bg-amber-950/40 border border-amber-500/40 rounded-2xl text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
-                  <Lock className="w-6 h-6" />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {mode !== 'processing' && (
+            <>
+              {/* AI Vision Key Setup */}
+              <button
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className={`text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border ${
+                  getGeminiApiKey()
+                    ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400 font-bold'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                }`}
+                title="Configure Google Gemini 2.5 Flash for automated OCR"
+              >
+                {getGeminiApiKey() ? 'AI On' : 'AI Key'}
+              </button>
+
+              {/* Multiple receipts toggle */}
+              <button
+                onClick={() => setIsScanningBatch(!isScanningBatch)}
+                className={`text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border ${
+                  isScanningBatch
+                    ? 'bg-emerald-950 border-emerald-500/50 text-emerald-300 font-bold'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                }`}
+                title="Scan multiple receipts in succession"
+              >
+                Batch{batchCount > 0 ? ` (${batchCount})` : ''}
+              </button>
+            </>
+          )}
+
+          {/* Manual Entry Button */}
+          <button
+            onClick={() => {
+              handleClose();
+              onOpenManualEntry?.();
+            }}
+            className="text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white hover:border-emerald-500/50"
+            title="Enter expense manually without scanning"
+          >
+            {mode === 'processing' ? 'Enter Manually' : 'Manual'}
+          </button>
+
+          {mode !== 'processing' && (
+            <button
+              onClick={handleClose}
+              className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Hidden File Inputs (Supports Single or Multi-Select Batch Upload) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf,.pdf"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        multiple
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={cameraCaptureInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Center Viewport */}
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-neutral-950">
+        {mode === 'batch_queue' && (
+          <div className="p-4 max-w-md mx-auto w-full space-y-3.5 animate-in fade-in">
+            <div className="p-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl flex items-center justify-between shadow-md">
+              <div>
+                <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                  <span>Batch Upload Queue</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-semibold">
+                    {batchQueue.length} Ready
+                  </span>
+                </h4>
+                <p className="text-[11px] text-neutral-400 mt-0.5">
+                  Multi-receipt OCR scan completed successfully
+                </p>
+              </div>
+            </div>
+
+            {/* List of extracted receipts in batch */}
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+              {batchQueue.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-neutral-900/90 border border-neutral-800 rounded-xl flex items-center justify-between gap-3 shadow-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="font-bold text-xs text-white truncate">{item.merchant}</div>
+                    <div className="text-[10px] text-neutral-400 mt-0.5">
+                      {item.date} · <span className="text-neutral-300">{item.category}</span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-mono text-xs font-extrabold text-emerald-400">
+                      ${item.totalAmount.toFixed(2)}
+                    </div>
+                    <div className="text-[9px] text-neutral-500 font-mono">
+                      Conf: {item.confidenceScores.total}%
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-white">Monthly Free Scan Limit Reached</h4>
-                  <p className="text-xs text-neutral-300 mt-1 max-w-xs mx-auto">
-                    You have used all <span className="font-bold text-amber-400">{scanCheck.limit} free receipt scans</span> for this month on the Starter Plan.
-                  </p>
+              ))}
+            </div>
+
+            {/* Batch Action Buttons */}
+            <div className="pt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setBatchQueue([]);
+                  setMode('camera');
+                  startCamera();
+                }}
+                className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (onBatchReceiptsProcessed) {
+                    onBatchReceiptsProcessed(batchQueue);
+                  } else {
+                    batchQueue.forEach((item) => onReceiptProcessed(item));
+                  }
+                  onClose();
+                }}
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 active:scale-[0.98] text-neutral-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 transition-all"
+              >
+                <CheckCircle2 className="w-4 h-4 text-neutral-950" />
+                <span>Save All ({batchQueue.length}) to Vault</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'camera' && (
+          <div className="relative w-full h-full flex flex-col items-center justify-center">
+            {cameraError ? (
+              <div className="p-6 text-center max-w-sm space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+                  <Camera className="w-7 h-7" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm font-bold text-white">Camera Scanner</div>
+                  <div className="text-xs text-neutral-300 leading-relaxed">
+                    {cameraError}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  <button
+                    onClick={takePhotoNative}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-neutral-950 font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <Camera className="w-4 h-4 text-neutral-950 shrink-0" />
+                    <span className="whitespace-nowrap">Take Camera Photo</span>
+                  </button>
+                  <button
+                    onClick={pickPhotoFromGallery}
+                    className="w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <Upload className="w-4 h-4 text-neutral-400 shrink-0" />
+                    <span className="whitespace-nowrap">Choose from Gallery</span>
+                  </button>
+                  <button
+                    onClick={() => pdfInputRef.current?.click()}
+                    className="w-full bg-neutral-950 hover:bg-neutral-900 border border-neutral-800/80 text-neutral-400 font-semibold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="whitespace-nowrap">Upload PDF Receipt</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      stopCamera();
+                      onClose();
+                      onOpenManualEntry?.();
+                    }}
+                    className="w-full bg-neutral-900 hover:bg-neutral-850 border border-emerald-500/40 text-emerald-300 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <PenTool className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="whitespace-nowrap">Enter Expense Manually</span>
+                  </button>
                 </div>
                 <button
-                  onClick={() => {
-                    onClose();
-                    onOpenSubscription();
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer"
+                  type="button"
+                  onClick={startCamera}
+                  className="text-[10px] text-neutral-500 hover:text-neutral-300 underline cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Upgrade to Compliance Pro for Unlimited Scans</span>
+                  Retry Live Viewfinder
                 </button>
               </div>
             ) : (
               <>
-                {/* Free Tier Remaining Indicator */}
-                {profile.subscription.tier === 'free' && (
-                  <div className="p-2.5 bg-neutral-950 border border-neutral-800 rounded-xl flex items-center justify-between text-[11px]">
-                    <span className="text-neutral-400">Starter Free Scans:</span>
-                    <span className="font-mono text-emerald-400 font-bold">
-                      {scanCheck.remaining} of {scanCheck.limit} remaining this month
-                    </span>
-                  </div>
-                )}
+                <video
+                  ref={videoRef}
+                  playsInline
+                  autoPlay
+                  muted
+                  onPlaying={() => setIsVideoStreaming(true)}
+                  onLoadedMetadata={() => {
+                    videoRef.current?.play().catch(() => {});
+                    setIsVideoStreaming(true);
+                  }}
+                  className="w-full h-full object-cover"
+                />
 
-                {/* Viewfinder simulator */}
-                <div className="border-2 border-dashed border-neutral-700 hover:border-emerald-500/50 rounded-2xl p-6 text-center bg-neutral-950/60 relative overflow-hidden group transition-all">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3 text-emerald-400">
-                    <Camera className="w-8 h-8" />
-                  </div>
-                  <h4 className="font-semibold text-sm text-neutral-200">Snap or Upload Receipt</h4>
-                  <p className="text-xs text-neutral-400 mt-1 max-w-xs mx-auto">
-                    Automatic detection of merchant, GST/VAT, total, and IRD deductible status.
-                  </p>
-
-                  <div className="mt-4 flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Choose Photo / PDF</span>
-                    </button>
-                  </div>
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Quick Test Demo Presets */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-neutral-400">
-                <span className="font-semibold text-neutral-300 flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Instant Test Receipts (1-Click Scan & Review)</span>
-                </span>
-                <span className="text-[10px] text-neutral-500">NZ & Global Vendors</span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2">
-                {SAMPLE_RECEIPTS.map((sample, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSelectSample(sample)}
-                    className="p-2.5 bg-neutral-950/80 hover:bg-neutral-800/80 border border-neutral-800 rounded-xl text-left flex items-center justify-between transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-lg overflow-hidden bg-neutral-800 shrink-0">
-                        <img src={sample.image} alt={sample.name} className="w-full h-full object-cover" />
+                {/* Receipt Boundary Detection Overlay Animation - Only when video is actively streaming */}
+                {isVideoStreaming && (
+                  <>
+                    <div className="absolute inset-x-8 inset-y-16 pointer-events-none border-2 border-emerald-500/60 rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-4">
+                      {/* Corner accents */}
+                      <div className="flex justify-between">
+                        <div className="w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
+                        <div className="w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-neutral-200 group-hover:text-emerald-400 transition-colors">
-                          {sample.name}
-                        </div>
-                        <div className="text-[10px] text-neutral-400">
-                          {sample.parsed.category} · {taxConfig.currencySymbol}{sample.parsed.totalAmount} · {sample.parsed.deductiblePercentage}% Claim
-                        </div>
+
+                      {/* Scanning Laser Line */}
+                      <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#10b981] animate-pulse" />
+
+                      <div className="flex justify-between">
+                        <div className="w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
+                        <div className="w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-neutral-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* STEP 2: SCANNING IN PROGRESS */}
-        {step === 'scanning' && (
-          <div className="p-8 text-center space-y-4 flex flex-col items-center justify-center my-auto">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <Receipt className="w-10 h-10 text-emerald-400 animate-pulse" />
-              </div>
-              <div className="absolute inset-0 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-            </div>
+                    <div className="absolute bottom-6 inset-x-0 text-center pointer-events-none">
+                      <span className="bg-black/60 backdrop-blur-md text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-500/30">
+                        Align receipt within border · Auto-focus active
+                      </span>
+                    </div>
+                  </>
+                )}
 
-            <div>
-              <h4 className="font-bold text-base text-white">Scanning Tax Receipt</h4>
-              <p className="text-xs text-neutral-400 mt-1 font-mono">{scanStatusMessage}</p>
-            </div>
-
-            <div className="w-full max-w-xs bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-emerald-500 h-full w-2/3 animate-pulse" />
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: DATA REVIEW BEFORE SAVING */}
-        {step === 'review' && (
-          <div className="p-4 space-y-4">
-            {/* Visual Banner: Pre-Save Review Status */}
-            <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <div className="text-xs">
-                  <div className="font-semibold text-emerald-300">
-                    Data Extracted · Ready for Review
+                {!isVideoStreaming && !cameraError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950 text-neutral-300 text-xs gap-2.5">
+                    <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                    <span className="font-medium text-neutral-300">Connecting camera...</span>
                   </div>
-                  <div className="text-[11px] text-neutral-300 mt-0.5">
-                    Review and modify any fields below before committing to the financial ledger and database.
-                  </div>
-                </div>
-              </div>
-
-              {previewImage && (
-                <button
-                  onClick={() => setShowVoucherFull(!showVoucherFull)}
-                  className="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-[10px] font-medium flex items-center gap-1 shrink-0 cursor-pointer"
-                >
-                  <Eye className="w-3 h-3 text-emerald-400" />
-                  <span>{showVoucherFull ? 'Hide Receipt' : 'View Voucher'}</span>
-                </button>
-              )}
-            </div>
-
-            {/* Optional Voucher Image Expansion */}
-            {previewImage && showVoucherFull && (
-              <div className="border border-neutral-800 rounded-xl overflow-hidden bg-black/60 p-2 max-h-52 flex items-center justify-center">
-                <img src={previewImage} alt="Voucher" className="max-h-48 object-contain rounded-lg" />
-              </div>
+                )}
+              </>
             )}
+          </div>
+        )}
 
-            {/* Statutory Tax Impact Summary Card */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 space-y-2">
-              <div className="text-[11px] font-semibold text-neutral-400 flex items-center justify-between border-b border-neutral-800/80 pb-1.5">
-                <span>Calculated Tax Impact ({taxConfig.currencyCode})</span>
-                <span className="font-mono text-emerald-400">
-                  {taxConfig.countryCode} {taxConfig.taxAuthority.split('(')[0].trim()} Rule
-                </span>
-              </div>
+        {mode === 'preview' && capturedImage && (
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            <div
+              className={`max-w-full max-h-[80vh] rounded-2xl overflow-hidden transition-all shadow-2xl border border-neutral-800 ${
+                imageFilter === 'enhanced'
+                  ? 'contrast-125 brightness-110 saturate-110'
+                  : imageFilter === 'high_contrast'
+                  ? 'contrast-150 brightness-95'
+                  : imageFilter === 'grayscale'
+                  ? 'grayscale contrast-125'
+                  : ''
+              }`}
+              style={{ transform: `rotate(${rotation}deg)` }}
+            >
+              <img
+                src={capturedImage}
+                alt="Captured Receipt"
+                className="max-h-[75vh] w-auto object-contain rounded-2xl"
+              />
+            </div>
+          </div>
+        )}
 
-              <div className="grid grid-cols-4 gap-2 text-center pt-1">
-                <div className="bg-neutral-900/60 p-2 rounded-lg">
-                  <div className="text-[10px] text-neutral-400">Gross Paid</div>
-                  <div className="font-mono font-bold text-xs text-white mt-0.5">
-                    {taxConfig.currencySymbol}{amount.toFixed(2)}
-                  </div>
-                </div>
-
-                <div className="bg-neutral-900/60 p-2 rounded-lg">
-                  <div className="text-[10px] text-neutral-400">
-                    {taxConfig.countryCode === 'NZ' ? 'GST (15%)' : 'Tax Included'}
-                  </div>
-                  <div className="font-mono font-bold text-xs text-neutral-300 mt-0.5">
-                    {taxConfig.currencySymbol}{gstAmount.toFixed(2)}
-                  </div>
-                </div>
-
-                <div className="bg-neutral-900/60 p-2 rounded-lg">
-                  <div className="text-[10px] text-neutral-400">Deductible Claim</div>
-                  <div className="font-mono font-bold text-xs text-emerald-400 mt-0.5">
-                    {taxConfig.currencySymbol}{allowableClaim.toFixed(2)}
-                  </div>
-                </div>
-
-                <div className="bg-neutral-900/60 p-2 rounded-lg">
-                  <div className="text-[10px] text-neutral-400">Est. Tax Saved</div>
-                  <div className="font-mono font-bold text-xs text-amber-400 mt-0.5">
-                    ~{taxConfig.currencySymbol}{estimatedTaxSaved.toFixed(2)}
-                  </div>
-                </div>
+        {mode === 'processing' && (
+          <div className="p-8 text-center space-y-4 max-w-sm">
+            <div className="relative w-20 h-20 mx-auto">
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping" />
+              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 shadow-xl">
+                <ScanLine className="w-10 h-10 animate-bounce" />
               </div>
             </div>
 
-            {/* Editable Field Review Form */}
-            <div className="space-y-3 text-xs">
-              <div className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-blue-400" />
-                <span>Verify Extracted Database Fields</span>
-              </div>
-
-              {/* Merchant & Date */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Merchant / Payee</label>
-                  <input
-                    type="text"
-                    value={merchant}
-                    onChange={e => setMerchant(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 font-medium focus:outline-none focus:border-emerald-500"
-                    placeholder="Merchant name"
-                  />
-                </div>
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Transaction Date</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Amount, Currency & GST */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-1">
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Total Paid</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={amount}
-                    onChange={e => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setAmount(val);
-                      setGstAmount(Math.round(val * (taxConfig.standardGSTRate / (1 + taxConfig.standardGSTRate)) * 100) / 100);
-                    }}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 font-mono font-bold focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Currency</label>
-                  <select
-                    value={selectedCurrency}
-                    onChange={e => setSelectedCurrency(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1.5 text-neutral-100 focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    <option value="NZD">NZD ($)</option>
-                    <option value="AUD">AUD ($)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="CAD">CAD ($)</option>
-                    <option value="JPY">JPY (¥)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">
-                    {taxConfig.countryCode === 'NZ' ? 'GST Included (15%)' : 'Tax Included'}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={gstAmount}
-                    onChange={e => setGstAmount(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Category & Deductibility % */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Assigned Tax Category</label>
-                  <select
-                    value={category}
-                    onChange={e => {
-                      const newCat = e.target.value as ExpenseCategory;
-                      setCategory(newCat);
-                      if (newCat === 'Client Entertainment') {
-                        setDeductiblePercentage(50); // NZ 50% rule
-                      } else if (newCat === 'Vehicle & Mileage') {
-                        setDeductiblePercentage(80);
-                      } else {
-                        setDeductiblePercentage(100);
-                      }
-                    }}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    {categories.map(c => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px] flex items-center justify-between">
-                    <span>Tax Deductible Ratio</span>
-                    <span className="font-mono text-emerald-400 font-bold">{deductiblePercentage}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    value={deductiblePercentage}
-                    onChange={e => setDeductiblePercentage(parseInt(e.target.value))}
-                    className="w-full accent-emerald-500 cursor-pointer mt-1"
-                  />
-                </div>
-              </div>
-
-              {/* Payment Method & Receipt # */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Payment Method</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={e => setPaymentMethod(e.target.value as any)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    <option value="EFTPOS">EFTPOS</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Debit Card">Debit Card</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cash">Cash</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-neutral-400 block mb-1 text-[11px]">Voucher / Tax Invoice #</label>
-                  <input
-                    type="text"
-                    value={receiptNumber}
-                    onChange={e => setReceiptNumber(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Statutory Audit Note */}
-              <div className="p-2.5 bg-neutral-950 border border-neutral-800/80 rounded-lg text-[11px] text-neutral-400 flex items-start gap-2">
-                <Info className="w-3.5 h-3.5 text-neutral-400 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-neutral-300">Auditor Note: </span>
-                  {category === 'Client Entertainment'
-                    ? 'Inland Revenue 50% Rule: Business food, drinks, and client entertainment are 50% non-deductible.'
-                    : category === 'Vehicle & Mileage'
-                    ? 'Motor Vehicle: Claiming 80% business use logbook apportionment.'
-                    : '100% allowable business operating expenditure under local tax acts.'}
-                </div>
-              </div>
-
-              {/* Database Destination Indicator */}
-              <div className="text-[10px] text-neutral-500 flex items-center justify-between pt-1">
-                <span>Database Destination:</span>
-                <span className="font-mono text-neutral-400">
-                  expenses_ledger · {isOnline ? 'Direct Cloud Mirror' : 'Stored Offline (Pending Sync)'}
-                </span>
-              </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-extrabold text-white">AI OCR Reading Receipt</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+                {processingStatus}
+              </p>
             </div>
 
-            {/* Action Buttons: Confirm & Save vs Rescan */}
-            <div className="flex items-center gap-2 pt-3 border-t border-neutral-800">
-              <button
-                onClick={handleReset}
-                className="px-3.5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Rescan</span>
-              </button>
-
-              <button
-                onClick={handleSave}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer active:scale-95"
-              >
-                <Database className="w-4 h-4" />
-                <span>Confirm & Save to Database</span>
-              </button>
+            <div className="text-[11px] text-emerald-400/90 font-mono bg-emerald-950/60 border border-emerald-800/60 py-1.5 px-3 rounded-full">
+              Checking GSTIN & Financial Totals...
             </div>
           </div>
         )}
       </div>
+
+      {/* Bottom Controls Bar */}
+      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-neutral-950 border-t border-neutral-800/80 z-20">
+        {mode === 'camera' && (
+          <div className="flex items-center justify-around max-w-sm mx-auto">
+            {/* Upload PDF */}
+            <button
+              onClick={() => {
+                const scanCheck = SubscriptionService.canScanReceipt(profile);
+                if (!scanCheck.allowed) {
+                  setIsLimitModalOpen(true);
+                  return;
+                }
+                pdfInputRef.current?.click();
+              }}
+              className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-emerald-400" />
+              </div>
+              <span className="text-[10px] font-medium">Upload PDF</span>
+            </button>
+
+            {/* Shutter Button (Capture) */}
+            <button
+              onClick={handleCapturePhoto}
+              className="w-18 h-18 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 p-1 flex items-center justify-center shadow-xl shadow-emerald-500/30 cursor-pointer transition-transform"
+            >
+              <div className="w-full h-full rounded-full border-2 border-neutral-950 flex items-center justify-center bg-white">
+                <Camera className="w-7 h-7 text-neutral-950 stroke-[2.5]" />
+              </div>
+            </button>
+
+            {/* Upload Photo from gallery */}
+            <button
+              onClick={pickPhotoFromGallery}
+              className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-teal-400" />
+              </div>
+              <span className="text-[10px] font-medium">Gallery</span>
+            </button>
+
+            {/* Manual Entry */}
+            <button
+              onClick={() => {
+                stopCamera();
+                onClose();
+                onOpenManualEntry?.();
+              }}
+              className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              title="Add expense without scanning"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center hover:border-emerald-500/50">
+                <PenTool className="w-5 h-5 text-amber-400" />
+              </div>
+              <span className="text-[10px] font-medium">Manual</span>
+            </button>
+          </div>
+        )}
+
+        {mode === 'preview' && (
+          <div className="space-y-3 max-w-md mx-auto">
+            {/* Image Adjustment Bar: Retake, Rotate, Improve Filter */}
+            <div className="flex items-center justify-around border-b border-neutral-800/80 pb-2.5 text-xs text-neutral-300">
+              <button
+                onClick={() => {
+                  setCapturedImage(null);
+                  setMode('camera');
+                  startCamera();
+                }}
+                className="flex items-center gap-1.5 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <RefreshCw className="w-4 h-4 text-neutral-400 shrink-0" />
+                <span className="whitespace-nowrap">Retake</span>
+              </button>
+
+              <button
+                onClick={handleRotate}
+                className="flex items-center gap-1.5 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <RotateCw className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="whitespace-nowrap">Rotate 90°</span>
+              </button>
+
+              <button
+                onClick={handleImproveImage}
+                className="flex items-center gap-1.5 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="whitespace-nowrap">
+                  Improve ({imageFilter === 'none' ? 'Normal' : imageFilter})
+                </span>
+              </button>
+            </div>
+
+            {/* Proceed to OCR Check Button */}
+            <button
+              onClick={handleConfirmAndProcess}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-neutral-950 font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap"
+            >
+              <CheckCircle2 className="w-5 h-5 text-neutral-950 stroke-[2.5] shrink-0" />
+              <span className="text-sm font-black whitespace-nowrap">Read Receipt with AI</span>
+              <ArrowRight className="w-4 h-4 text-neutral-950 shrink-0" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Gemini AI Key Setup Modal */}
+      <GeminiApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+      />
+
+      {/* Scan Limit Alert Modal */}
+      <ScanLimitModal
+        isOpen={isLimitModalOpen}
+        onClose={() => setIsLimitModalOpen(false)}
+        profile={profile}
+        onUpgradeToPro={() => {
+          setIsLimitModalOpen(false);
+          stopCamera();
+          onClose();
+          onOpenSubscription?.('AI Receipt Scan Limit Reached');
+        }}
+        onEnterManually={() => {
+          setIsLimitModalOpen(false);
+          stopCamera();
+          onClose();
+          onOpenManualEntry?.();
+        }}
+      />
     </div>
   );
 };

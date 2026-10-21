@@ -53,8 +53,8 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 animate-in fade-in duration-200">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto flex flex-col text-neutral-100 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto flex flex-col text-neutral-100 shadow-2xl relative modal-enter-animation">
         {/* Close Button */}
         <button
           onClick={onClose}

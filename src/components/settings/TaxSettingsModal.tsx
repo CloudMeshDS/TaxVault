@@ -24,6 +24,10 @@ import { CountryTaxConfig, SupportedCountry, BusinessEntityType, UserProfile, Ex
 import { TAX_CONFIGS } from '../../services/taxRules';
 import { storageService } from '../../services/storageService';
 import { supabaseService, SUPABASE_SQL_SCHEMA, SupabaseSyncStatus } from '../../services/supabaseService';
+import { GoogleIcon, AppleIcon } from '../auth/AuthModal';
+
+// Feature flag: Hide Google & Apple buttons (keep implementation intact)
+const SHOW_OAUTH_PROVIDERS = false;
 
 interface TaxSettingsModalProps {
   profile: UserProfile;
@@ -175,7 +179,10 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
     setIsPushing(true);
     setStatusNotice(null);
     try {
-      const res = await supabaseService.syncAll(profile, expenses, incomes);
+      const trips = storageService.getMileageTrips(profile.country);
+      const invoices = storageService.getClientInvoices(profile.currencySymbol);
+      const bankTxs = storageService.getBankTransactions();
+      const res = await supabaseService.syncAll(profile, expenses, incomes, trips, invoices, bankTxs);
       if (res.success) {
         setStatusNotice({
           type: 'success',
@@ -415,28 +422,53 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
           )}
         </div>
 
-        <div className="p-3 bg-neutral-950 rounded-lg border border-neutral-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center font-bold text-neutral-200 text-sm overflow-hidden">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-              ) : (
-                profile.fullName.charAt(0)
-              )}
+        <div className="p-3 bg-neutral-950 rounded-lg border border-neutral-800 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center font-bold text-neutral-200 text-sm overflow-hidden">
+                {profile.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  profile.fullName.charAt(0)
+                )}
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-neutral-100">{profile.fullName}</div>
+                <div className="text-[11px] text-neutral-400 font-mono">{profile.email}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs font-semibold text-neutral-100">{profile.fullName}</div>
-              <div className="text-[11px] text-neutral-400 font-mono">{profile.email}</div>
-            </div>
+
+            {onOpenAuth && (
+              <button
+                onClick={onOpenAuth}
+                className="py-1 px-2.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-emerald-400 hover:text-emerald-300 text-xs font-medium cursor-pointer transition-colors"
+              >
+                Switch Account
+              </button>
+            )}
           </div>
 
-          {onOpenAuth && (
-            <button
-              onClick={onOpenAuth}
-              className="py-1 px-2.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-emerald-400 hover:text-emerald-300 text-xs font-medium cursor-pointer transition-colors"
-            >
-              Switch Account
-            </button>
+          {/* Separate Buttons for Google and Apple (Hidden via feature flag) */}
+          {SHOW_OAUTH_PROVIDERS && onOpenAuth && (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="py-2 px-3 rounded-lg bg-white hover:bg-neutral-100 active:scale-[0.98] text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all border border-neutral-200"
+              >
+                <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>Google</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="py-2 px-3 rounded-lg bg-black hover:bg-neutral-950 active:scale-[0.98] text-white border border-neutral-700 hover:border-neutral-500 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
+              >
+                <AppleIcon className="w-3.5 h-3.5 shrink-0 text-white fill-white" />
+                <span>Apple</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
