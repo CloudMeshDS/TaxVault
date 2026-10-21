@@ -437,14 +437,14 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
               {/* AI Vision Key Setup */}
               <button
                 onClick={() => setIsApiKeyModalOpen(true)}
-                className={`text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border ${
+                className="text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border bg-emerald-950/80 border-emerald-500/40 text-emerald-400 font-bold"
+                title={
                   getGeminiApiKey()
-                    ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-400 font-bold'
-                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
-                }`}
-                title="Configure Google Gemini 2.5 Flash for automated OCR"
+                    ? 'AI reading is on (using your personal Gemini key as backup)'
+                    : 'AI reading is on. Optionally add a personal Gemini key as backup.'
+                }
               >
-                {getGeminiApiKey() ? 'AI On' : 'AI Key'}
+                AI On
               </button>
 
               {/* Multiple receipts toggle */}

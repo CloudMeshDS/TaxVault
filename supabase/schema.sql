@@ -935,45 +935,11 @@ ON CONFLICT (id) DO UPDATE SET
   updated_at = NOW();
 
 -- ==============================================================================
--- 15. SECURE PASSWORD RESET FUNCTION (EmailJS OTP / Self-Service Recovery)
+-- 15. PASSWORD RESET
 -- ==============================================================================
--- Allows password reset when user verifies via OTP (EmailJS) without requiring magic link redirect
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-CREATE OR REPLACE FUNCTION public.reset_password_for_email(
-  target_email TEXT,
-  new_plain_password TEXT
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth, extensions
-AS $$
-DECLARE
-  v_user_id UUID;
-BEGIN
-  IF new_plain_password IS NULL OR LENGTH(TRIM(new_plain_password)) < 6 THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Password must be at least 6 characters long.');
-  END IF;
-
-  SELECT id INTO v_user_id
-  FROM auth.users
-  WHERE LOWER(TRIM(email)) = LOWER(TRIM(target_email));
-
-  IF v_user_id IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'error', 'No registered account found with email ' || target_email);
-  END IF;
-
-  UPDATE auth.users
-  SET encrypted_password = crypt(new_plain_password, gen_salt('bf')),
-      updated_at = NOW()
-  WHERE id = v_user_id;
-
-  RETURN jsonb_build_object('success', true, 'message', 'Password updated successfully');
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.reset_password_for_email(TEXT, TEXT) TO anon, authenticated, service_role;
+-- Passwords are changed only via Supabase recovery sessions (supabase.auth.updateUser).
+-- Do not add a SECURITY DEFINER function that sets passwords by email: callable with the
+-- public anon key, it lets anyone take over any account.
 
 -- ==============================================================================
 -- 16. COUNTRY TERMS (Statutory Terms & Conditions by Jurisdiction)

@@ -29,6 +29,7 @@ import { emailJsService } from '../../services/emailJsService';
 import { createCleanUserProfile } from '../../services/storageService';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
+import { apiUrl } from '../../services/apiBase';
 
 export const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24">
@@ -341,7 +342,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       // 1. Dispatch via server endpoint (generates Supabase recovery token & sends)
       try {
-        await fetch('/api/auth/send-reset-link', {
+        await fetch(apiUrl('/api/auth/send-reset-link'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: targetEmail }),
@@ -350,13 +351,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         console.warn('Backend send-reset-link notice:', apiErr);
       }
 
-      // 2. Send via EmailJS Portal
-      const emailJsRes = await emailJsService.sendPasswordResetEmail(targetEmail);
-      if (!emailJsRes.success) {
-        console.warn('EmailJS notice:', emailJsRes.error);
-      }
-
-      // 3. Also trigger Supabase reset password in parallel for link redundancy
+      // 2. Also trigger Supabase reset password in parallel for link redundancy
       try {
         await supabaseService.resetPasswordForEmail(targetEmail);
       } catch (e) {}

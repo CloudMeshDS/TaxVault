@@ -16,6 +16,7 @@ import {
   SupportedCountry,
 } from '../types';
 import { SUPABASE_SQL_SCHEMA } from '../constants/supabaseSchema';
+import { apiUrl } from './apiBase';
 
 export { SUPABASE_SQL_SCHEMA };
 
@@ -857,86 +858,41 @@ class SupabaseService {
   /**
    * Supabase Auth: Update Password for Recovery Session, Backend API, or RPC
    */
-  public async updatePassword(newPassword: string, targetEmail?: string): Promise<{ success: boolean; error?: string }> {
+  public async updatePassword(newPassword: string, _targetEmail?: string): Promise<{ success: boolean; error?: string }> {
     const client = this.getClient();
     if (!client) return { success: false, error: 'Supabase client not initialized' };
 
+    // A password can only be changed from an authenticated session: the one Supabase creates
+    // when the user opens the reset link from their email. An email address alone is never enough.
     try {
-      // 1. If user has active session (e.g. from recovery link), use standard client updateUser
-      const { data: authData } = await client.auth.getUser();
-      if (authData?.user) {
-        const { error } = await client.auth.updateUser({
-          password: newPassword,
-        });
-
-        if (!error) {
-          return { success: true };
-        }
-      }
-
-      // 2. Resolve target email from argument, sessionStorage challenge, or localStorage
-      let cleanEmail = targetEmail?.trim().toLowerCase();
-      if (!cleanEmail && typeof window !== 'undefined') {
-        try {
-          const item = sessionStorage.getItem('taxvault_emailjs_challenge');
-          if (item) {
-            const parsed = JSON.parse(item);
-            if (parsed?.email) cleanEmail = parsed.email.trim().toLowerCase();
-          }
-        } catch {}
-        if (!cleanEmail) {
-          cleanEmail = localStorage.getItem('taxvault_last_auth_email')?.trim().toLowerCase() || '';
-        }
-      }
-
-      // 3. If target email is available, invoke the backend admin reset endpoint
-      if (cleanEmail) {
-        try {
-          const apiRes = await fetch('/api/auth/reset-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: cleanEmail, newPassword }),
-          });
-          const apiJson = await apiRes.json();
-          if (apiRes.ok && apiJson.success) {
-            return { success: true };
-          }
-          if (apiJson.error && apiJson.code !== 'REQUIRES_ADMIN_OR_RPC') {
-            return { success: false, error: apiJson.error };
-          }
-        } catch (apiErr) {
-          console.warn('API reset password call notice:', apiErr);
-        }
-
-        // 4. Try direct RPC function (reset_password_for_email) if deployed in Supabase
-        try {
-          const { data: rpcData, error: rpcErr } = await client.rpc('reset_password_for_email', {
-            target_email: cleanEmail,
-            new_plain_password: newPassword,
-          });
-
-          if (!rpcErr && (rpcData?.success || rpcData === true)) {
-            return { success: true };
-          }
-          if (rpcErr && !rpcErr.message.includes('Could not find')) {
-            return { success: false, error: rpcErr.message };
-          }
-        } catch (rpcErr) {
-          console.warn('RPC reset password call notice:', rpcErr);
-        }
-      }
-
-      if (!cleanEmail) {
+      const { data: sessionData } = await client.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) {
         return {
           success: false,
-          error: 'Please enter or confirm your registered account email address to update your password.',
+          error: 'For your security, open the password reset link we emailed you, then set your new password.',
         };
       }
 
-      return {
-        success: false,
-        error: 'Unable to update password. Please ensure your backend has the SUPABASE_SERVICE_ROLE_KEY configured or the reset_password_for_email SQL function deployed.',
-      };
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (!error) return { success: true };
+
+      // Fall back to the server, which verifies this same session token before updating
+      try {
+        const apiRes = await fetch(apiUrl('/api/auth/reset-password'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ newPassword }),
+        });
+        const apiJson = await apiRes.json().catch(() => ({}));
+        if (apiRes.ok && apiJson.success) return { success: true };
+        return { success: false, error: apiJson.error || error.message };
+      } catch {
+        return { success: false, error: error.message };
+      }
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to update password' };
     }

@@ -10,6 +10,7 @@ import {
 import { CATEGORY_MAP, validateCalculation, formatCurrency } from './taxRules';
 import { usageTrackingService } from './usageTrackingService';
 import { activityLogService } from './activityLogService';
+import { apiUrl } from './apiBase';
 
 export interface ExtractedReceiptData {
   merchant: string;
@@ -683,26 +684,9 @@ export function classifyExpenseCategory(text: string): ExpenseCategory {
  * and uses resilient country-specific heuristic fallbacks.
  */
 // Gemini AI Key Helpers for Client-Side OCR
-// Shared Gemini API key, read from the environment (GEMINI_API_KEY on the server,
-// VITE_GEMINI_API_KEY in the client build). Never hard-code the key in source control.
-export const COMMON_GEMINI_API_KEY: string =
-  (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
-  (import.meta as any).env?.VITE_GEMINI_API_KEY ||
-  '';
-
+// The shared TaxVault Gemini key lives only on the server (GEMINI_API_KEY) and is used via
+// POST /api/receipt-ocr. This returns only a personal key the user saved on their own device.
 export function getGeminiApiKey(): string | null {
-  // 1. Common built-in key in code (shared across all users)
-  if (COMMON_GEMINI_API_KEY && (COMMON_GEMINI_API_KEY as string).trim()) {
-    return (COMMON_GEMINI_API_KEY as string).trim();
-  }
-
-  // 2. Vite environment variable (baked in at build time or from .env)
-  try {
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (envKey && envKey.trim() && envKey !== 'MY_GEMINI_API_KEY') return envKey.trim();
-  } catch {}
-
-  // 3. User local storage override
   try {
     const local = localStorage.getItem('taxvault_gemini_api_key');
     if (local && local.trim() && local !== 'MY_GEMINI_API_KEY') return local.trim();
@@ -978,6 +962,63 @@ Return ONLY a valid JSON object matching this structure:
 }
 
 /**
+ * Server-side OCR (POST /api/receipt-ocr): the server holds the Gemini key, so it never
+ * ships inside the web bundle or the APK. Images are compressed first to keep uploads small.
+ */
+async function callServerOcr(
+  inputPayload: string,
+  country: SupportedCountry,
+  customerTaxId: string
+): Promise<ExtractedReceiptData | null> {
+  try {
+    const isPdf = inputPayload.startsWith('data:application/pdf') || inputPayload.startsWith('JVBERi');
+    const payload = isPdf ? inputPayload : await optimizeReceiptImage(inputPayload, 1280, 0.82);
+    const started = Date.now();
+    const res = await fetch(apiUrl('/api/receipt-ocr'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ input: payload, customerTaxId, country }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      console.warn(`Server OCR status: ${res.status}`);
+      return null;
+    }
+    const json = await res.json();
+    if (!json || json.ocrStatus === 'manual_required') return null;
+
+    const meta = json._meta || {};
+    const promptTokens = Number(meta.promptTokens) || 0;
+    const completionTokens = Number(meta.completionTokens) || 0;
+    usageTrackingService.recordAIRequest({
+      requestType: 'receipt_ocr',
+      modelName: meta.model || 'server',
+      promptTokens,
+      completionTokens,
+      latencyMs: Date.now() - started,
+      status: 'success',
+      metadata: { country, model: meta.model, tokens: promptTokens + completionTokens },
+    });
+    activityLogService.logActivity({
+      entityType: 'ai_scan',
+      action: 'scan_receipt',
+      description: `AI OCR extracted receipt (${meta.model || 'server'})`,
+      status: 'success',
+      metadata: { model: meta.model, promptTokens, completionTokens },
+    });
+
+    delete json._meta;
+    json.country = country;
+    json.ocrStatus = 'ai_extracted';
+    json.originalImage = inputPayload;
+    return normalizeExtractedResult(json, inputPayload, customerTaxId, country);
+  } catch (err) {
+    console.warn('Server OCR unavailable:', err);
+    return null;
+  }
+}
+
+/**
  * Clean manual entry template when no OCR engine is available.
  * Keeps the receipt image in place, sets clean empty merchant & 0 amount,
  * never showing raw base64 or fake random data.
@@ -1098,17 +1139,26 @@ export async function parseReceiptData(
     return data;
   }
 
-  // 2. If it's an image or PDF document, run Gemini Multimodal Vision AI
+  // 2. If it's an image or PDF document, read it with Gemini via the TaxVault server
   if (isDocumentOrImage) {
-    const apiKey = getGeminiApiKey();
-    if (apiKey) {
-      const geminiResult = await callGeminiVision(inputPayload, country, customerTaxId, apiKey);
-      if (geminiResult && (geminiResult.merchant || geminiResult.totalAmount > 0 || (geminiResult.items && geminiResult.items.length > 0))) {
-        if (!geminiResult.merchant || !geminiResult.merchant.trim()) {
-          geminiResult.merchant = 'Document / Invoice';
-        }
-        return geminiResult;
+    const isUsable = (r: ExtractedReceiptData | null): r is ExtractedReceiptData =>
+      Boolean(r && (r.merchant || r.totalAmount > 0 || (r.items && r.items.length > 0)));
+
+    let result: ExtractedReceiptData | null = await callServerOcr(inputPayload, country, customerTaxId);
+
+    // Optional: a personal Gemini key saved on this device (never the shared app key)
+    if (!isUsable(result)) {
+      const personalKey = getGeminiApiKey();
+      if (personalKey) {
+        result = await callGeminiVision(inputPayload, country, customerTaxId, personalKey);
       }
+    }
+
+    if (isUsable(result)) {
+      if (!result.merchant || !result.merchant.trim()) {
+        result.merchant = 'Document / Invoice';
+      }
+      return result;
     }
 
     // 3. Clean manual entry template with original image or document
@@ -1116,7 +1166,7 @@ export async function parseReceiptData(
       inputPayload,
       customerTaxId,
       country,
-      apiKey ? 'Could not read document. Please enter merchant & total.' : 'Gemini AI API key not configured. Please enter details.'
+      'Could not read this receipt automatically. Please enter merchant & total.'
     );
   }
 

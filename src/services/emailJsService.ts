@@ -48,7 +48,9 @@ class EmailJsService {
       serviceId: saved.serviceId || (import.meta as any).env?.VITE_EMAILJS_SERVICE_ID || 'service_it6g9vc',
       templateId: saved.templateId || (import.meta as any).env?.VITE_EMAILJS_TEMPLATE_ID || 'template_2gzkt71',
       publicKey: saved.publicKey || (import.meta as any).env?.VITE_EMAILJS_PUBLIC_KEY || 'EPqv-Ye3lXpWFhEV8',
-      privateKey: saved.privateKey || (import.meta as any).env?.VITE_EMAILJS_PRIVATE_KEY || 'kiRKvV4Gy1NpAPB09cCIW',
+      // The EmailJS private key is a server secret and must never be bundled into the app.
+      // Only a key the user enters on their own device is used here.
+      privateKey: saved.privateKey || '',
     };
   }
 

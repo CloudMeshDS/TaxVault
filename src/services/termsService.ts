@@ -1,6 +1,7 @@
 import { SupportedCountry, CustomerAgreement } from '../types';
 import { COUNTRY_TERMS, CountryTermsData } from '../constants/countryTerms';
 import { supabaseService } from './supabaseService';
+import { apiUrl } from './apiBase';
 
 const CACHE_PREFIX = 'taxvault_terms_cache_v1_';
 const AGREEMENTS_KEY = 'taxvault_customer_agreements_v1';
@@ -23,7 +24,7 @@ class TermsService {
 
     // 2. Try fetching from the database API (/api/terms/:country)
     try {
-      const res = await fetch(`/api/terms/${encodeURIComponent(country)}`, {
+      const res = await fetch(apiUrl(`/api/terms/${encodeURIComponent(country)}`), {
         headers: { 'Accept': 'application/json' },
       });
 
@@ -110,7 +111,7 @@ class TermsService {
    */
   public async getAllCountryTerms(): Promise<Record<SupportedCountry, CountryTermsData>> {
     try {
-      const res = await fetch('/api/terms', { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(apiUrl('/api/terms'), { headers: { 'Accept': 'application/json' } });
       if (res.ok) {
         const json = await res.json();
         if (json?.success && json?.data) {
@@ -168,7 +169,7 @@ class TermsService {
 
     // 1. Save to Backend Database API (/api/agreements)
     try {
-      await fetch('/api/agreements', {
+      await fetch(apiUrl('/api/agreements'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(agreement),

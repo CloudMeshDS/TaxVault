@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import { COMMON_GEMINI_API_KEY } from './src/services/receiptOcr';
 import nodemailer from 'nodemailer';
 import { COUNTRY_TERMS } from './src/constants/countryTerms';
 
@@ -1709,6 +1708,51 @@ async function startServer() {
 
   app.use(express.json({ limit: '20mb' }));
 
+  // CORS for the Capacitor Android/iOS builds, which call this server from their own origin.
+  // Add more origins (comma separated) via CORS_ORIGINS if the web app is hosted elsewhere.
+  const allowedOrigins = new Set(
+    [
+      'capacitor://localhost',
+      'https://localhost',
+      'http://localhost',
+      process.env.APP_URL || '',
+      ...(process.env.CORS_ORIGINS || '').split(','),
+    ]
+      .map((o) => o.trim().replace(/\/+$/, ''))
+      .filter(Boolean)
+  );
+  app.use('/api', (req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.has(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    }
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
+  // Minimal in-memory rate limiter so public endpoints can't be used to drain the Gemini quota
+  // or spam reset emails.
+  const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+  const rateLimit = (name: string, max: number, windowMs: number) =>
+    (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const key = `${name}:${req.ip}`;
+      const now = Date.now();
+      const bucket = rateBuckets.get(key);
+      if (!bucket || bucket.resetAt <= now) {
+        rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+        return next();
+      }
+      if (bucket.count >= max) {
+        res.setHeader('Retry-After', String(Math.ceil((bucket.resetAt - now) / 1000)));
+        return res.status(429).json({ success: false, error: 'Too many requests. Please try again shortly.' });
+      }
+      bucket.count += 1;
+      next();
+    };
+
   // 1. Health check
   app.get('/api/health', (_req, res) => {
     res.json({
@@ -1993,7 +2037,7 @@ async function startServer() {
   });
 
   // 6a. API: Send Reset Link (POST /api/auth/send-reset-link)
-  app.post('/api/auth/send-reset-link', async (req, res) => {
+  app.post('/api/auth/send-reset-link', rateLimit('reset-link', 5, 15 * 60 * 1000), async (req, res) => {
     try {
       const { email } = req.body;
       if (!email) {
@@ -2016,10 +2060,10 @@ async function startServer() {
           });
           if (!linkErr && linkData?.properties?.action_link) {
             recoveryLink = linkData.properties.action_link;
-            console.log('\n======================================================');
-            console.log(`🔗 SUPABASE RECOVERY LINK FOR ${cleanEmail}:`);
-            console.log(recoveryLink);
-            console.log('======================================================\n');
+            // A recovery link signs its holder into the account: only print it for local development
+            if (process.env.NODE_ENV !== 'production') {
+              console.log(`[dev] Supabase recovery link for ${cleanEmail}: ${recoveryLink}`);
+            }
           }
         } catch (adminErr: any) {
           console.warn('Supabase Admin generateLink notice:', adminErr?.message);
@@ -2082,10 +2126,11 @@ async function startServer() {
         }
       }
 
+      // Never return the recovery link itself: whoever holds it can take over the account.
+      // It is delivered only to the mailbox (via SMTP above or Supabase's own mailer).
       return res.json({
         success: true,
         message: emailSentDirectly ? 'Password reset link sent directly to your email.' : 'Password reset link dispatched.',
-        recoveryLink,
         sentDirectly: emailSentDirectly,
       });
     } catch (err: any) {
@@ -2094,79 +2139,45 @@ async function startServer() {
   });
 
   // 6b. API: Reset Password (POST /api/auth/reset-password)
-  app.post('/api/auth/reset-password', async (req, res) => {
+  app.post('/api/auth/reset-password', rateLimit('reset-password', 10, 15 * 60 * 1000), async (req, res) => {
+    // Only the signed-in owner of an account may change its password. The caller must send the
+    // Supabase access token from their recovery (or normal) session; the email in the body is
+    // ignored, so knowing someone's email address is not enough to take over their account.
     try {
-      const { email, newPassword } = req.body;
-      if (!email || !newPassword) {
-        return res.status(400).json({ success: false, error: 'Email and new password are required.' });
-      }
+      const { newPassword } = req.body || {};
+      const authHeader = String(req.headers.authorization || '');
+      const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
 
-      if (newPassword.length < 6) {
+      if (!accessToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'Open the password reset link from your email to set a new password.',
+          code: 'RECOVERY_SESSION_REQUIRED',
+        });
+      }
+      if (!newPassword || String(newPassword).length < 6) {
         return res.status(400).json({ success: false, error: 'Password must be at least 6 characters long.' });
       }
-
-      const cleanEmail = String(email).trim().toLowerCase();
-
-      // 1. Try Supabase Admin Auth API if service role key is configured
-      if (supabaseAdmin) {
-        try {
-          const { data: usersData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-          if (!listErr && usersData?.users) {
-            const user = usersData.users.find((u) => u.email?.toLowerCase() === cleanEmail);
-            if (user) {
-              const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-                password: newPassword,
-                email_confirm: true,
-              });
-              if (!updateErr) {
-                return res.json({ success: true, message: 'Password updated successfully via Supabase Admin API.' });
-              } else {
-                return res.status(400).json({ success: false, error: updateErr.message });
-              }
-            } else {
-              // Create user account if not existing in Supabase yet
-              const { error: createErr } = await supabaseAdmin.auth.admin.createUser({
-                email: cleanEmail,
-                password: newPassword,
-                email_confirm: true,
-              });
-              if (!createErr) {
-                return res.json({ success: true, message: 'Password registered successfully via Supabase Admin API.' });
-              } else {
-                return res.status(400).json({ success: false, error: createErr.message });
-              }
-            }
-          }
-        } catch (adminErr: any) {
-          console.warn('Supabase Admin API reset notice:', adminErr?.message);
-        }
+      if (!supabaseAdmin) {
+        return res.status(503).json({ success: false, error: 'Password reset is not configured on the server.' });
       }
 
-      // 2. Try Supabase Database RPC function (reset_password_for_email)
-      if (supabase) {
-        try {
-          const { data: rpcData, error: rpcErr } = await supabase.rpc('reset_password_for_email', {
-            target_email: cleanEmail,
-            new_plain_password: newPassword,
-          });
-
-          if (!rpcErr && (rpcData?.success || rpcData === true)) {
-            return res.json({ success: true, message: 'Password updated successfully via database function.' });
-          }
-
-          if (rpcErr && !rpcErr.message.includes('Could not find')) {
-            return res.status(400).json({ success: false, error: rpcErr.message });
-          }
-        } catch (rpcErr: any) {
-          console.warn('Supabase RPC reset notice:', rpcErr?.message);
-        }
+      const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(accessToken);
+      if (userErr || !userData?.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Your reset link has expired. Please request a new one.',
+          code: 'RECOVERY_SESSION_REQUIRED',
+        });
       }
 
-      return res.status(400).json({
-        success: false,
-        error: 'Password update requires the reset_password_for_email SQL function in Supabase or the SUPABASE_SERVICE_ROLE_KEY.',
-        code: 'REQUIRES_ADMIN_OR_RPC',
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(userData.user.id, {
+        password: String(newPassword),
       });
+      if (updateErr) {
+        return res.status(400).json({ success: false, error: updateErr.message });
+      }
+      return res.json({ success: true, message: 'Password updated successfully.' });
     } catch (err: any) {
       return res.status(500).json({ success: false, error: err?.message || 'Internal server error' });
     }
@@ -2437,14 +2448,20 @@ async function startServer() {
   });
 
   // 10. API: Reset All Data (POST /api/reset-data)
-  app.post('/api/reset-data', async (_req, res) => {
-    inMemoryExpenses = [];
+  app.post('/api/reset-data', rateLimit('reset-data', 5, 15 * 60 * 1000), async (req, res) => {
+    // Clears only the requesting user's expenses. It previously deleted every row in the table,
+    // so one user tapping "Clear data" wiped all users' records.
+    const userId = String(req.body?.userId || '').replace(/[^A-Za-z0-9_.@-]/g, '');
+    if (!userId || userId === 'usr_taxvault_admin') {
+      return res.status(400).json({ success: false, error: 'userId is required to clear data.' });
+    }
+    inMemoryExpenses = inMemoryExpenses.filter((e) => e.customerTaxId !== userId && e.userId !== userId);
     if (supabase) {
       try {
-        await supabase.from('expenses').delete().neq('id', 'keep_none');
+        await supabase.from('expenses').delete().eq('customer_tax_id', userId);
       } catch {}
     }
-    return res.json({ success: true, message: 'All expense data cleared.' });
+    return res.json({ success: true, message: 'Your expense data was cleared.' });
   });
 
   // 11. API: Calculated Reports Position (GET /api/reports)
@@ -2469,16 +2486,18 @@ async function startServer() {
   });
 
   // 12. API: Automated Multi-Jurisdiction Receipt OCR & GST Extraction
-  app.post('/api/receipt-ocr', async (req, res) => {
+  app.post('/api/receipt-ocr', rateLimit('ocr', 40, 10 * 60 * 1000), async (req, res) => {
     try {
       const { input, customerGstin = '', customerTaxId = '', country = 'NZ' } = req.body;
-      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || COMMON_GEMINI_API_KEY;
+      // The Gemini key is read only on the server; it is never sent to or bundled into clients.
+      const apiKey = process.env.GEMINI_API_KEY || '';
 
       if (!input) {
         return res.status(400).json({ error: 'Input receipt payload required' });
       }
 
-      const isImage = String(input).startsWith('data:image');
+      const isPdf = String(input).startsWith('data:application/pdf');
+      const isImage = String(input).startsWith('data:image') || isPdf;
 
       if (apiKey && apiKey !== 'MY_GEMINI_API_KEY') {
         const ai = new GoogleGenAI({ apiKey });
@@ -2535,7 +2554,9 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
 
         let contents: any = prompt;
         if (isImage) {
-          const mimeType = input.startsWith('data:image/png')
+          const mimeType = isPdf
+            ? 'application/pdf'
+            : input.startsWith('data:image/png')
             ? 'image/png'
             : input.startsWith('data:image/webp')
             ? 'image/webp'
@@ -2555,16 +2576,30 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
           contents = `${prompt}\n\nInvoice Text:\n${String(input).substring(0, 6000)}`;
         }
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
-          contents,
-        });
-
-        const text = response.text || '';
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return res.json(parsed);
+        // Fast vision models first, falling back to the larger model
+        const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash'];
+        for (const model of candidateModels) {
+          try {
+            const response = await ai.models.generateContent({
+              model,
+              contents,
+              config: { temperature: 0.1, responseMimeType: 'application/json' },
+            });
+            const text = response.text || '';
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              const usage: any = (response as any).usageMetadata || {};
+              parsed._meta = {
+                model,
+                promptTokens: usage.promptTokenCount || 0,
+                completionTokens: usage.candidatesTokenCount || 0,
+              };
+              return res.json(parsed);
+            }
+          } catch (modelErr: any) {
+            console.warn(`Gemini model ${model} OCR notice:`, modelErr?.message);
+          }
         }
       }
 

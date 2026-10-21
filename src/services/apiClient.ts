@@ -1,6 +1,7 @@
 import { ExpenseRecord, SupportedCountry, UserProfile } from '../types';
 import { storageService, DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE } from './storageService';
 import { supabaseService } from './supabaseService';
+import { apiUrl } from './apiBase';
 
 /**
  * TaxVault API Client
@@ -34,7 +35,7 @@ export const apiClient = {
    */
   async getHealth(): Promise<{ status: string; supabaseConfigured: boolean }> {
     try {
-      const res = await fetch('/api/health');
+      const res = await fetch(apiUrl('/api/health'));
       if (res.ok) return await res.json();
     } catch {}
     const cfg = supabaseService.getConfig();
@@ -46,7 +47,7 @@ export const apiClient = {
    */
   async getSupabaseStatus(): Promise<SupabaseStatusResponse> {
     try {
-      const res = await fetch('/api/supabase/status');
+      const res = await fetch(apiUrl('/api/supabase/status'));
       if (res.ok) return await res.json();
     } catch {}
 
@@ -82,7 +83,7 @@ export const apiClient = {
       if (userId) params.append('userId', userId);
       if (userEmail) params.append('userEmail', userEmail);
       const qs = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(`/api/expenses${qs}`, {
+      const res = await fetch(apiUrl(`/api/expenses${qs}`), {
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {
@@ -134,7 +135,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch('/api/expenses', {
+      const res = await fetch(apiUrl('/api/expenses'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(expense),
@@ -190,7 +191,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(`/api/expenses/${encodeURIComponent(expense.id)}`, {
+      const res = await fetch(apiUrl(`/api/expenses/${encodeURIComponent(expense.id)}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(expense),
@@ -235,7 +236,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(`/api/expenses/${encodeURIComponent(id)}`, {
+      const res = await fetch(apiUrl(`/api/expenses/${encodeURIComponent(id)}`), {
         method: 'DELETE',
         headers: { 'Accept': 'application/json' },
       });
@@ -283,7 +284,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch(`/api/expenses/${encodeURIComponent(id)}/restore`, {
+      const res = await fetch(apiUrl(`/api/expenses/${encodeURIComponent(id)}/restore`), {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
       });
@@ -317,7 +318,7 @@ export const apiClient = {
       if (email) params.append('email', email);
       if (userId) params.append('userId', userId);
       const qs = params.toString() ? `?${params.toString()}` : '';
-      const res = await fetch(`/api/profile${qs}`, {
+      const res = await fetch(apiUrl(`/api/profile${qs}`), {
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {
@@ -354,7 +355,7 @@ export const apiClient = {
 
     // 1. Try Backend API
     try {
-      const res = await fetch('/api/profile', {
+      const res = await fetch(apiUrl('/api/profile'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(profile),
@@ -389,7 +390,7 @@ export const apiClient = {
    */
   async seedCountryData(country: SupportedCountry = 'NZ'): Promise<{ success: boolean; count: number; profile?: UserProfile; expenses?: ExpenseRecord[] }> {
     try {
-      const res = await fetch(`/api/seed-country/${encodeURIComponent(country)}`, {
+      const res = await fetch(apiUrl(`/api/seed-country/${encodeURIComponent(country)}`), {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
       });
@@ -417,11 +418,12 @@ export const apiClient = {
   /**
    * Clear All Data via API (POST /api/reset-data)
    */
-  async clearAllData(): Promise<boolean> {
+  async clearAllData(userId?: string): Promise<boolean> {
     try {
-      const res = await fetch('/api/reset-data', {
+      const res = await fetch(apiUrl('/api/reset-data'), {
         method: 'POST',
-        headers: { 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ userId }),
       });
       if (res.ok) {
         storageService.clearAllData();
@@ -439,7 +441,7 @@ export const apiClient = {
    */
   async parseSearchQuery(query: string): Promise<any> {
     try {
-      const res = await fetch('/api/ai-search', {
+      const res = await fetch(apiUrl('/api/ai-search'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ query }),
@@ -459,7 +461,7 @@ export const apiClient = {
    */
   async getReportsMetrics(): Promise<any> {
     try {
-      const res = await fetch('/api/reports', {
+      const res = await fetch(apiUrl('/api/reports'), {
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {

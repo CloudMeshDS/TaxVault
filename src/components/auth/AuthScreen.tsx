@@ -29,6 +29,7 @@ import { emailJsService } from '../../services/emailJsService';
 import { DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE, createCleanUserProfile } from '../../services/storageService';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
+import { apiUrl } from '../../services/apiBase';
 
 interface AuthScreenProps {
   onAuthenticated: (profile?: Partial<UserProfile>) => void;
@@ -395,7 +396,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
       // 1. Dispatch via server endpoint (handles direct SMTP + Supabase admin link generation)
       let sentDirectly = false;
       try {
-        const resp = await fetch('/api/auth/send-reset-link', {
+        const resp = await fetch(apiUrl('/api/auth/send-reset-link'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: targetEmail }),
@@ -412,16 +413,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
         console.warn('Backend send-reset-link notice:', apiErr);
       }
 
-      // 2. Dispatch recovery email via EmailJS Portal if not already sent directly
-      if (!sentDirectly) {
-        const emailJsRes = await emailJsService.sendPasswordResetEmail(targetEmail);
-        if (!emailJsRes.success) {
-          console.warn('EmailJS notice:', emailJsRes.error);
-          setEmailDeliveryNotice('Email dispatched via backup mailer. Please check your inbox and spam folder.');
-        }
-      } else {
-        setEmailDeliveryNotice(null);
-      }
+      // 2. Only a Supabase-issued recovery link can authorise a password change, so no
+      //    client-generated codes are emailed. Supabase's own mailer is the fallback below.
+      setEmailDeliveryNotice(sentDirectly ? null : 'Check your inbox and spam folder for the reset link.');
 
       // 3. Also trigger Supabase client reset password directly for link redundancy
       try {

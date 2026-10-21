@@ -22,6 +22,7 @@ import { ScanLine, Loader2 } from 'lucide-react';
 
 import { activityLogService } from './services/activityLogService';
 import { usageTrackingService } from './services/usageTrackingService';
+import { apiUrl } from './services/apiBase';
 
 // Screens and modals load on demand so sign-in and Home don't wait on PDF/Excel/report code
 const ExpenseList = lazy(() => import('./components/expenses/ExpenseList').then((m) => ({ default: m.ExpenseList })));
@@ -337,7 +338,7 @@ export default function App() {
     setIsSyncing(true);
     try {
       const payload = storageService.generateBackupPayload();
-      await fetch('/api/backup/sync', {
+      await fetch(apiUrl('/api/backup/sync'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ backupPayload: payload }),
@@ -763,7 +764,7 @@ export default function App() {
   const handleClearData = async () => {
     try {
       setIsSyncing(true);
-      await apiClient.clearAllData();
+      await apiClient.clearAllData(profile.id);
       setExpenses([]);
       setIncomes([]);
     } catch (err) {
