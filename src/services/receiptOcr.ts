@@ -10,7 +10,7 @@ import {
 import { CATEGORY_MAP, validateCalculation, formatCurrency } from './taxRules';
 import { usageTrackingService } from './usageTrackingService';
 import { activityLogService } from './activityLogService';
-import { apiUrl } from './apiBase';
+import { authedFetch } from './apiBase';
 
 export interface ExtractedReceiptData {
   merchant: string;
@@ -974,7 +974,7 @@ async function callServerOcr(
     const isPdf = inputPayload.startsWith('data:application/pdf') || inputPayload.startsWith('JVBERi');
     const payload = isPdf ? inputPayload : await optimizeReceiptImage(inputPayload, 1280, 0.82);
     const started = Date.now();
-    const res = await fetch(apiUrl('/api/receipt-ocr'), {
+    const res = await authedFetch('/api/receipt-ocr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ input: payload, customerTaxId, country }),

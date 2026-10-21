@@ -1,4 +1,4 @@
-import { apiUrl } from './apiBase';
+import { authedFetch } from './apiBase';
 /**
  * Razorpay Payment Gateway Service for TaxVault Pro Version Purchase
  */
@@ -139,7 +139,7 @@ export class RazorpayService {
     receipt?: string
   ): Promise<{ success: boolean; orderId?: string; error?: string }> {
     try {
-      const res = await fetch(apiUrl('/api/razorpay/create-order'), {
+      const res = await authedFetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, currency, receipt }),
@@ -161,7 +161,7 @@ export class RazorpayService {
     response: RazorpaySuccessResponse
   ): Promise<{ verified: boolean; error?: string }> {
     try {
-      const res = await fetch(apiUrl('/api/razorpay/verify-payment'), {
+      const res = await authedFetch('/api/razorpay/verify-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(response),
