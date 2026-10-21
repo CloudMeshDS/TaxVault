@@ -7,12 +7,14 @@
     "dev": "node ./node_modules/tsx/dist/cli.mjs server.ts",
     "start": "node ./node_modules/tsx/dist/cli.mjs server.ts",
     "build": "node ./node_modules/vite/bin/vite.js build",
+    "build:mobile": "node ./node_modules/vite/bin/vite.js build --mode mobile",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
-    "android:sync": "npm run build && node ./node_modules/@capacitor/cli/bin/capacitor sync android",
+    "android:sync": "npm run build:mobile && node ./node_modules/@capacitor/cli/bin/capacitor sync android",
     "android:apk": "npm run android:sync && node ./scripts/build-android.mjs",
-    "ios:sync": "npm run build && node ./node_modules/@capacitor/cli/bin/capacitor sync ios",
+    "ios:sync": "npm run build:mobile && node ./node_modules/@capacitor/cli/bin/capacitor sync ios",
     "clean": "rm -rf dist server.js",
-    "lint": "node ./node_modules/typescript/bin/tsc --noEmit"
+    "lint": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "build:edge": "node ./scripts/build-edge.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

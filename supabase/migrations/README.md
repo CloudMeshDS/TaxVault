@@ -58,6 +58,23 @@ WHERE user_id = '<auth user uuid>';
 Run step 3 soon after step 2: until it runs, the old open policies still let a client write its
 own plan row.
 
+## Where the API runs
+
+The `/api` routes live in `server/api.ts` and run in two places:
+
+- **Supabase Edge Function `api`**, used by the Android/iOS apps (`npm run build:mobile` reads
+  `.env.mobile`, which points `VITE_API_BASE_URL` at
+  `https://egtmuxewuremxgodpjxj.supabase.co/functions/v1`). Redeploy after changing `server/`:
+
+  ```bash
+  npm run build:edge && npx supabase functions deploy api --project-ref egtmuxewuremxgodpjxj --use-api
+  ```
+
+  Its secrets (Gemini, Razorpay, SMTP) are set with `npx supabase secrets set`; Supabase provides
+  the `SUPABASE_*` values itself. The CLI must be logged in as the account that owns the project
+  (cloudmeshdigitalsolutions@gmail.com).
+- **`npm run dev` / `npm start`** (`server.ts`), which also serves the web app, reading `.env`.
+
 ## Server environment
 
 | Variable | Needed for |
