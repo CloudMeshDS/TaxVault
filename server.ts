@@ -1823,6 +1823,8 @@ async function startServer() {
   };
   // Without RAZORPAY_KEY_SECRET payments cannot be verified. Simulated upgrades are then only
   // accepted when explicitly enabled (local testing), never by default.
+  // Overridable only from the server environment (used to test against a stub of the Razorpay API)
+  const RAZORPAY_API_BASE = (process.env.RAZORPAY_API_BASE || 'https://api.razorpay.com').replace(/\/+$/, '');
   const simulatedPaymentsAllowed = () =>
     !process.env.RAZORPAY_KEY_SECRET && process.env.ALLOW_SIMULATED_PAYMENTS === 'true';
   const currentPeriodStart = () => {
@@ -2857,7 +2859,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
 
       // Official Razorpay API Order Generation
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+      const rzpRes = await fetch(`${RAZORPAY_API_BASE}/v1/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2936,7 +2938,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
       }
 
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(String(razorpay_order_id))}`, {
+      const orderRes = await fetch(`${RAZORPAY_API_BASE}/v1/orders/${encodeURIComponent(String(razorpay_order_id))}`, {
         headers: { Authorization: `Basic ${auth}` },
       });
       const order: any = await orderRes.json();

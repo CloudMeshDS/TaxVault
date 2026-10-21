@@ -40,6 +40,20 @@ copies that the server never trusts (the column used to default to "pro"; it now
 - `POST /api/receipt-ocr` (Gemini) needs a signed-in user and returns `402 SCAN_LIMIT` once a free
   user has used 10 AI scans this month. Demo accounts get the built-in sample receipts and manual entry.
 
+**Existing plans are reset.** Before this change the app wrote its own `customer_subscriptions`
+rows with no verified payment, so step 3 sets every paid plan to free unless the server recorded
+it (`payment_method = 'razorpay'`). The old plan is kept in `metadata.previous_plan_id`. To
+re-activate a customer you know has paid, after checking the payment in the Razorpay dashboard:
+
+```sql
+UPDATE public.customer_subscriptions
+SET plan_id = 'pro', payment_method = 'razorpay', current_period_end = NOW() + INTERVAL '30 days'
+WHERE user_id = '<auth user uuid>';
+```
+
+Run step 3 soon after step 2: until it runs, the old open policies still let a client write its
+own plan row.
+
 ## Server environment
 
 | Variable | Needed for |

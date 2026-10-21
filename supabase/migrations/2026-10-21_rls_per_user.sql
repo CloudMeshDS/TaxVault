@@ -111,6 +111,22 @@ CREATE POLICY "Owner read subscription transactions" ON public.subscription_tran
 -- Its old default claimed every new profile was on "pro".
 ALTER TABLE public.profiles ALTER COLUMN subscription SET DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb;
 
+-- Before this change the app wrote its own plan rows, with no verified payment. Reset every paid
+-- plan the server did not record itself (the server sets payment_method = 'razorpay' only after
+-- verifying a Razorpay payment). The previous plan is kept in metadata. Safe to re-run: verified
+-- plans are never touched.
+UPDATE public.customer_subscriptions
+SET plan_id = 'free',
+    current_period_end = NULL,
+    cancel_at_period_end = FALSE,
+    metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+      'reset_reason', 'unverified plan reset by 2026-10-21_rls_per_user.sql',
+      'previous_plan_id', plan_id,
+      'reset_at', NOW()
+    ),
+    updated_at = NOW()
+WHERE plan_id <> 'free' AND payment_method IS DISTINCT FROM 'razorpay';
+
 -- Ledgers / audit trails: owners can read and append, never edit or delete.
 
 CREATE POLICY "Owner read token request logs" ON public.token_request_logs
