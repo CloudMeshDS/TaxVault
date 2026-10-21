@@ -411,15 +411,6 @@ export interface TaxCalculationResult {
   bracketBreakdown?: { bracket: string; taxableAmount: number; tax: number }[];
 }
 
-export interface AccountantShareToken {
-  token: string;
-  pin: string;
-  expiryDate: string;
-  createdAt: string;
-  readOnly: boolean;
-  includeReceiptImages: boolean;
-}
-
 export interface ExchangeRates {
   base: string;
   date: string;

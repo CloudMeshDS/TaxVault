@@ -218,16 +218,4 @@ ${profile?.phone || ''}`);
 
     return `mailto:${targetEmail}?subject=${subject}&body=${body}`;
   }
-
-  // Legacy compatibility helper
-  public static createAccountantShareToken(options: any = {}) {
-    return {
-      token: 'TXV-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
-      pin: String(Math.floor(1000 + Math.random() * 9000)),
-      expiryDate: new Date(Date.now() + (options.validityDays || 30) * 86400000).toISOString(),
-      createdAt: new Date().toISOString(),
-      readOnly: options.readOnly ?? true,
-      includeReceiptImages: options.includeReceiptImages ?? true,
-    };
-  }
 }

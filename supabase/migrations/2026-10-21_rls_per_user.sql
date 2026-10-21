@@ -172,9 +172,15 @@ END $$;
 -- The expense audit trigger writes activity_logs rows (sometimes with user_id NULL, e.g. on
 -- delete) that the caller's own RLS policies would reject. Run it as its owner so audit logging
 -- keeps working. Trigger functions cannot be called through the REST API.
-ALTER FUNCTION public.fn_log_expense_activity() SECURITY DEFINER SET search_path = public, pg_temp;
--- Firing a trigger needs no EXECUTE grant, so no client role needs one.
-REVOKE EXECUTE ON FUNCTION public.fn_log_expense_activity() FROM PUBLIC, anon, authenticated;
+-- (Databases created from the in-app SQL have no audit trigger, so this is skipped there.)
+DO $$
+BEGIN
+  IF to_regprocedure('public.fn_log_expense_activity()') IS NOT NULL THEN
+    ALTER FUNCTION public.fn_log_expense_activity() SECURITY DEFINER SET search_path = public, pg_temp;
+    -- Firing a trigger needs no EXECUTE grant, so no client role needs one.
+    REVOKE EXECUTE ON FUNCTION public.fn_log_expense_activity() FROM PUBLIC, anon, authenticated;
+  END IF;
+END $$;
 
 -- record_activity_log / record_token_usage take a p_user_id argument. As SECURITY DEFINER and
 -- callable by anon they let anyone forge log and usage rows for any user. Make them run with
