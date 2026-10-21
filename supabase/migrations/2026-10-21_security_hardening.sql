@@ -12,8 +12,21 @@
 -- an authenticated session (supabase.auth.updateUser), or through the TaxVault server,
 -- which verifies that session token first. Nothing in the app calls this function any more.
 
-REVOKE EXECUTE ON FUNCTION public.reset_password_for_email(TEXT, TEXT) FROM anon, authenticated, public;
-DROP FUNCTION IF EXISTS public.reset_password_for_email(TEXT, TEXT);
+-- Drops every version of the function, whatever its argument list, and does nothing if there is
+-- none (some databases never had it, or have it under a different signature).
+DO $$
+DECLARE
+  f RECORD;
+BEGIN
+  FOR f IN
+    SELECT p.oid::regprocedure AS sig
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'reset_password_for_email'
+  LOOP
+    EXECUTE format('DROP FUNCTION %s', f.sig);
+    RAISE NOTICE 'Dropped %', f.sig;
+  END LOOP;
+END $$;
 
 -- ==============================================================================
 -- Part 2 (NOT included here): Row Level Security
