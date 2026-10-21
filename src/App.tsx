@@ -955,9 +955,19 @@ export default function App() {
   // Export Excel helper
   const handleExportExcel = async () => {
     try {
-      const { ExportService } = await import('./services/exportService');
+      const { ExportClient } = await import('./services/exportClient');
       const fy = (profile?.financialYear || 'Current').replace(/\s+/g, '_');
-      ExportService.downloadExcel(profile, expenses, taxResult, `TaxVault_Expenses_${fy}.xlsx`);
+      const result = await ExportClient.downloadProExport('xlsx', {
+        profile,
+        expenses,
+        taxResult,
+        fileName: `TaxVault_Expenses_${fy}.xlsx`,
+      });
+      if (!result.ok) {
+        if (result.reason === 'pro_required') openSubscriptionModal(result.message);
+        else window.alert(result.message);
+        return;
+      }
 
       activityLogService.logActivity({
         userId: profile.id,
@@ -1052,6 +1062,7 @@ export default function App() {
                 profile={profile}
                 expenses={expenses}
                 taxResult={taxResult}
+                onOpenSubscription={openSubscriptionModal}
               />
             )}
 
@@ -1062,6 +1073,7 @@ export default function App() {
                 taxResult={taxResult}
                 onUpdateProfile={handleUpdateProfile}
                 onSelectExpense={(exp) => setSelectedExpenseForDetail(exp)}
+                onOpenSubscription={openSubscriptionModal}
               />
             )}
 

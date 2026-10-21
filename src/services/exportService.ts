@@ -1,10 +1,15 @@
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../types';
 import { formatCurrency, formatINR, TAX_CONFIGS, calculateQuarterlyBreakdown } from './taxRules';
 
+/**
+ * PDF / Excel / CA zip generators for the Pro exports. Server-only: imported by server.ts for
+ * POST /api/exports/:kind, which checks the user's plan first. The app must not import this file
+ * (that would put the Pro generators back into the bundle); it uses exportClient.ts instead.
+ */
 export class ExportService {
   /**
    * Generates a Tax Audit Report in PDF format adapting to NZ, AU, CA, US, and IN
@@ -328,102 +333,6 @@ export class ExportService {
   }
 
   /**
-   * Safe helper to trigger file download of a Blob across all modern browsers and WebViews
-   */
-  public static triggerDownload(blob: Blob, fileName: string): void {
-    try {
-      // 1. Standard Object URL creation
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-
-      // Delay revoking URL by 60 seconds to allow Chromium/Safari background download threads to finish reading the stream
-      setTimeout(() => {
-        try {
-          if (document.body.contains(a)) {
-            document.body.removeChild(a);
-          }
-          URL.revokeObjectURL(url);
-        } catch {}
-      }, 60000);
-    } catch (err) {
-      console.error('Standard blob download failed, trying data-URL fallback:', err);
-      // 2. Data URL fallback using FileReader for restricted WebViews
-      try {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const a = document.createElement('a');
-          a.href = reader.result as string;
-          a.download = fileName;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            try {
-              if (document.body.contains(a)) {
-                document.body.removeChild(a);
-              }
-            } catch {}
-          }, 10000);
-        };
-        reader.readAsDataURL(blob);
-      } catch (fallbackErr) {
-        console.error('All download attempts failed:', fallbackErr);
-        throw fallbackErr;
-      }
-    }
-  }
-
-  /**
-   * One-stop helper to download PDF report safely
-   */
-  public static downloadPDF(
-    profile: UserProfile,
-    expenses: ExpenseRecord[],
-    taxResult: TaxCalculationResult,
-    fileName?: string,
-    options: { dateRangeLabel?: string } = {}
-  ): void {
-    const doc = this.generateIndianCAPDF(profile, expenses, taxResult, options);
-    const pdfBlob = doc.output('blob');
-    const safeName = fileName || `TaxVault_Report_${(profile?.financialYear || 'Current').replace(/\s+/g, '_')}.pdf`;
-    this.triggerDownload(pdfBlob, safeName);
-  }
-
-  /**
-   * One-stop helper to download Excel workbook safely
-   */
-  public static downloadExcel(
-    profile: UserProfile,
-    expenses: ExpenseRecord[],
-    taxResult: TaxCalculationResult,
-    fileName?: string
-  ): void {
-    const buffer = this.generateIndianExcelWorkbook(profile, expenses, taxResult);
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    });
-    const safeName = fileName || `TaxVault_Register_${(profile?.financialYear || 'Current').replace(/\s+/g, '_')}.xlsx`;
-    this.triggerDownload(blob, safeName);
-  }
-
-  /**
-   * One-stop helper to download CSV safely
-   */
-  public static downloadCSV(
-    expenses: ExpenseRecord[],
-    fileName?: string
-  ): void {
-    const blob = this.generateCSV(expenses);
-    const safeName = fileName || `TaxVault_Expenses_${new Date().toISOString().split('T')[0]}.csv`;
-    this.triggerDownload(blob, safeName);
-  }
-
-  /**
    * Generates a complete ZIP archive containing:
    * - Official Tax Audit PDF
    * - Itemized Excel spreadsheet
@@ -516,112 +425,5 @@ Notes: ${exp.caNotes || 'No notes'}`;
     }
 
     return await zip.generateAsync({ type: 'blob' });
-  }
-
-  /**
-   * Generates WhatsApp share URL with prefilled text
-   */
-  public static getWhatsAppShareUrl(
-    profile: UserProfile,
-    taxResult: TaxCalculationResult,
-    phone?: string
-  ): string {
-    const targetPhone = (phone || profile?.accountantPhone || '').replace(/[^0-9]/g, '');
-    const country = profile?.country || 'NZ';
-    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
-    const curr = profile?.defaultCurrency || config.currencyCode;
-    const sym = profile?.currencySymbol || config.currencySymbol;
-    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
-    const taxLabel = country === 'US' ? 'Sales Tax' : 'GST/HST';
-    const taxIdName = country === 'NZ' ? 'IRD' : country === 'AU' ? 'ABN' : country === 'CA' ? 'CRA BN' : country === 'US' ? 'EIN' : 'GSTIN';
-    const taxId = profile?.taxId || profile?.pan || profile?.gstin || 'Unregistered';
-
-    const greeting = country === 'IN' ? 'Namaste CA Sahab,' : `Hello ${profile?.accountantName || 'Tax Advisor'},`;
-    const message = `${greeting}
-
-Here is my business expense and ${taxLabel} summary from TaxVault for ${profile?.financialYear || config.taxYearLabel}:
-
-Client: ${profile?.businessName || profile?.fullName || 'Business Entity'}
-${taxIdName}: ${taxId}
-Total Invoices: ${taxResult?.expenseCount || 0}
-Total Expenses: ${fmt(taxResult?.totalExpenses || 0)}
-Business Claimable: ${fmt(taxResult?.claimableBusinessTotal || 0)}
-${taxLabel} Identified: ${fmt(taxResult?.totalGstIdentified || 0)}
-Eligible Credit / Deduction: ${fmt(taxResult?.eligibleGstItc || 0)}
-
-I have compiled the PDF report, Excel register, and all digitized receipts. Please let me know if any further clarification is required.`;
-
-    const encoded = encodeURIComponent(message);
-    return targetPhone
-      ? `https://wa.me/${targetPhone}?text=${encoded}`
-      : `https://wa.me/?text=${encoded}`;
-  }
-
-  /**
-   * Generates Email mailto URL for CA / CPA / Tax Agent
-   */
-  public static getEmailShareUrl(
-    profile: UserProfile,
-    taxResult: TaxCalculationResult,
-    email?: string
-  ): string {
-    const country = profile?.country || 'NZ';
-    const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
-    const curr = profile?.defaultCurrency || config.currencyCode;
-    const sym = profile?.currencySymbol || config.currencySymbol;
-    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
-    const taxLabel = country === 'US' ? 'Sales Tax' : 'GST/HST';
-
-    const targetEmail = email || profile?.accountantEmail || '';
-    const subject = encodeURIComponent(`TaxVault Expense & ${taxLabel} Compliance Pack - ${profile?.businessName || profile?.fullName || 'Business'} (${profile?.financialYear || config.taxYearLabel})`);
-    const body = encodeURIComponent(`Dear ${profile?.accountantName || 'Tax Advisor / Accountant'},
-
-Please find attached the compiled expense records, ${taxLabel} calculation, and audit vouchers for ${profile?.businessName || profile?.fullName || 'Business'} for ${profile?.financialYear || config.taxYearLabel}.
-
-Key Summary Metrics:
-- Total Incurred Expenses: ${fmt(taxResult?.totalExpenses || 0)}
-- Allowable Business Deductions: ${fmt(taxResult?.claimableBusinessTotal || 0)}
-- Total ${taxLabel} Paid: ${fmt(taxResult?.totalGstIdentified || 0)}
-- Eligible Input Tax Credit / Deductions: ${fmt(taxResult?.eligibleGstItc || 0)}
-- Invoices Count: ${taxResult?.expenseCount || 0}
-
-Looking forward to your review and filing confirmation.
-
-Regards,
-${profile?.fullName || 'Taxpayer'}
-${profile?.phone || ''}`);
-
-    return `mailto:${targetEmail}?subject=${subject}&body=${body}`;
-  }
-
-  // Legacy compatibility helpers
-  public static createAccountantShareToken(options: any = {}) {
-    return {
-      token: 'TXV-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
-      pin: String(Math.floor(1000 + Math.random() * 9000)),
-      expiryDate: new Date(Date.now() + (options.validityDays || 30) * 86400000).toISOString(),
-      createdAt: new Date().toISOString(),
-      readOnly: options.readOnly ?? true,
-      includeReceiptImages: options.includeReceiptImages ?? true,
-    };
-  }
-
-  public static generateAccountantTaxPDF(profile: any, expenses: any, _incomes: any, taxResult: any) {
-    const doc = this.generateIndianCAPDF(profile, expenses, taxResult);
-    return doc.output('blob');
-  }
-
-  public static generateAccountantExcel(profile: any, expenses: any, _incomes: any, taxResult: any) {
-    const buffer = this.generateIndianExcelWorkbook(profile, expenses, taxResult);
-    return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  }
-
-  public static generateCSV(expenses: any) {
-    const headers = 'ID,Date,Merchant,Category,Amount,Tax,BusinessPercentage\n';
-    const rows = expenses.map((e: any) => {
-      const taxAmt = (Number(e.cgst) || 0) + (Number(e.sgst) || 0) + (Number(e.igst) || 0) || Number(e.taxAmount) || Number(e.gstAmount) || Number(e.salesTaxAmount) || 0;
-      return `"${e.id || ''}","${e.date || ''}","${(e.merchant || '').replace(/"/g, '""')}","${e.category || ''}",${Number(e.amount) || 0},${taxAmt},${e.businessPercentage ?? 100}`;
-    }).join('\n');
-    return new Blob([headers + rows], { type: 'text/csv' });
   }
 }

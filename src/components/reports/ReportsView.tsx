@@ -32,7 +32,7 @@ import {
   calculateQuarterlyBreakdown,
   calculateTaxPosition,
 } from '../../services/taxRules';
-import { ExportService } from '../../services/exportService';
+import { ExportClient } from '../../services/exportClient';
 import {
   PeriodFilterState,
   createDefaultPeriodFilterState,
@@ -45,12 +45,14 @@ interface ReportsViewProps {
   profile: UserProfile;
   expenses: ExpenseRecord[];
   taxResult: TaxCalculationResult;
+  onOpenSubscription?: (reason?: string) => void;
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
   profile,
   expenses,
   taxResult,
+  onOpenSubscription,
 }) => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilterState>(() =>
     createDefaultPeriodFilterState(profile.country, profile.financialYear)
@@ -214,9 +216,17 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       setIsDownloadingPDF(true);
       const safeLabel = periodBadgeLabel.replace(/[^a-zA-Z0-9_\-]/g, '_');
       const filename = `TaxVault_Report_${safeLabel}.pdf`;
-      ExportService.downloadPDF(profile, filteredExpenses, currentPeriodTaxResult, filename, {
-        dateRangeLabel: periodBadgeLabel,
+      const result = await ExportClient.downloadProExport('pdf', {
+        profile,
+        expenses: filteredExpenses,
+        taxResult: currentPeriodTaxResult,
+        fileName: filename,
+        options: { dateRangeLabel: periodBadgeLabel },
       });
+      if (!result.ok) {
+        if (result.reason === 'pro_required') onOpenSubscription?.(result.message);
+        throw new Error(result.message);
+      }
       setDownloadNotice({ type: 'success', message: `Audit Report "${filename}" downloaded successfully!` });
       setTimeout(() => setDownloadNotice(null), 4500);
     } catch (err: any) {
@@ -234,7 +244,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       setIsDownloadingExcel(true);
       const safeLabel = periodBadgeLabel.replace(/[^a-zA-Z0-9_\-]/g, '_');
       const filename = `TaxVault_Register_${safeLabel}.xlsx`;
-      ExportService.downloadExcel(profile, filteredExpenses, currentPeriodTaxResult, filename);
+      const result = await ExportClient.downloadProExport('xlsx', {
+        profile,
+        expenses: filteredExpenses,
+        taxResult: currentPeriodTaxResult,
+        fileName: filename,
+      });
+      if (!result.ok) {
+        if (result.reason === 'pro_required') onOpenSubscription?.(result.message);
+        throw new Error(result.message);
+      }
       setDownloadNotice({ type: 'success', message: `Excel Register "${filename}" downloaded successfully!` });
       setTimeout(() => setDownloadNotice(null), 4500);
     } catch (err: any) {

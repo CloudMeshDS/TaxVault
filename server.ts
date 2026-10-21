@@ -8,6 +8,7 @@ import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import { COUNTRY_TERMS } from './src/constants/countryTerms';
+import { ExportService } from './src/services/exportService';
 
 dotenv.config({ override: true });
 
@@ -1725,7 +1726,10 @@ async function startServer() {
   const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
   const supabaseAdmin = (supabaseUrl && supabaseServiceRoleKey) ? createClient(supabaseUrl, supabaseServiceRoleKey) : null;
 
-  app.use(express.json({ limit: '20mb' }));
+  // CA zip packs carry the receipt images, so that route accepts larger bodies
+  const jsonBody = express.json({ limit: '20mb' });
+  const largeJsonBody = express.json({ limit: '60mb' });
+  app.use((req, res, next) => (req.path.startsWith('/api/exports/') ? largeJsonBody : jsonBody)(req, res, next));
 
   // CORS for the Capacitor Android/iOS builds, which call this server from their own origin.
   // Add more origins (comma separated) via CORS_ORIGINS if the web app is hosted elsewhere.
@@ -2547,6 +2551,61 @@ async function startServer() {
         count: list.length,
       }
     });
+  });
+
+  // 11b. API: Pro exports (POST /api/exports/pdf | xlsx | zip)
+  // Generated here, not in the app, so the plan check can't be skipped by editing local data.
+  // The free plan exports CSV only (done in the app). The document content is the caller's own
+  // on-screen data (current period filter, profile details), passed in the body.
+  app.post('/api/exports/:kind', rateLimit('exports', 30, 10 * 60 * 1000), requireUser, async (req, res) => {
+    try {
+      const kind = req.params.kind;
+      if (!['pdf', 'xlsx', 'zip'].includes(kind)) {
+        return res.status(404).json({ error: 'Unknown export type.' });
+      }
+      const ent = await getEntitlement(req.user!.id);
+      if (ent.tier === 'free') {
+        return res.status(402).json({
+          error: 'PDF reports, Excel registers and CA audit packs require Tax Compliance Pro.',
+          code: 'PRO_REQUIRED',
+        });
+      }
+
+      const { profile, expenses, taxResult, options = {} } = req.body || {};
+      if (!profile || !Array.isArray(expenses) || !taxResult) {
+        return res.status(400).json({ error: 'profile, expenses and taxResult are required.' });
+      }
+
+      let body: Buffer;
+      let contentType: string;
+      if (kind === 'pdf') {
+        const doc = ExportService.generateIndianCAPDF(profile, expenses, taxResult, {
+          includeExpenses: options.includeExpenses,
+          includeGst: options.includeGst,
+          includeVendors: options.includeVendors,
+          dateRangeLabel: options.dateRangeLabel,
+        });
+        body = Buffer.from(doc.output('arraybuffer'));
+        contentType = 'application/pdf';
+      } else if (kind === 'xlsx') {
+        body = Buffer.from(ExportService.generateIndianExcelWorkbook(profile, expenses, taxResult));
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      } else {
+        const zipBlob = await ExportService.generateCAZipPackage(profile, expenses, taxResult, {
+          includeReceiptImages: options.includeReceiptImages,
+          dateRangeLabel: options.dateRangeLabel,
+        });
+        body = Buffer.from(await zipBlob.arrayBuffer());
+        contentType = 'application/zip';
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', String(body.length));
+      return res.send(body);
+    } catch (err: any) {
+      console.warn('Export generation error:', err?.message);
+      return res.status(500).json({ error: 'Failed to generate the report. Please try again.' });
+    }
   });
 
   // 12. API: Automated Multi-Jurisdiction Receipt OCR & GST Extraction

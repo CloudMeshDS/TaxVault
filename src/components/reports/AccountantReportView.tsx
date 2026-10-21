@@ -15,7 +15,7 @@ import {
   Printer
 } from 'lucide-react';
 import { CountryTaxConfig, ExpenseRecord, IncomeRecord, TaxCalculationResult, UserProfile, AccountantShareToken } from '../../types';
-import { ExportService } from '../../services/exportService';
+import { ExportClient } from '../../services/exportClient';
 import { SubscriptionService } from '../../services/subscriptionService';
 
 interface AccountantReportViewProps {
@@ -51,7 +51,7 @@ export const AccountantReportView: React.FC<AccountantReportViewProps> = ({
       onOpenSubscription('Direct Chartered Accountant Reviewer Token & Link sharing is a Pro feature.');
       return;
     }
-    const token = ExportService.createAccountantShareToken();
+    const token = ExportClient.createAccountantShareToken();
     setActiveToken(token);
     setShowShareModal(true);
   };
@@ -61,7 +61,9 @@ export const AccountantReportView: React.FC<AccountantReportViewProps> = ({
       onOpenSubscription('Official Chartered Accountant Audit PDF with statutory IRD sign-off requires Tax Compliance Pro.');
       return;
     }
-    ExportService.generateAccountantTaxPDF(profile, expenses, incomes, taxResult);
+    ExportClient.downloadProExport('pdf', { profile, expenses, taxResult, fileName: 'TaxVault_CA_Audit_Report.pdf' }).then((result) => {
+      if (!result.ok && result.reason === 'pro_required') onOpenSubscription(result.message);
+    });
   };
 
   const handleDownloadExcel = () => {
@@ -69,11 +71,13 @@ export const AccountantReportView: React.FC<AccountantReportViewProps> = ({
       onOpenSubscription('Multi-Sheet Excel Tax Audit Pack (.xlsx) requires Tax Compliance Pro.');
       return;
     }
-    ExportService.generateAccountantExcel(profile, expenses, incomes, taxResult);
+    ExportClient.downloadProExport('xlsx', { profile, expenses, taxResult, fileName: 'TaxVault_Expense_Register.xlsx' }).then((result) => {
+      if (!result.ok && result.reason === 'pro_required') onOpenSubscription(result.message);
+    });
   };
 
   const handleDownloadCSV = () => {
-    ExportService.generateCSV(expenses);
+    ExportClient.downloadCSV(expenses);
   };
 
   const handleCopyShareLink = () => {

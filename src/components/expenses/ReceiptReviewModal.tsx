@@ -458,6 +458,14 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
               </div>
             )}
 
+            {/* Why the receipt was not read automatically (sign-in needed, scan limit, unreadable) */}
+            {extractedData.extractionNotice && (
+              <div role="status" className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-800 text-sm flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed">{extractedData.extractionNotice}</p>
+              </div>
+            )}
+
             {/* Calculation Mismatch Warning (scanned receipts only) */}
             {!isManual && !validationResult.isValid && totalAmount > 0 && subtotal > 0 && (
               <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-800 text-sm flex items-start gap-2">

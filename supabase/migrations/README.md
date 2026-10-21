@@ -39,6 +39,10 @@ copies that the server never trusts (the column used to default to "pro"; it now
   write `customer_subscriptions` + `subscription_transactions`.
 - `POST /api/receipt-ocr` (Gemini) needs a signed-in user and returns `402 SCAN_LIMIT` once a free
   user has used 10 AI scans this month. Demo accounts get the built-in sample receipts and manual entry.
+- `POST /api/exports/pdf|xlsx|zip` builds the PDF report, Excel register and CA zip pack on the
+  server for paid plans only (`402 PRO_REQUIRED` otherwise). The free plan exports CSV, made in the
+  app. The PDF/Excel/zip generators (`src/services/exportService.ts`) are imported only by the
+  server, so they are not in the app bundle.
 
 **Existing plans are reset.** Before this change the app wrote its own `customer_subscriptions`
 rows with no verified payment, so step 3 sets every paid plan to free unless the server recorded
