@@ -1,0 +1,9 @@
+# Supabase CLI settings used to deploy the TaxVault API Edge Function.
+project_id = "egtmuxewuremxgodpjxj"
+
+[functions.api]
+# Built by `npm run build:edge` from server/edge.ts (not committed)
+entrypoint = "./functions/api/index.js"
+# The API verifies the caller's Supabase session itself and must also answer public routes
+# (/api/health, /api/terms, password reset) and CORS preflights, which carry no JWT.
+verify_jwt = false
