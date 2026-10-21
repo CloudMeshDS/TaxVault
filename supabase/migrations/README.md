@@ -19,12 +19,35 @@ then closes the direct `/rest/v1` hole: anyone holding the anon key from the app
 |-------|--------------|--------|
 | `profiles` | `id` | `id = auth.uid()` — the Supabase auth user id *is* the profile id |
 | `expenses` | `customer_tax_id` | `customer_tax_id = auth.uid()` (GST/tax numbers live in `customer_gstin`) |
-| `incomes`, `mileage_trips`, `client_invoices`, `bank_transactions`, `customer_subscriptions`, `customer_usage` | `user_id` | owner: all operations |
-| `subscription_transactions`, `token_request_logs`, `activity_logs` | `user_id` | owner: read + insert only (append-only ledgers) |
+| `incomes`, `mileage_trips`, `client_invoices`, `bank_transactions` | `user_id` | owner: all operations |
+| `customer_subscriptions`, `subscription_transactions`, `customer_usage` | `user_id` | owner: **read only**. The server writes them after verifying a payment / counting an AI scan |
+| `token_request_logs`, `activity_logs` | `user_id` | owner: read + insert only (append-only ledgers) |
 | `customer_agreements` | `user_id` / `user_email` | owner: read own; insert own. Anonymous sign-up consent is written by the server |
 | `subscription_plans`, `country_terms` | — | everyone can read; only the service role writes |
 
 Owner columns default to `auth.uid()`, so a signed-in client's inserts are owned by it automatically.
+
+## Plans and scan quota
+
+The server is the only source of truth for a user's plan (`customer_subscriptions`) and monthly
+AI scan count (`customer_usage`). `profiles.subscription` and the app's local profile are display
+copies that the server never trusts (the column used to default to "pro"; it now defaults to free).
+
+- `POST /api/razorpay/create-order` prices the plan on the server and tags the order with the user id.
+- `POST /api/razorpay/verify-payment` checks the signature, fetches the order from Razorpay, requires
+  it to be paid, for this user, for at least the plan price, and not used before; only then does it
+  write `customer_subscriptions` + `subscription_transactions`.
+- `POST /api/receipt-ocr` (Gemini) needs a signed-in user and returns `402 SCAN_LIMIT` once a free
+  user has used 10 AI scans this month. Demo accounts get the built-in sample receipts and manual entry.
+
+## Server environment
+
+| Variable | Needed for |
+|----------|-----------|
+| `SUPABASE_SERVICE_ROLE_KEY` | everything above (server-only, never in the app) |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | real upgrades. Without them upgrades are refused |
+| `ALLOW_SIMULATED_PAYMENTS=true` | local testing only: accept fake payments when no Razorpay secret is set |
+| `TERMS_ADMIN_EMAILS` | comma-separated emails allowed to edit Terms & Conditions |
 
 ## Demo accounts
 

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   accountant_phone TEXT,
   biometric_lock BOOLEAN DEFAULT FALSE,
   app_pin TEXT DEFAULT '1234',
-  subscription JSONB DEFAULT '{"tier":"pro","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":15,"monthlyReceiptLimit":500}'::jsonb,
+  subscription JSONB DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb,
   last_backup_date TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   entity_type TEXT DEFAULT 'Sole Trader',
@@ -68,7 +68,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pan TEXT DEFAULT 'AAAPS1234
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gstin TEXT DEFAULT '27AABCU9603R1ZM';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS biometric_lock BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS app_pin TEXT DEFAULT '1234';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription JSONB DEFAULT '{"tier":"pro","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":15,"monthlyReceiptLimit":500}'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription JSONB DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb;
 
 -- 2. EXPENSES TABLE
 CREATE TABLE IF NOT EXISTS public.expenses (
@@ -634,16 +634,15 @@ CREATE POLICY "Owner access to client invoices" ON public.client_invoices FOR AL
   USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
 CREATE POLICY "Owner access to bank transactions" ON public.bank_transactions FOR ALL TO authenticated
   USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
-CREATE POLICY "Owner access to customer subscriptions" ON public.customer_subscriptions FOR ALL TO authenticated
-  USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
-CREATE POLICY "Owner access to customer usage" ON public.customer_usage FOR ALL TO authenticated
-  USING (user_id = (SELECT auth.uid())::text) WITH CHECK (user_id = (SELECT auth.uid())::text);
+-- Plan, payments and scan quota: read-only for owners; written by the server (service role).
+CREATE POLICY "Owner read customer subscriptions" ON public.customer_subscriptions FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner read customer usage" ON public.customer_usage FOR SELECT TO authenticated
+  USING (user_id = (SELECT auth.uid())::text);
 
 -- Ledgers / audit trails: read and append own rows only.
 CREATE POLICY "Owner read subscription transactions" ON public.subscription_transactions FOR SELECT TO authenticated
   USING (user_id = (SELECT auth.uid())::text);
-CREATE POLICY "Owner insert subscription transactions" ON public.subscription_transactions FOR INSERT TO authenticated
-  WITH CHECK (user_id = (SELECT auth.uid())::text);
 CREATE POLICY "Owner read token request logs" ON public.token_request_logs FOR SELECT TO authenticated
   USING (user_id = (SELECT auth.uid())::text);
 CREATE POLICY "Owner insert token request logs" ON public.token_request_logs FOR INSERT TO authenticated
@@ -664,8 +663,8 @@ CREATE POLICY "Public read country terms" ON public.country_terms FOR SELECT TO 
 -- Logging helpers run with the caller's rights (RLS applies) and are not callable by anon.
 REVOKE EXECUTE ON FUNCTION public.record_activity_log(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, TEXT, JSONB) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_activity_log(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, TEXT, JSONB) TO authenticated, service_role;
-REVOKE EXECUTE ON FUNCTION public.record_token_usage(TEXT, TEXT, TEXT, INT, INT, INT, NUMERIC, TEXT, TEXT, JSONB) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.record_token_usage(TEXT, TEXT, TEXT, INT, INT, INT, NUMERIC, TEXT, TEXT, JSONB) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.record_token_usage(TEXT, TEXT, TEXT, INT, INT, INT, NUMERIC, TEXT, TEXT, JSONB) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_token_usage(TEXT, TEXT, TEXT, INT, INT, INT, NUMERIC, TEXT, TEXT, JSONB) TO service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon;
 `;
 

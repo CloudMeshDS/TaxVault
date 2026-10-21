@@ -97,24 +97,21 @@ CREATE POLICY "Owner access to bank transactions" ON public.bank_transactions
   USING (user_id = (SELECT auth.uid())::text)
   WITH CHECK (user_id = (SELECT auth.uid())::text);
 
--- The app's upgrade flow and quota counters still write these from the client, so owners keep
--- write access to their own rows. Moving these writes server-side (after payment verification)
--- is a separate change.
-CREATE POLICY "Owner access to customer subscriptions" ON public.customer_subscriptions
-  FOR ALL TO authenticated
-  USING (user_id = (SELECT auth.uid())::text)
-  WITH CHECK (user_id = (SELECT auth.uid())::text);
-
-CREATE POLICY "Owner access to customer usage" ON public.customer_usage
-  FOR ALL TO authenticated
-  USING (user_id = (SELECT auth.uid())::text)
-  WITH CHECK (user_id = (SELECT auth.uid())::text);
-
--- Ledgers / audit trails: owners can read and append, never edit or delete.
+-- Plan, payments and scan quota: owners can only READ. The server writes them with the service
+-- role after verifying a Razorpay payment / counting an AI scan, so a user cannot grant
+-- themselves a paid plan or reset their quota.
+CREATE POLICY "Owner read customer subscriptions" ON public.customer_subscriptions
+  FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid())::text);
+CREATE POLICY "Owner read customer usage" ON public.customer_usage
+  FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid())::text);
 CREATE POLICY "Owner read subscription transactions" ON public.subscription_transactions
   FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid())::text);
-CREATE POLICY "Owner insert subscription transactions" ON public.subscription_transactions
-  FOR INSERT TO authenticated WITH CHECK (user_id = (SELECT auth.uid())::text);
+
+-- profiles.subscription is a display copy that owners can edit; the server never trusts it.
+-- Its old default claimed every new profile was on "pro".
+ALTER TABLE public.profiles ALTER COLUMN subscription SET DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb;
+
+-- Ledgers / audit trails: owners can read and append, never edit or delete.
 
 CREATE POLICY "Owner read token request logs" ON public.token_request_logs
   FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid())::text);
@@ -166,18 +163,24 @@ REVOKE EXECUTE ON FUNCTION public.fn_log_expense_activity() FROM PUBLIC, anon, a
 -- record_activity_log / record_token_usage take a p_user_id argument. As SECURITY DEFINER and
 -- callable by anon they let anyone forge log and usage rows for any user. Make them run with
 -- the caller's rights (so RLS applies: a user can only log for themselves) and remove anon.
+-- record_token_usage also bumps customer_usage (the scan quota), so it is server-only.
 DO $$
 DECLARE
   f RECORD;
 BEGIN
   FOR f IN
-    SELECT p.oid::regprocedure AS sig
+    SELECT p.oid::regprocedure AS sig, p.proname
     FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public' AND p.proname IN ('record_activity_log', 'record_token_usage')
   LOOP
     EXECUTE format('ALTER FUNCTION %s SECURITY INVOKER', f.sig);
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC, anon', f.sig);
-    EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated, service_role', f.sig);
+    IF f.proname = 'record_token_usage' THEN
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC, anon, authenticated', f.sig);
+      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role', f.sig);
+    ELSE
+      EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC, anon', f.sig);
+      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated, service_role', f.sig);
+    END IF;
   END LOOP;
 END $$;
 

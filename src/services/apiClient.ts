@@ -354,6 +354,21 @@ export const apiClient = {
   },
 
   /**
+   * The signed-in user's plan and scan usage as recorded by the server (GET /api/subscription).
+   * Null for on-device demo accounts or when offline.
+   */
+  async getSubscription(): Promise<UserProfile['subscription'] | null> {
+    try {
+      const res = await authedFetch('/api/subscription', { headers: { 'Accept': 'application/json' } });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) return json.data;
+      }
+    } catch {}
+    return null;
+  },
+
+  /**
    * Update User Profile via API / Supabase Direct (PUT /api/profile)
    */
   async updateProfile(profile: UserProfile): Promise<UserProfile> {

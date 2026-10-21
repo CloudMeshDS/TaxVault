@@ -131,22 +131,22 @@ export class RazorpayService {
   }
 
   /**
-   * Calls backend /api/razorpay/create-order to generate an official Razorpay Order
+   * Calls backend /api/razorpay/create-order to generate an official Razorpay Order.
+   * The server sets the price for the plan and tags the order with the signed-in user.
    */
   public static async createOrderOnServer(
-    amount: number, // in paise
-    currency: string = 'INR',
-    receipt?: string
-  ): Promise<{ success: boolean; orderId?: string; error?: string }> {
+    tier: 'pro' | 'enterprise',
+    billingCycle: 'monthly' | 'annual'
+  ): Promise<{ success: boolean; orderId?: string; amount?: number; error?: string }> {
     try {
       const res = await authedFetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency, receipt }),
+        body: JSON.stringify({ tier, billingCycle }),
       });
       const data = await res.json();
       if (res.ok && data.order?.id) {
-        return { success: true, orderId: data.order.id };
+        return { success: true, orderId: data.order.id, amount: data.order.amount };
       }
       return { success: false, error: data?.error || 'Order creation failed' };
     } catch (err: any) {
@@ -155,19 +155,26 @@ export class RazorpayService {
   }
 
   /**
-   * Verifies the HMAC-SHA256 signature via backend /api/razorpay/verify-payment
+   * Verifies the payment on the server (signature + paid order owned by this user), which then
+   * activates the plan. The returned subscription is the server's record, the only one that counts.
    */
   public static async verifyPaymentOnServer(
-    response: RazorpaySuccessResponse
-  ): Promise<{ verified: boolean; error?: string }> {
+    response: RazorpaySuccessResponse,
+    tier: 'pro' | 'enterprise',
+    billingCycle: 'monthly' | 'annual'
+  ): Promise<{ verified: boolean; subscription?: any; error?: string }> {
     try {
       const res = await authedFetch('/api/razorpay/verify-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(response),
+        body: JSON.stringify({ ...response, tier, billingCycle }),
       });
-      const data = await res.json();
-      return { verified: Boolean(data?.verified) };
+      const data = await res.json().catch(() => ({}));
+      return {
+        verified: res.ok && Boolean(data?.verified),
+        subscription: data?.subscription,
+        error: data?.error,
+      };
     } catch (err: any) {
       return { verified: false, error: err?.message };
     }

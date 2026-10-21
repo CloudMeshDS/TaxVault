@@ -1812,6 +1812,124 @@ async function startServer() {
     } catch {}
     next();
   };
+  // ---- Plan entitlement: the server is the only source of truth ----------------------------
+  // Plan tier and scan counts live in customer_subscriptions / customer_usage, which clients can
+  // read but not write (RLS). profiles.subscription and the app's local profile are display
+  // copies only and are never trusted.
+  const FREE_MONTHLY_SCANS = 10;
+  const PAID_PLAN_PRICES_INR: Record<'pro' | 'enterprise', { monthly: number; annual: number }> = {
+    pro: { monthly: 1199, annual: 11999 },
+    enterprise: { monthly: 3199, annual: 31999 },
+  };
+  // Without RAZORPAY_KEY_SECRET payments cannot be verified. Simulated upgrades are then only
+  // accepted when explicitly enabled (local testing), never by default.
+  const simulatedPaymentsAllowed = () =>
+    !process.env.RAZORPAY_KEY_SECRET && process.env.ALLOW_SIMULATED_PAYMENTS === 'true';
+  const currentPeriodStart = () => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  };
+  type Entitlement = {
+    tier: 'free' | 'pro' | 'enterprise';
+    billingCycle: 'monthly' | 'annual';
+    status: string;
+    periodEnd: string | null;
+    scansUsed: number;
+  };
+  const getEntitlement = async (userId: string): Promise<Entitlement> => {
+    const ent: Entitlement = { tier: 'free', billingCycle: 'monthly', status: 'active', periodEnd: null, scansUsed: 0 };
+    const [{ data: sub }, { data: usage }] = await Promise.all([
+      supabaseAdmin!.from('customer_subscriptions').select('*').eq('user_id', userId)
+        .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      supabaseAdmin!.from('customer_usage').select('scans_used').eq('user_id', userId)
+        .eq('period_start', currentPeriodStart()).maybeSingle(),
+    ]);
+    const paidActive = sub
+      && (sub.plan_id === 'pro' || sub.plan_id === 'enterprise')
+      && ['active', 'trial'].includes(sub.status)
+      && (!sub.current_period_end || new Date(sub.current_period_end).getTime() > Date.now());
+    if (paidActive) {
+      ent.tier = sub.plan_id;
+      ent.billingCycle = sub.billing_cycle === 'annual' ? 'annual' : 'monthly';
+      ent.status = sub.status;
+      ent.periodEnd = sub.current_period_end || null;
+    }
+    ent.scansUsed = Number(usage?.scans_used || 0);
+    return ent;
+  };
+  // Shape used by the app's UserProfile.subscription
+  const toProfileSubscription = (ent: Entitlement) => ({
+    tier: ent.tier,
+    billingCycle: ent.billingCycle,
+    status: ent.status,
+    receiptsScannedThisMonth: ent.scansUsed,
+    monthlyReceiptLimit: ent.tier === 'free' ? FREE_MONTHLY_SCANS : 999999,
+    usagePeriod: currentPeriodStart().slice(0, 7),
+    renewsOn: ent.periodEnd ? ent.periodEnd.slice(0, 10) : undefined,
+  });
+  const incrementScanUsage = async (userId: string) => {
+    const periodStart = currentPeriodStart();
+    const { data: row } = await supabaseAdmin!.from('customer_usage').select('id, scans_used, requests_count')
+      .eq('user_id', userId).eq('period_start', periodStart).maybeSingle();
+    if (row) {
+      await supabaseAdmin!.from('customer_usage').update({
+        scans_used: Number(row.scans_used || 0) + 1,
+        requests_count: Number(row.requests_count || 0) + 1,
+        last_request_at: new Date().toISOString(),
+      }).eq('id', row.id);
+    } else {
+      const start = new Date(periodStart);
+      const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+      await supabaseAdmin!.from('customer_usage').insert({
+        user_id: userId, period_start: periodStart, period_end: end, scans_used: 1, requests_count: 1,
+        scans_limit: FREE_MONTHLY_SCANS,
+      });
+    }
+  };
+  const activatePlan = async (
+    userId: string,
+    tier: 'free' | 'pro' | 'enterprise',
+    billingCycle: 'monthly' | 'annual',
+    payment: { gateway: string; amount: number; orderId?: string; paymentId?: string; signature?: string },
+  ) => {
+    const now = new Date();
+    const periodEnd = tier === 'free'
+      ? null
+      : new Date(now.getTime() + (billingCycle === 'annual' ? 365 : 30) * 86400000).toISOString();
+    const subId = 'sub_' + userId;
+    const { error: subErr } = await supabaseAdmin!.from('customer_subscriptions').upsert({
+      id: subId,
+      user_id: userId,
+      plan_id: tier,
+      status: 'active',
+      billing_cycle: billingCycle,
+      current_period_start: now.toISOString(),
+      current_period_end: periodEnd,
+      cancel_at_period_end: false,
+      payment_method: payment.gateway,
+      updated_at: now.toISOString(),
+    });
+    if (subErr) throw new Error(subErr.message);
+    await supabaseAdmin!.from('subscription_transactions').insert({
+      id: 'tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+      subscription_id: subId,
+      user_id: userId,
+      plan_id: tier,
+      amount: payment.amount,
+      currency: 'INR',
+      status: 'succeeded',
+      billing_cycle: billingCycle,
+      payment_gateway: payment.gateway,
+      gateway_order_id: payment.orderId || null,
+      gateway_payment_id: payment.paymentId || null,
+      gateway_signature: payment.signature || null,
+    });
+    // Keep the display copy on the profile in step
+    const ent = await getEntitlement(userId);
+    await supabaseAdmin!.from('profiles').update({ subscription: toProfileSubscription(ent) }).eq('id', userId);
+    return ent;
+  };
+
   // Returns the owner of an expense row, or null if no such row exists.
   const getExpenseOwner = async (id: string): Promise<string | null> => {
     const { data } = await supabaseAdmin!.from('expenses').select('customer_tax_id').eq('id', id).maybeSingle();
@@ -2282,7 +2400,8 @@ async function startServer() {
           accountantPhone: data.accountant_phone,
           biometricLock: Boolean(data.biometric_lock),
           appPin: data.app_pin || '1234',
-          subscription: cachedProfile.subscription || data.subscription,
+          // Never profiles.subscription: it is owner-writable and its column default says "pro"
+          subscription: toProfileSubscription(await getEntitlement(userId)),
         };
         profileCache.set(userId, { ...cachedProfile, ...profile });
         return res.json({ success: true, data: profile });
@@ -2429,7 +2548,9 @@ async function startServer() {
   });
 
   // 12. API: Automated Multi-Jurisdiction Receipt OCR & GST Extraction
-  app.post('/api/receipt-ocr', rateLimit('ocr', 40, 10 * 60 * 1000), async (req, res) => {
+  // AI reading costs Gemini quota, so it needs a signed-in user and counts against the plan's
+  // monthly scan limit, which is enforced here (the app's own counter is display only).
+  app.post('/api/receipt-ocr', rateLimit('ocr', 40, 10 * 60 * 1000), requireUser, async (req, res) => {
     try {
       const { input, customerGstin = '', customerTaxId = '', country = 'NZ' } = req.body;
       // The Gemini key is read only on the server; it is never sent to or bundled into clients.
@@ -2437,6 +2558,15 @@ async function startServer() {
 
       if (!input) {
         return res.status(400).json({ error: 'Input receipt payload required' });
+      }
+
+      const ent = await getEntitlement(req.user!.id);
+      if (ent.tier === 'free' && ent.scansUsed >= FREE_MONTHLY_SCANS) {
+        return res.status(402).json({
+          error: `You have used all ${FREE_MONTHLY_SCANS} free AI scans this month.`,
+          code: 'SCAN_LIMIT',
+          subscription: toProfileSubscription(ent),
+        });
       }
 
       const isPdf = String(input).startsWith('data:application/pdf');
@@ -2533,10 +2663,16 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
               const usage: any = (response as any).usageMetadata || {};
+              try {
+                await incrementScanUsage(req.user!.id);
+              } catch (usageErr: any) {
+                console.warn('Scan usage update notice:', usageErr?.message);
+              }
               parsed._meta = {
                 model,
                 promptTokens: usage.promptTokenCount || 0,
                 completionTokens: usage.candidatesTokenCount || 0,
+                scansUsed: ent.scansUsed + 1,
               };
               return res.json(parsed);
             }
@@ -2690,23 +2826,29 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
   });
 
   // 15. Razorpay: Create Order API (Server-to-Server)
-  app.post('/api/razorpay/create-order', async (req, res) => {
+  // The price comes from the server's plan table, never from the client, and the order is tagged
+  // with the buyer's user id and plan so the payment can only activate that plan for that user.
+  app.post('/api/razorpay/create-order', requireUser, async (req, res) => {
     try {
-      const { amount, currency = 'INR', receipt, notes } = req.body;
+      const tier = req.body?.tier === 'enterprise' ? 'enterprise' : 'pro';
+      const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
+      const amount = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100; // paise
       const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
       if (!keyId || !keySecret || keyId === 'rzp_test_TaxVaultLiveKey') {
-        // Fallback / Sandbox Simulated Order
+        if (!simulatedPaymentsAllowed()) {
+          return res.status(503).json({ success: false, error: 'Payments are not configured on the server.' });
+        }
         const rand = Math.random().toString(36).substring(2, 9).toUpperCase();
         return res.json({
           success: true,
           isSimulated: true,
           order: {
-            id: `order_RZP${Date.now().toString().slice(-6)}${rand.slice(0, 4)}`,
-            amount: amount || 119900,
-            currency,
-            receipt: receipt || `rcpt_${Date.now()}`,
+            id: `order_SIM${Date.now().toString().slice(-6)}${rand.slice(0, 4)}`,
+            amount,
+            currency: 'INR',
+            receipt: `rcpt_${tier}_${Date.now()}`,
             status: 'created',
           },
           keyId: keyId || 'rzp_test_TaxVaultLiveKey',
@@ -2722,10 +2864,10 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
           Authorization: `Basic ${auth}`,
         },
         body: JSON.stringify({
-          amount: Math.round(amount), // Amount in paise (e.g. 119900 = ₹1,199)
-          currency,
-          receipt: receipt || `rcpt_sub_${Date.now()}`,
-          notes: notes || {},
+          amount,
+          currency: 'INR',
+          receipt: `rcpt_${tier}_${Date.now()}`,
+          notes: { user_id: req.user!.id, tier, billing_cycle: billingCycle },
         }),
       });
 
@@ -2746,15 +2888,39 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
     }
   });
 
-  // 16. Razorpay: Verify Payment Signature API
-  app.post('/api/razorpay/verify-payment', async (req, res) => {
+  // 16. Razorpay: Verify payment and activate the plan (POST /api/razorpay/verify-payment)
+  // Checks the HMAC signature, then fetches the order from Razorpay to confirm it is paid, was
+  // created for this user, and which plan it bought. Only then is customer_subscriptions written.
+  app.post('/api/razorpay/verify-payment', requireUser, async (req, res) => {
+    const userId = req.user!.id;
     try {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      if (!razorpay_order_id || !razorpay_payment_id) {
+        return res.status(400).json({ verified: false, error: 'Missing payment details.' });
+      }
 
-      if (!keySecret) {
-        // In test mode without secret
-        return res.json({ verified: true, isSimulated: true });
+      // A payment id can only ever activate one plan
+      const { data: used } = await supabaseAdmin!.from('subscription_transactions').select('id')
+        .eq('gateway_payment_id', String(razorpay_payment_id)).limit(1);
+      if (used && used.length > 0) {
+        return res.status(409).json({ verified: false, error: 'This payment has already been used.' });
+      }
+
+      if (!keySecret || !keyId) {
+        if (!simulatedPaymentsAllowed()) {
+          return res.status(503).json({ verified: false, error: 'Payments are not configured on the server.' });
+        }
+        const tier = req.body?.tier === 'enterprise' ? 'enterprise' : 'pro';
+        const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
+        const ent = await activatePlan(userId, tier, billingCycle, {
+          gateway: 'simulated',
+          amount: PAID_PLAN_PRICES_INR[tier][billingCycle],
+          orderId: String(razorpay_order_id),
+          paymentId: String(razorpay_payment_id),
+        });
+        return res.json({ verified: true, isSimulated: true, subscription: toProfileSubscription(ent) });
       }
 
       const crypto = await import('crypto');
@@ -2762,15 +2928,62 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         .createHmac('sha256', keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest('hex');
+      const given = String(razorpay_signature || '');
+      const signatureOk = given.length === expectedSignature.length
+        && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expectedSignature));
+      if (!signatureOk) {
+        return res.status(400).json({ verified: false, error: 'Payment signature is invalid.' });
+      }
 
-      const isSignatureValid = expectedSignature === razorpay_signature;
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(String(razorpay_order_id))}`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      const order: any = await orderRes.json();
+      const tier = order?.notes?.tier === 'enterprise' ? 'enterprise' : order?.notes?.tier === 'pro' ? 'pro' : null;
+      const billingCycle = order?.notes?.billing_cycle === 'annual' ? 'annual' : 'monthly';
+      if (!orderRes.ok || order?.notes?.user_id !== userId || !tier) {
+        return res.status(403).json({ verified: false, error: 'This payment does not belong to your account.' });
+      }
+      const price = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100;
+      if (order.status !== 'paid' || Number(order.amount_paid || 0) < price) {
+        return res.status(402).json({ verified: false, error: 'Payment has not been completed.' });
+      }
+
+      const ent = await activatePlan(userId, tier, billingCycle, {
+        gateway: 'razorpay',
+        amount: price / 100,
+        orderId: String(razorpay_order_id),
+        paymentId: String(razorpay_payment_id),
+        signature: given,
+      });
       return res.json({
-        verified: isSignatureValid,
+        verified: true,
         paymentId: razorpay_payment_id,
         orderId: razorpay_order_id,
+        subscription: toProfileSubscription(ent),
       });
     } catch (err: any) {
-      return res.status(500).json({ error: err?.message || 'Server error verifying payment' });
+      return res.status(500).json({ verified: false, error: err?.message || 'Server error verifying payment' });
+    }
+  });
+
+  // 16b. Current plan and scan usage for the signed-in user (GET /api/subscription)
+  app.get('/api/subscription', requireUser, async (req, res) => {
+    try {
+      return res.json({ success: true, data: toProfileSubscription(await getEntitlement(req.user!.id)) });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err?.message });
+    }
+  });
+
+  // 16c. Switch the signed-in user to the free plan (POST /api/subscription/downgrade)
+  app.post('/api/subscription/downgrade', requireUser, async (req, res) => {
+    try {
+      const ent = await activatePlan(req.user!.id, 'free', 'monthly', { gateway: 'manual', amount: 0 });
+      return res.json({ success: true, data: toProfileSubscription(ent) });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err?.message });
     }
   });
 

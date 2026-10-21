@@ -59,11 +59,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
     try {
       // 1. Create server-side order with Razorpay
-      const orderRes = await RazorpayService.createOrderOnServer(
-        Math.round(amountINR * 100),
-        'INR',
-        `rcpt_${planTier}_${Date.now()}`
-      );
+      const orderRes = await RazorpayService.createOrderOnServer(planTier, billingCycle);
 
       setProcessingStep('Launching Razorpay Checkout...');
 
@@ -82,9 +78,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
         theme: {
           color: '#0c2340',
         },
-        handler: async (response: RazorpaySuccessResponse) => {
-          setProcessingStep('Verifying payment signature with Razorpay...');
-          await RazorpayService.verifyPaymentOnServer(response);
+        // The parent verifies the payment on the server before granting the plan
+        handler: (response: RazorpaySuccessResponse) => {
           setIsProcessing(false);
           onPaymentSuccess(response);
         },

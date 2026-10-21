@@ -16,12 +16,13 @@ import {
   ExternalLink,
   ShieldCheck,
 } from 'lucide-react';
-import { CountryTaxConfig, SubscriptionTier, UserProfile, SubscriptionTransaction, CustomerSubscription } from '../../types';
+import { CountryTaxConfig, SubscriptionTier, UserProfile } from '../../types';
 import { SUBSCRIPTION_PLANS, SubscriptionPlan } from '../../services/subscriptionService';
 import { supabaseService } from '../../services/supabaseService';
 import { activityLogService } from '../../services/activityLogService';
 import { RazorpayCheckoutModal } from './RazorpayCheckoutModal';
-import { RazorpaySuccessResponse } from '../../services/razorpayService';
+import { RazorpaySuccessResponse, RazorpayService } from '../../services/razorpayService';
+import { authedFetch } from '../../services/apiBase';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [isRazorpayCheckoutOpen, setIsRazorpayCheckoutOpen] = useState(false);
   const [selectedTierForPayment, setSelectedTierForPayment] = useState<'pro' | 'enterprise'>('pro');
   const [isCopied, setIsCopied] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [razorpaySuccessData, setRazorpaySuccessData] = useState<{
     response: RazorpaySuccessResponse;
     tier: 'pro' | 'enterprise';
@@ -69,55 +71,31 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     setIsRazorpayCheckoutOpen(true);
   };
 
-  const handleRazorpaySuccess = (res: RazorpaySuccessResponse) => {
+  const handleRazorpaySuccess = async (res: RazorpaySuccessResponse) => {
     const tier = selectedTierForPayment;
     const amount = tier === 'pro'
       ? (billingCycle === 'annual' ? 11999 : 1199)
       : (billingCycle === 'annual' ? 31999 : 3199);
-    const currency = 'INR';
     const userId = profile.id || 'usr_taxvault_admin';
+    setPaymentError(null);
 
-    // 1. Transaction record with Razorpay payment details
-    const tx: SubscriptionTransaction = {
-      id: 'tx_rzp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      userId,
-      planId: tier,
-      amount,
-      currency,
-      status: 'succeeded',
-      billingCycle,
-      paymentGateway: 'razorpay',
-      gatewayPaymentId: res.razorpay_payment_id,
-      gatewayOrderId: res.razorpay_order_id,
-      gatewaySignature: res.razorpay_signature,
-      receiptNumber: 'RZP-' + Math.floor(100000 + Math.random() * 900000),
-      createdAt: new Date().toISOString(),
-    };
+    // Signed-in accounts: the server verifies the payment and records the plan. Nothing is
+    // granted unless it confirms. On-device demo accounts (no session) only change local state.
+    if (await supabaseService.hasSession()) {
+      setIsProcessing(true);
+      const verification = await RazorpayService.verifyPaymentOnServer(res, tier, billingCycle);
+      setIsProcessing(false);
+      if (!verification.verified) {
+        setIsRazorpayCheckoutOpen(false);
+        setPaymentError(verification.error || 'We could not verify this payment, so your plan was not changed.');
+        return;
+      }
+    }
 
-    // 2. Customer subscription record
-    const sub: CustomerSubscription = {
-      id: 'sub_' + userId,
-      userId,
-      planId: tier,
-      status: 'active',
-      billingCycle,
-      currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date(Date.now() + (billingCycle === 'annual' ? 365 : 30) * 86400000).toISOString(),
-      cancelAtPeriodEnd: false,
-      paymentMethod: 'Razorpay (UPI / NetBanking / Cards)',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Async record to Supabase
-    supabaseService.recordSubscriptionTransaction(tx).catch(() => {});
-    supabaseService.upsertCustomerSubscription(sub).catch(() => {});
-
-    // 3. Log Activity
     activityLogService.logActivity({
       userId,
       entityType: 'subscription',
-      entityId: sub.id,
+      entityId: 'sub_' + userId,
       action: 'upgrade_plan',
       description: `Purchased ${tier.toUpperCase()} plan via Razorpay (${billingCycle}) - ₹${amount.toLocaleString('en-IN')}`,
       status: 'success',
@@ -151,44 +129,26 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     });
   };
 
-  const handleDowngradeToFree = () => {
+  const handleDowngradeToFree = async () => {
     setIsProcessing(true);
+    setPaymentError(null);
     const userId = profile.id || 'usr_taxvault_admin';
 
-    const tx: SubscriptionTransaction = {
-      id: 'tx_' + Date.now(),
-      userId,
-      planId: 'free',
-      amount: 0,
-      currency: profile.defaultCurrency || 'USD',
-      status: 'succeeded',
-      billingCycle,
-      paymentGateway: 'manual',
-      receiptNumber: 'RCP-FREE-' + Math.floor(100000 + Math.random() * 900000),
-      createdAt: new Date().toISOString(),
-    };
-
-    const sub: CustomerSubscription = {
-      id: 'sub_' + userId,
-      userId,
-      planId: 'free',
-      status: 'active',
-      billingCycle,
-      currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
-      cancelAtPeriodEnd: false,
-      paymentMethod: 'Free Starter',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    supabaseService.recordSubscriptionTransaction(tx).catch(() => {});
-    supabaseService.upsertCustomerSubscription(sub).catch(() => {});
+    if (await supabaseService.hasSession()) {
+      try {
+        const res = await authedFetch('/api/subscription/downgrade', { method: 'POST' });
+        if (!res.ok) throw new Error('Downgrade failed');
+      } catch {
+        setIsProcessing(false);
+        setPaymentError('Could not change your plan. Please check your connection and try again.');
+        return;
+      }
+    }
 
     activityLogService.logActivity({
       userId,
       entityType: 'subscription',
-      entityId: sub.id,
+      entityId: 'sub_' + userId,
       action: 'downgrade_plan',
       description: `Downgraded to FREE plan`,
       status: 'success',
@@ -335,6 +295,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <div className="mt-3 py-1.5 px-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium inline-flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5" />
                     <span>{initialReason}</span>
+                  </div>
+                )}
+
+                {paymentError && (
+                  <div role="alert" className="mt-3 py-1.5 px-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
+                    {paymentError}
                   </div>
                 )}
 

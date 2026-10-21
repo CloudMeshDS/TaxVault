@@ -908,10 +908,21 @@ export default function App() {
     // Immediate cross-device cloud sync: pull the authenticated user's expenses from Supabase Cloud
     try {
       setIsSyncing(true);
-      const cloudData = await apiClient.getExpenses(activeProfile.id, activeProfile.email);
+      const [cloudData, serverSubscription] = await Promise.all([
+        apiClient.getExpenses(activeProfile.id, activeProfile.email),
+        apiClient.getSubscription(),
+      ]);
       if (cloudData && Array.isArray(cloudData.expenses)) {
         setExpenses(cloudData.expenses);
         storageService.saveExpenses(cloudData.expenses);
+      }
+      // The plan shown is the one the server has on record, not whatever the profile carried in
+      if (serverSubscription) {
+        setProfile((prev) => {
+          const synced = { ...prev, subscription: { ...prev.subscription, ...serverSubscription } };
+          storageService.saveUserProfile(synced);
+          return synced;
+        });
       }
     } catch (err) {
       console.warn('Post-login cloud sync error:', err);

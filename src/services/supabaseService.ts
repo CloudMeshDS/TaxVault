@@ -352,13 +352,13 @@ export function supabaseRowToProfile(row: any): UserProfile {
     biometricEnabled: Boolean(row.biometric_enabled),
     devicePlatform: row.device_platform || 'ios',
     lastBackupDate: row.last_backup_date || new Date().toISOString(),
+    // Placeholder until GET /api/subscription answers: the plan is decided by the server only
     subscription: {
-      tier: 'pro',
+      tier: 'free',
       billingCycle: 'monthly',
       status: 'active',
       receiptsScannedThisMonth: 0,
-      monthlyReceiptLimit: 500,
-      renewsOn: '2026-11-01',
+      monthlyReceiptLimit: 10,
     },
   };
 }
