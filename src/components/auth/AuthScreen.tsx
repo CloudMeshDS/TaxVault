@@ -549,7 +549,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center justify-center gap-2">
               <span>TaxVault</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold">
                 v3.0
               </span>
             </h1>
@@ -575,7 +575,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 <ArrowRight className="w-3.5 h-3.5 rotate-180" />
                 <span>Back to Sign In</span>
               </button>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                 {tab === 'forgot' ? 'Account Recovery' : tab === 'email-sent' ? 'Email Sent' : 'Reset Password'}
               </span>
             </div>
@@ -662,7 +662,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       setErrorMessage(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
+                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
                   >
                     Forgot Password?
                   </button>
@@ -711,7 +711,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Instant Demo Accounts</span>
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">1-click login</span>
+                  <span className="text-xs text-slate-400 font-medium">1-click login</span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">
@@ -727,12 +727,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                         <div className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
                           Rajesh Sharma · Sharma Tech
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono truncate">
+                        <div className="text-xs text-slate-500 font-mono truncate">
                           rajesh@sharmatech.in · 18% GSTN
                         </div>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
                       Sign In
                     </span>
                   </button>
@@ -749,12 +749,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                         <div className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
                           Liam McKenzie · McKenzie Digital
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono truncate">
+                        <div className="text-xs text-slate-500 font-mono truncate">
                           liam@mckenziedigital.co.nz · 15% IRD
                         </div>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
                       Sign In
                     </span>
                   </button>
@@ -895,13 +895,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   </button>
                 </div>
                 {signupConfirmPassword && signupPassword !== signupConfirmPassword && (
-                  <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-rose-600 font-semibold flex items-center gap-1 mt-0.5">
                     <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
                     <span>Passwords do not match</span>
                   </p>
                 )}
                 {signupConfirmPassword && signupPassword === signupConfirmPassword && (
-                  <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
                     <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                     <span>Passwords match</span>
                   </p>
@@ -954,7 +954,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-500 px-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 px-1">
                   <span className="flex items-center gap-1">
                     <span className="text-emerald-600 font-bold">✓</span>
                     <span>Includes {TAX_CONFIGS[signupCountry]?.taxAuthority || 'Tax Authority'} record keeping &amp; disclaimer</span>
@@ -998,7 +998,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <h2 className="text-base font-extrabold text-slate-900">Forgot Your Password?</h2>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border flex items-center gap-1 ${
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold border flex items-center gap-1 ${
                     emailJsService.isConfigured()
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                       : 'bg-amber-50 text-amber-800 border-amber-200'
@@ -1018,7 +1018,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   <button
                     type="button"
                     onClick={() => setShowEmailJsConfig(!showEmailJsConfig)}
-                    className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 inline-flex items-center gap-1 cursor-pointer underline decoration-dotted"
+                    className="text-xs font-bold text-slate-500 hover:text-emerald-700 inline-flex items-center gap-1 cursor-pointer underline decoration-dotted"
                   >
                     <SlidersHorizontal className="w-3 h-3" />
                     <span>{showEmailJsConfig ? 'Hide EmailJS Keys' : 'EmailJS Portal Settings'}</span>
@@ -1038,7 +1038,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       href="https://dashboard.emailjs.com/admin"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 underline"
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 underline"
                     >
                       emailjs.com/admin
                     </a>
@@ -1046,7 +1046,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
 
                   <div className="space-y-2">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Service ID</label>
+                      <label className="text-xs font-bold text-slate-600 block mb-0.5">Service ID</label>
                       <input
                         type="text"
                         value={emailJsConfig.serviceId}
@@ -1056,7 +1056,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Template ID</label>
+                      <label className="text-xs font-bold text-slate-600 block mb-0.5">Template ID</label>
                       <input
                         type="text"
                         value={emailJsConfig.templateId}
@@ -1066,7 +1066,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-600 block mb-0.5">Public Key (User ID)</label>
+                      <label className="text-xs font-bold text-slate-600 block mb-0.5">Public Key (User ID)</label>
                       <input
                         type="text"
                         value={emailJsConfig.publicKey}
@@ -1077,7 +1077,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     </div>
                   </div>
 
-                  <p className="text-[10px] text-slate-500 leading-normal">
+                  <p className="text-xs text-slate-500 leading-normal">
                     Supported template variables in your EmailJS template: <code className="bg-slate-200 px-1 rounded text-slate-800">{'{{to_email}}'}</code>, <code className="bg-slate-200 px-1 rounded text-slate-800">{'{{passcode}}'}</code>, <code className="bg-slate-200 px-1 rounded text-slate-800">{'{{reset_link}}'}</code>.
                   </p>
 
@@ -1102,7 +1102,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     <button
                       type="button"
                       onClick={() => setResetCode(simulatedCode)}
-                      className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded font-extrabold hover:bg-emerald-700 cursor-pointer"
+                      className="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded font-extrabold hover:bg-emerald-700 cursor-pointer"
                     >
                       Auto-Fill Code
                     </button>
@@ -1110,7 +1110,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   <div className="font-mono text-base font-black text-emerald-950 tracking-wider">
                     {simulatedCode}
                   </div>
-                  <div className="text-[10px] text-emerald-700">
+                  <div className="text-xs text-emerald-700">
                     Keys not yet configured in EmailJS settings. Code generated and ready to test!
                   </div>
                 </div>
@@ -1131,7 +1131,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     placeholder="name@company.com"
                     className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                   />
-                  <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
                     A secure password reset link will be sent to your email. You must open that link to verify your identity and set a new password.
                   </p>
                 </div>
@@ -1195,15 +1195,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
 
               <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl text-left space-y-2">
                 <div className="flex items-start gap-2.5 text-xs text-emerald-950 font-medium">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</span>
                   <span>Open your email inbox and click the password reset link inside.</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-emerald-950 font-medium">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</span>
                   <span><strong>Important:</strong> Check your <strong>Spam / Junk folder</strong> if the email is not in your Inbox.</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-emerald-950 font-medium">
-                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</span>
                   <span>The link will verify your identity with Supabase and open the new password screen.</span>
                 </div>
               </div>
@@ -1215,10 +1215,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>Email Delivery Alert</span>
                   </div>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                  <p className="text-xs text-amber-800 leading-relaxed">
                     {emailDeliveryNotice}
                   </p>
-                  <p className="text-[11px] text-amber-700 leading-relaxed">
+                  <p className="text-xs text-amber-700 leading-relaxed">
                     Supabase's backup mailer dispatched the reset email. Please look in your <strong>Spam / Junk folder</strong>.
                   </p>
                 </div>
@@ -1232,11 +1232,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Direct Recovery Link</span>
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded">
+                    <span className="text-xs font-mono text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded">
                       Supabase Verified
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                  <p className="text-xs text-slate-500 leading-relaxed">
                     If email delivery is delayed, click the verified Supabase recovery link below to test:
                   </p>
                   <a
@@ -1297,7 +1297,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     <span>Registered Account Email</span>
                   </span>
                   {resetEmail && (
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                       Target Account
                     </span>
                   )}
@@ -1365,18 +1365,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
         <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
           <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
             <Lock className="w-4 h-4 text-emerald-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-[11px]">256-bit AES</div>
-            <div className="text-[10px] text-slate-500">Bank-grade security</div>
+            <div className="font-bold text-slate-800 text-xs">256-bit AES</div>
+            <div className="text-xs text-slate-500">Bank-grade security</div>
           </div>
           <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
             <Sparkles className="w-4 h-4 text-teal-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-[11px]">Neural OCR</div>
-            <div className="text-[10px] text-slate-500">Auto GST extraction</div>
+            <div className="font-bold text-slate-800 text-xs">Neural OCR</div>
+            <div className="text-xs text-slate-500">Auto GST extraction</div>
           </div>
           <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
             <Globe className="w-4 h-4 text-blue-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-[11px]">5 Countries</div>
-            <div className="text-[10px] text-slate-500">Statutory tax rules</div>
+            <div className="font-bold text-slate-800 text-xs">5 Countries</div>
+            <div className="text-xs text-slate-500">Statutory tax rules</div>
           </div>
         </div>
 
@@ -1385,7 +1385,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           <button
             type="button"
             onClick={() => setShowTermsModal(true)}
-            className="text-[11px] font-bold text-slate-500 hover:text-emerald-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            className="text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Scale className="w-3.5 h-3.5 text-slate-400" />
             <span>Country-Specific Terms of Service &amp; Statutory Disclaimers</span>

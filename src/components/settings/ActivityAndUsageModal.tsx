@@ -111,38 +111,39 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
   const scanPct = scansLimit === -1 ? 15 : Math.min(100, Math.round((scansUsed / scansLimit) * 100));
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden modal-enter-animation text-neutral-100">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden modal-enter-animation text-slate-900">
         {/* Header */}
-        <div className="p-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/80">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
               {activeTab === 'activity' ? <Activity className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
             </div>
             <div>
               <h2 className="text-sm font-bold text-white">
                 {activeTab === 'activity' ? 'Activity Audit Trail' : 'Token & Request Usage'}
               </h2>
-              <p className="text-[10px] text-neutral-400">
+              <p className="text-xs text-slate-500">
                 {activeTab === 'activity' ? 'Immutable cloud log of all user & AI actions' : 'AI consumption meter and quota tracking'}
               </p>
             </div>
           </div>
           <button
+            aria-label="Close"
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="p-3 bg-neutral-950/50 border-b border-neutral-800 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
-          <div className="flex items-center p-1 bg-neutral-900 border border-neutral-800 rounded-xl text-xs">
+        <div className="p-3 bg-slate-50/50 border-b border-slate-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+          <div className="flex items-center p-1 bg-white shadow-xs border border-slate-200 rounded-xl text-xs">
             <button
               onClick={() => setActiveTab('activity')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                activeTab === 'activity' ? 'bg-emerald-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
+                activeTab === 'activity' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-white'
               }`}
             >
               <Activity className="w-3.5 h-3.5 shrink-0" />
@@ -151,7 +152,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
             <button
               onClick={() => setActiveTab('usage')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                activeTab === 'usage' ? 'bg-emerald-600 text-white shadow-xs' : 'text-neutral-400 hover:text-white'
+                activeTab === 'usage' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-white'
               }`}
             >
               <Zap className="w-3.5 h-3.5 shrink-0" />
@@ -161,17 +162,18 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
 
           <div className="flex items-center gap-1.5">
             <button
+              aria-label="Refresh"
               onClick={loadData}
               disabled={isLoading}
               title="Refresh"
-              className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-white transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             {activeTab === 'activity' && (
               <button
                 onClick={handleExportJson}
-                className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-[11px] font-bold text-neutral-200 flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-800 flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 <Download className="w-3 h-3 shrink-0" />
                 <span>Export JSON</span>
@@ -187,7 +189,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
               {/* Category Filter Pills */}
               <div
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-[11px]"
+                className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs"
               >
                 {[
                   { id: 'all', label: 'All Activities' },
@@ -201,8 +203,8 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                     onClick={() => setFilterType(f.id)}
                     className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                       filterType === f.id
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
-                        : 'bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                        ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 font-bold'
+                        : 'bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     {f.label}
@@ -212,10 +214,10 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
 
               {/* Activity Feed */}
               {filteredLogs.length === 0 ? (
-                <div className="p-8 text-center bg-neutral-950/60 rounded-2xl border border-neutral-800/80">
-                  <Activity className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
-                  <p className="text-xs text-neutral-300 font-bold">No activity recorded yet</p>
-                  <p className="text-[11px] text-neutral-500 mt-1">
+                <div className="p-8 text-center bg-slate-50/60 rounded-2xl border border-slate-200">
+                  <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-700 font-bold">No activity recorded yet</p>
+                  <p className="text-xs text-slate-400 mt-1">
                     Actions like scanning receipts, editing expenses, and subscription upgrades will appear here.
                   </p>
                 </div>
@@ -227,16 +229,16 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                     return (
                       <div
                         key={log.id}
-                        className="p-3 bg-neutral-950/80 border border-neutral-800/80 rounded-2xl hover:border-neutral-700 transition-colors flex items-start gap-3 select-text"
+                        className="p-3 bg-slate-50/80 border border-slate-200 rounded-2xl hover:border-slate-200 transition-colors flex items-start gap-3 select-text"
                       >
                         {/* Status Icon */}
                         <div
                           className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
                             isSuccess
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                               : isWarning
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              ? 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
+                              : 'bg-red-500/10 text-red-700 border border-red-500/20'
                           }`}
                         >
                           {log.entityType === 'ai_scan' ? (
@@ -251,24 +253,24 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
                               {log.entityType} · {log.action.replace('_', ' ')}
                             </span>
-                            <span className="text-[10px] text-neutral-500 font-mono whitespace-nowrap shrink-0">
+                            <span className="text-xs text-slate-400 font-mono whitespace-nowrap shrink-0">
                               {formatTimeAgo(log.createdAt)}
                             </span>
                           </div>
-                          <p className="text-xs text-neutral-200 font-medium mt-0.5 leading-snug">
+                          <p className="text-xs text-slate-800 font-medium mt-0.5 leading-snug">
                             {log.description}
                           </p>
 
                           {/* Metadata chip if available */}
                           {log.metadata && Object.keys(log.metadata).length > 0 && (
-                            <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] font-mono text-neutral-400">
+                            <div className="mt-1.5 flex flex-wrap gap-1 text-xs font-mono text-slate-500">
                               {Object.entries(log.metadata)
                                 .slice(0, 3)
                                 .map(([k, v]) => (
-                                  <span key={k} className="bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">
+                                  <span key={k} className="bg-white shadow-xs px-1.5 py-0.5 rounded border border-slate-200">
                                     {k}: {String(v)}
                                   </span>
                                 ))}
@@ -285,15 +287,15 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
             /* TAB 2: TOKEN & REQUEST USAGE */
             <div className="space-y-3.5">
               {/* Plan Banner */}
-              <div className="p-3.5 bg-gradient-to-r from-emerald-950/40 via-neutral-950 to-neutral-950 border border-emerald-500/30 rounded-2xl flex items-center justify-between">
+              <div className="p-3.5 bg-gradient-to-r from-emerald-950/40 via-slate-50 to-slate-50 border border-emerald-500/30 rounded-2xl flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-white">Active Plan</span>
-                    <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-extrabold uppercase">
+                    <span className="text-xs font-mono bg-emerald-500/20 text-emerald-600 px-2 py-0.5 rounded font-extrabold uppercase">
                       {currentTier}
                     </span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Monthly billing cycle ({usage?.periodStart || 'Active'} to {usage?.periodEnd || 'End of month'})
                   </p>
                 </div>
@@ -312,46 +314,46 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
               </div>
 
               {/* Meter 1: AI Tokens */}
-              <div className="p-3.5 bg-neutral-950/80 border border-neutral-800 rounded-2xl space-y-2">
+              <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Gemini AI Tokens Used</span>
                   </span>
-                  <span className="font-mono text-emerald-400 font-bold">
+                  <span className="font-mono text-emerald-600 font-bold">
                     {tokensUsed.toLocaleString()} / {tokenLimit === -1 ? 'Unlimited' : tokenLimit.toLocaleString()}
                   </span>
                 </div>
-                <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     style={{ width: `${tokenPct}%` }}
                     className={`h-full rounded-full transition-all ${tokenPct >= 90 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>Input + Output Completion Tokens</span>
                   <span>{tokenLimit === -1 ? 'Unlimited' : `${Math.max(0, tokenLimit - tokensUsed).toLocaleString()} tokens remaining`}</span>
                 </div>
               </div>
 
               {/* Meter 2: Monthly Scans */}
-              <div className="p-3.5 bg-neutral-950/80 border border-neutral-800 rounded-2xl space-y-2">
+              <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-white flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-blue-400" />
+                    <Layers className="w-3.5 h-3.5 text-blue-700" />
                     <span>Monthly Receipt Scans</span>
                   </span>
-                  <span className="font-mono text-blue-400 font-bold">
+                  <span className="font-mono text-blue-700 font-bold">
                     {scansUsed} / {scansLimit === -1 ? 'Unlimited' : scansLimit}
                   </span>
                 </div>
-                <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     style={{ width: `${scanPct}%` }}
                     className="h-full rounded-full bg-blue-500 transition-all"
                   />
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>High-speed Multimodal Vision OCR</span>
                   <span>{scansLimit === -1 ? 'Unlimited scans' : `${Math.max(0, scansLimit - scansUsed)} scans left this cycle`}</span>
                 </div>
@@ -360,11 +362,11 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
               {/* Recent AI Request Ledger */}
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Server className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Recent Token Ledger</span>
                   </span>
-                  <span className="text-[10px] text-neutral-500 font-mono">
+                  <span className="text-xs text-slate-400 font-mono">
                     {tokenLogs.length} requests logged
                   </span>
                 </div>
@@ -373,25 +375,25 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                   {tokenLogs.slice(0, 5).map((t) => (
                     <div
                       key={t.id}
-                      className="p-2.5 bg-neutral-950/60 border border-neutral-800/80 rounded-xl text-xs flex items-center justify-between select-text"
+                      className="p-2.5 bg-slate-50/60 border border-slate-200 rounded-xl text-xs flex items-center justify-between select-text"
                     >
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-[11px] font-bold text-white">{t.modelName}</span>
-                          <span className="text-[9px] bg-neutral-800 text-neutral-300 px-1 py-0.2 rounded font-mono">
+                          <span className="font-mono text-xs font-bold text-white">{t.modelName}</span>
+                          <span className="text-xs bg-slate-100 text-slate-700 px-1 py-0.2 rounded font-mono">
                             {t.requestType}
                           </span>
                         </div>
-                        <p className="text-[10px] text-neutral-400 mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           {t.latencyMs}ms latency · est. ${t.estimatedCostUsd.toFixed(5)}
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <span className="font-mono text-xs font-bold text-emerald-400">
+                        <span className="font-mono text-xs font-bold text-emerald-600">
                           {t.totalTokens} tokens
                         </span>
-                        <p className="text-[9px] text-neutral-500">
+                        <p className="text-xs text-slate-400">
                           {t.promptTokens} in / {t.completionTokens} out
                         </p>
                       </div>
@@ -404,14 +406,14 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-neutral-800 bg-neutral-950/80 flex items-center justify-between text-[11px] text-neutral-400">
+        <div className="p-3 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <Shield className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span>Encrypted Supabase audit ledger</span>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-white font-bold text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
             Done
           </button>

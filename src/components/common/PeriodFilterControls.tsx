@@ -61,19 +61,19 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {title && (
-              <span className="text-xs font-bold tracking-wide uppercase text-neutral-400">
+              <span className="text-xs font-bold tracking-wide uppercase text-slate-500">
                 {title}
               </span>
             )}
             {showBadge && (
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Filter className="w-2.5 h-2.5" />
                 <span>{badgeLabel}</span>
               </span>
             )}
           </div>
           {recordCount !== undefined && (
-            <span className="text-[11px] text-emerald-400 font-medium font-mono">
+            <span className="text-xs text-emerald-600 font-medium font-mono">
               {recordCount} {recordCount === 1 ? 'Receipt' : 'Receipts'}
             </span>
           )}
@@ -81,17 +81,17 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
       )}
 
       {/* Main Filter Card */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-2.5 space-y-2 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-2.5 space-y-2 shadow-sm">
         {/* Always visible top header bar for Options / Customization toggle */}
-        <div className="flex items-center justify-between gap-2 pb-1 border-b border-neutral-800/60">
-          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+        <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200">
+          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
             Select Period Mode
           </span>
           {filter.mode !== 'all' && (
             <button
               type="button"
               onClick={toggleExpanded}
-              className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/70 border border-emerald-800/70 px-2.5 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
+              className="text-xs font-bold text-emerald-600 hover:text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
               title="Show or hide detailed date picker options"
             >
               <span>{filter.isExpanded ? 'Hide Options' : 'Options'}</span>
@@ -112,8 +112,8 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             onClick={() => handleModeChange('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'all'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
+                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             <span className="whitespace-nowrap">All Time</span>
@@ -124,8 +124,8 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             onClick={() => handleModeChange('month')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'month'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
+                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -137,8 +137,8 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             onClick={() => handleModeChange('quarter')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'quarter'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
+                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             <Layers className="w-3.5 h-3.5 shrink-0" />
@@ -150,8 +150,8 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             onClick={() => handleModeChange('fy')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'fy'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
+                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             <span className="whitespace-nowrap">Financial Year</span>
@@ -162,8 +162,8 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             onClick={() => handleModeChange('cy')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'cy'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
+                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             <span className="whitespace-nowrap">Calendar Year</span>
@@ -174,8 +174,8 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             onClick={() => handleModeChange('range')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'range'
-                ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
+                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -185,18 +185,18 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
 
         {/* Interactive Parameters Drawer */}
         {filter.isExpanded && filter.mode !== 'all' && (
-          <div className="pt-2 border-t border-neutral-800/80 animate-in fade-in duration-150 space-y-2">
+          <div className="pt-2 border-t border-slate-200 animate-in fade-in duration-150 space-y-2">
             {/* Option 1: Month & Year Picker */}
             {filter.mode === 'month' && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-neutral-400 uppercase font-bold">Month</label>
+                  <label className="text-xs text-slate-500 uppercase font-bold">Month</label>
                   <select
                     value={filter.selectedMonth}
                     onChange={(e) =>
                       onChange({ ...filter, selectedMonth: parseInt(e.target.value, 10) })
                     }
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     {MONTHS_LIST.map((m) => (
                       <option key={m.value} value={m.value}>
@@ -207,13 +207,13 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] text-neutral-400 uppercase font-bold">Year</label>
+                  <label className="text-xs text-slate-500 uppercase font-bold">Year</label>
                   <select
                     value={filter.selectedYear}
                     onChange={(e) =>
                       onChange({ ...filter, selectedYear: parseInt(e.target.value, 10) })
                     }
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     {AVAILABLE_YEARS.map((y) => (
                       <option key={y} value={y}>
@@ -230,13 +230,13 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
               <div className="space-y-2 text-xs">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-[10px] text-neutral-400 uppercase font-bold">Quarter</label>
+                    <label className="text-xs text-slate-500 uppercase font-bold">Quarter</label>
                     <select
                       value={filter.selectedQuarter}
                       onChange={(e) =>
                         onChange({ ...filter, selectedQuarter: e.target.value as FiscalQuarter })
                       }
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer font-bold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer font-bold"
                     >
                       {quarters.map((q) => (
                         <option key={q.quarter} value={q.quarter}>
@@ -247,11 +247,11 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] text-neutral-400 uppercase font-bold">Financial Year</label>
+                    <label className="text-xs text-slate-500 uppercase font-bold">Financial Year</label>
                     <select
                       value={filter.selectedQuarterFY}
                       onChange={(e) => onChange({ ...filter, selectedQuarterFY: e.target.value })}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
                       {AVAILABLE_FYS.map((fy) => (
                         <option key={fy} value={fy}>
@@ -272,16 +272,16 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                         key={q}
                         type="button"
                         onClick={() => onChange({ ...filter, selectedQuarter: q })}
-                        className={`flex-1 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
+                        className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                           isSelected
-                            ? 'bg-emerald-500 text-neutral-950 shadow-xs'
-                            : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                            ? 'bg-emerald-500 text-slate-900 shadow-xs'
+                            : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
                         }`}
                       >
                         <div>{q}</div>
                         <div
-                          className={`text-[9px] font-normal ${
-                            isSelected ? 'text-neutral-900 opacity-80' : 'text-neutral-500'
+                          className={`text-xs font-normal ${
+                            isSelected ? 'text-slate-900 opacity-80' : 'text-slate-400'
                           }`}
                         >
                           {qInfo?.monthsLabel || ''}
@@ -296,11 +296,11 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             {/* Option 3: Financial Year Picker */}
             {filter.mode === 'fy' && (
               <div className="space-y-1 text-xs">
-                <label className="text-[10px] text-neutral-400 uppercase font-bold">Select Financial Year</label>
+                <label className="text-xs text-slate-500 uppercase font-bold">Select Financial Year</label>
                 <select
                   value={filter.selectedFY}
                   onChange={(e) => onChange({ ...filter, selectedFY: e.target.value })}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
                   {AVAILABLE_FYS.map((fy) => (
                     <option key={fy} value={fy}>
@@ -314,11 +314,11 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             {/* Option 4: Calendar Year Picker */}
             {filter.mode === 'cy' && (
               <div className="space-y-1 text-xs">
-                <label className="text-[10px] text-neutral-400 uppercase font-bold">Select Calendar Year</label>
+                <label className="text-xs text-slate-500 uppercase font-bold">Select Calendar Year</label>
                 <select
                   value={filter.selectedCY}
                   onChange={(e) => onChange({ ...filter, selectedCY: parseInt(e.target.value, 10) })}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
                   {AVAILABLE_YEARS.map((y) => (
                     <option key={y} value={y}>
@@ -333,21 +333,21 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             {filter.mode === 'range' && (
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-neutral-400 uppercase font-bold">Start Date</label>
+                  <label className="text-xs text-slate-500 uppercase font-bold">Start Date</label>
                   <input
                     type="date"
                     value={filter.customStartDate}
                     onChange={(e) => onChange({ ...filter, customStartDate: e.target.value })}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-neutral-400 uppercase font-bold">End Date</label>
+                  <label className="text-xs text-slate-500 uppercase font-bold">End Date</label>
                   <input
                     type="date"
                     value={filter.customEndDate}
                     onChange={(e) => onChange({ ...filter, customEndDate: e.target.value })}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>

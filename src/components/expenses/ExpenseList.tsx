@@ -28,6 +28,7 @@ import {
 } from '../../services/periodFilterService';
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { ReportDownloadModal } from './ReportDownloadModal';
+import { pressable } from '../../utils/a11y';
 
 interface ExpenseListProps {
   expenses: ExpenseRecord[];
@@ -212,10 +213,10 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-black text-white tracking-tight">Expense Records</h1>
-          <p className="text-xs text-neutral-400 font-medium">
+          <p className="text-xs text-slate-500 font-medium">
             {filteredExpenses.length} receipts
             {deletedCount > 0 && selectedType !== 'Deleted' && (
-              <span className="text-rose-400/90 font-medium ml-1">({deletedCount} deleted)</span>
+              <span className="text-rose-700/90 font-medium ml-1">({deletedCount} deleted)</span>
             )}
             {' · '}
             Total{' '}
@@ -225,8 +226,9 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
         <div className="flex items-center gap-2">
           <button
+            aria-label="Download Report (Excel / PDF / CSV)"
             onClick={() => setIsReportDownloadOpen(true)}
-            className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white transition-colors cursor-pointer shrink-0"
+            className="p-2 rounded-xl bg-white shadow-xs border border-slate-200 text-slate-700 hover:text-white transition-colors cursor-pointer shrink-0"
             title="Download Report (Excel / PDF / CSV)"
           >
             <Download className="w-4 h-4 shrink-0" />
@@ -235,17 +237,17 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
           {onOpenManualEntry && (
             <button
               onClick={onOpenManualEntry}
-              className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 hover:text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap shrink-0"
+              className="bg-white shadow-xs hover:bg-slate-100 border border-slate-200 text-slate-800 hover:text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap shrink-0"
               title="Add Expense Manually"
             >
-              <PenTool className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <PenTool className="w-3.5 h-3.5 text-amber-700 shrink-0" />
               <span className="whitespace-nowrap">Manual</span>
             </button>
           )}
 
           <button
             onClick={onOpenScanner}
-            className="bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap shrink-0"
+            className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[3] shrink-0" />
             <span className="whitespace-nowrap">Scan</span>
@@ -256,18 +258,19 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       {/* Natural Language Search Input */}
       <div className="space-y-1.5">
         <div className="relative">
-          <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by merchant, invoice # or ask AI..."
-            className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-9 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
+            className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
           />
           {searchQuery && (
             <button
+              aria-label="Clear search"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -276,7 +279,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
         {/* Natural Language Filter Feedback Tag */}
         {parsedFilters && (
-          <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
             <Sparkles className="w-3 h-3 shrink-0" />
             <span>
               AI Filter applied: {parsedFilters.category ? `Category: ${parsedFilters.category} ` : ''}
@@ -291,14 +294,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
         {!searchQuery && (
           <div
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-[11px]"
+            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-xs"
           >
-            <span className="text-neutral-500 text-[10px] uppercase font-bold shrink-0">Try:</span>
+            <span className="text-slate-400 text-xs uppercase font-bold shrink-0">Try:</span>
             {sampleSearchQueries.map((s) => (
               <button
                 key={s}
                 onClick={() => setSearchQuery(s)}
-                className="bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-200 px-2 py-0.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0"
+                className="bg-white shadow-xs hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-700 px-2 py-0.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0"
               >
                 {s}
               </button>
@@ -327,9 +330,9 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
               className={`px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 selectedType === t
                   ? t === 'Deleted'
-                    ? 'bg-rose-950 text-rose-300 border border-rose-800/80 shadow-xs'
-                    : 'bg-neutral-800 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                  : 'bg-neutral-900/80 text-neutral-400 hover:text-neutral-200 border border-neutral-800'
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-xs'
+                    : 'bg-slate-100 text-emerald-600 border border-emerald-500/30 shadow-xs'
+                  : 'bg-white shadow-xs text-slate-500 hover:text-slate-700 border border-slate-200'
               }`}
             >
               {t} {t === 'Deleted' && `(${deletedCount})`}
@@ -338,14 +341,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
         </div>
 
         {/* Pinned Action Controls: Always visible without sideways scrolling */}
-        <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-neutral-800/80">
+        <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-slate-200">
           <button
             type="button"
             onClick={() => setShowDateFilter(!showDateFilter)}
             className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               periodFilter.mode !== 'all' || showDateFilter
-                ? 'bg-emerald-950 border-emerald-500 text-emerald-400 font-bold shadow-xs'
-                : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-600 font-bold shadow-xs'
+                : 'bg-white shadow-xs border-slate-200 text-slate-700 hover:text-white'
             }`}
             title="Filter by Date (Same as Home Screen)"
           >
@@ -359,8 +362,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             onClick={() => setShowFiltersModal(true)}
             className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               onlyGst || selectedCategory !== 'All' || amountRange !== 'all'
-                ? 'bg-emerald-950 border-emerald-500 text-emerald-400 font-bold shadow-xs'
-                : 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white'
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-600 font-bold shadow-xs'
+                : 'bg-white shadow-xs border-slate-200 text-slate-700 hover:text-white'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
@@ -386,11 +389,11 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       {/* Expense List Records */}
       <div className="space-y-2">
         {filteredExpenses.length === 0 ? (
-          <div className="p-8 text-center bg-neutral-900/50 border border-neutral-800/80 rounded-3xl space-y-3">
-            <Receipt className="w-12 h-12 text-neutral-600 mx-auto" />
+          <div className="p-8 text-center bg-white shadow-xs border border-slate-200 rounded-3xl space-y-3">
+            <Receipt className="w-12 h-12 text-slate-300 mx-auto" />
             <div>
-              <p className="text-sm font-bold text-neutral-300">No matching expenses found</p>
-              <p className="text-xs text-neutral-500 mt-1">Try clearing filters or search query</p>
+              <p className="text-sm font-bold text-slate-700">No matching expenses found</p>
+              <p className="text-xs text-slate-400 mt-1">Try clearing filters or search query</p>
             </div>
             <button
               onClick={() => {
@@ -400,7 +403,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                 setOnlyGst(false);
                 setAmountRange('all');
               }}
-              className="text-xs font-semibold text-emerald-400 hover:underline cursor-pointer"
+              className="text-xs font-semibold text-emerald-600 hover:underline cursor-pointer"
             >
               Reset all filters
             </button>
@@ -412,17 +415,17 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             return (
               <div
                 key={exp.id}
-                onClick={() => onSelectExpense(exp)}
+                {...pressable(() => onSelectExpense(exp))}
                 className={`border rounded-2xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99] group shadow-sm ${
                   isDeleted
-                    ? 'bg-neutral-900/40 hover:bg-neutral-900/70 border-rose-950/60 opacity-80'
-                    : 'bg-neutral-900/80 hover:bg-neutral-850 border-neutral-800/80'
+                    ? 'bg-white shadow-xs hover:bg-white/70 border-rose-200 opacity-80'
+                    : 'bg-white shadow-xs hover:bg-slate-50 border-slate-200'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
                     className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-inner ${
-                      isDeleted ? 'bg-neutral-900 border border-rose-950/60 opacity-60' : 'bg-neutral-800'
+                      isDeleted ? 'bg-white shadow-xs border border-rose-200 opacity-60' : 'bg-slate-100'
                     }`}
                   >
                     {catInfo.icon}
@@ -431,13 +434,13 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   <div className="min-w-0">
                     <div
                       className={`font-extrabold text-sm truncate transition-colors ${
-                        isDeleted ? 'line-through text-neutral-400 group-hover:text-rose-400' : 'text-white group-hover:text-emerald-400'
+                        isDeleted ? 'line-through text-slate-500 group-hover:text-rose-700' : 'text-white group-hover:text-emerald-600'
                       }`}
                     >
                       {exp.merchant}
                     </div>
 
-                    <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                       <span>{exp.date}</span>
                       <span>·</span>
                       <span className="truncate">{exp.category}</span>
@@ -448,7 +451,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                 <div className="text-right shrink-0">
                   <div
                     className={`font-extrabold text-sm font-mono ${
-                      isDeleted ? 'line-through text-neutral-400' : 'text-white'
+                      isDeleted ? 'line-through text-slate-500' : 'text-white'
                     }`}
                   >
                     {formatCurrency(exp.amount, exp.currency || currCode, exp.currencySymbol || currSymbol, false)}
@@ -456,19 +459,19 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
                   <div className="flex items-center justify-end gap-1.5 mt-1">
                     {isDeleted ? (
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.2 rounded-md bg-rose-950 text-rose-300 border border-rose-800/80">
+                      <span className="text-xs font-black uppercase tracking-wider px-2 py-0.2 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
                         Deleted
                       </span>
                     ) : (
                       <>
                         {/* Business/Personal badge */}
                         <span
-                          className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-md ${
+                          className={`text-xs font-semibold px-1.5 py-0.2 rounded-md ${
                             exp.expenseType === 'Business'
-                              ? 'bg-blue-950/80 text-blue-300 border border-blue-800/50'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : exp.expenseType === 'Mixed'
-                              ? 'bg-amber-950/80 text-amber-300 border border-amber-800/50'
-                              : 'bg-purple-950/80 text-purple-300 border border-purple-800/50'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                              : 'bg-purple-50 text-purple-700 border border-purple-200'
                           }`}
                         >
                           {exp.expenseType === 'Mixed' ? `${exp.businessPercentage}% Biz` : exp.expenseType}
@@ -476,14 +479,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
                         {/* Tax indicator */}
                         {(exp.cgst > 0 || exp.igst > 0 || (exp.taxAmount && exp.taxAmount > 0) || (exp.gstAmount && exp.gstAmount > 0) || exp.vendorGSTIN || exp.vendorTaxId) && (
-                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/50">
+                          <span className="text-xs font-bold px-1 py-0.2 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">
                             {exp.taxType || (profile?.country === 'US' ? 'TAX' : 'GST')}
                           </span>
                         )}
 
                         {/* Review flag */}
                         {exp.caReviewStatus === 'Needs CA Review' && (
-                          <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-950/80 text-amber-400 border border-amber-800/60">
+                          <span className="text-xs font-bold px-1 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200">
                             {profile?.country === 'US' ? 'CPA' : profile?.country === 'AU' ? 'TAX' : 'CA'}
                           </span>
                         )}
@@ -499,13 +502,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
       {/* Advanced Filter Modal */}
       {showFiltersModal && (
-        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop-animation">
-          <div className="bg-neutral-900 border border-neutral-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto modal-enter-animation pb-8 sm:pb-6">
-            <div className="flex items-center justify-between text-white border-b border-neutral-800 pb-3">
+        <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop-animation">
+          <div className="bg-white shadow-xs border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto modal-enter-animation pb-8 sm:pb-6">
+            <div className="flex items-center justify-between text-white border-b border-slate-200 pb-3">
               <h3 className="font-extrabold text-base whitespace-nowrap">Filter Expenses</h3>
               <button
+                aria-label="Close"
                 onClick={() => setShowFiltersModal(false)}
-                className="p-1.5 rounded-xl bg-neutral-800 text-neutral-400 hover:text-white shrink-0 cursor-pointer"
+                className="p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-white shrink-0 cursor-pointer"
               >
                 <X className="w-4 h-4 shrink-0" />
               </button>
@@ -513,11 +517,11 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
             {/* Category Filter */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-300">Category</label>
+              <label className="text-xs font-bold text-slate-700">Category</label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-white"
               >
                 <option value="All">All 20 Categories</option>
                 {ALL_CATEGORIES.map((c) => (
@@ -530,14 +534,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
             {/* Amount Range Filter */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-300">Amount Range</label>
+              <label className="text-xs font-bold text-slate-700">Amount Range</label>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
                   onClick={() => setAmountRange('all')}
                   className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
                     amountRange === 'all'
-                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                      ? 'bg-emerald-50 border-emerald-500 text-white font-bold'
+                      : 'bg-slate-50 border-slate-200 text-slate-500'
                   }`}
                 >
                   Any Amount
@@ -546,8 +550,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   onClick={() => setAmountRange('under2k')}
                   className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
                     amountRange === 'under2k'
-                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                      ? 'bg-emerald-50 border-emerald-500 text-white font-bold'
+                      : 'bg-slate-50 border-slate-200 text-slate-500'
                   }`}
                 >
                   {currSymbol}0 – {currSymbol}2,000
@@ -556,8 +560,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   onClick={() => setAmountRange('2kto10k')}
                   className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
                     amountRange === '2kto10k'
-                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                      ? 'bg-emerald-50 border-emerald-500 text-white font-bold'
+                      : 'bg-slate-50 border-slate-200 text-slate-500'
                   }`}
                 >
                   {currSymbol}2,000 – {currSymbol}10,000
@@ -566,8 +570,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   onClick={() => setAmountRange('above10k')}
                   className={`py-2 px-3 rounded-xl border text-center whitespace-nowrap truncate ${
                     amountRange === 'above10k'
-                      ? 'bg-emerald-950 border-emerald-500 text-white font-bold'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                      ? 'bg-emerald-50 border-emerald-500 text-white font-bold'
+                      : 'bg-slate-50 border-slate-200 text-slate-500'
                   }`}
                 >
                   Above {currSymbol}10,000
@@ -576,10 +580,10 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             </div>
 
             {/* GST Filter Checkbox */}
-            <div className="pt-2 border-t border-neutral-800 flex items-center justify-between">
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold text-white whitespace-nowrap">Tax Invoices Only</div>
-                <div className="text-[11px] text-neutral-400">Show only expenses with identified tax number & tax</div>
+                <div className="text-xs text-slate-500">Show only expenses with identified tax number & tax</div>
               </div>
               <input
                 type="checkbox"
@@ -597,13 +601,13 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   setAmountRange('all');
                   setOnlyGst(false);
                 }}
-                className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
               >
                 Reset
               </button>
               <button
                 onClick={() => setShowFiltersModal(false)}
-                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
               >
                 Apply Filters
               </button>

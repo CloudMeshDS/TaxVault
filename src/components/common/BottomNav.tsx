@@ -54,12 +54,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                   }`}
                 />
                 {tab.badge && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-amber-500 text-white font-black text-[9px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                  <span className="absolute -top-1.5 -right-2.5 bg-amber-500 text-white font-black text-xs min-w-4 h-4 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse">
                     {tab.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-[11px] mt-1 tracking-tight transition-colors duration-150 whitespace-nowrap ${isActive ? 'font-bold text-emerald-700' : 'font-medium'}`}>
+              <span className={`text-xs mt-1 tracking-tight transition-colors duration-150 whitespace-nowrap ${isActive ? 'font-bold text-emerald-700' : 'font-medium'}`}>
                 {tab.label}
               </span>
             </button>

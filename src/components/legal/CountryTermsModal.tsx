@@ -156,11 +156,11 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-600 text-xs font-bold border border-emerald-500/30">
                   <Scale className="w-3.5 h-3.5" />
                   <span>Statutory Compliance &amp; Legal Terms</span>
                 </div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-slate-200 text-[11px] font-semibold border border-white/10">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-slate-200 text-xs font-semibold border border-white/10">
                   <span className={`w-1.5 h-1.5 rounded-full ${isLoadingDb ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
                   <span>{isLoadingDb ? 'Syncing DB...' : termsData.isFromDatabase ? 'Live Compliance Database' : 'Database Verified'}</span>
                 </div>
@@ -175,6 +175,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
             </div>
 
             <button
+              aria-label="Close terms modal"
               type="button"
               onClick={onClose}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
@@ -186,7 +187,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
 
           {/* Country Selector Tabs */}
           <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
               <Globe className="w-3.5 h-3.5" />
               <span>Jurisdiction:</span>
             </span>
@@ -216,7 +217,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
           <div className="flex items-center gap-2 text-slate-700">
             <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <div className="truncate">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Tax Authority</span>
+              <span className="text-xs uppercase font-bold text-slate-500 block">Tax Authority</span>
               <span className="font-bold text-slate-900 truncate block">{currentData.taxAuthority}</span>
             </div>
           </div>
@@ -224,7 +225,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
           <div className="flex items-center gap-2 text-slate-700">
             <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
             <div className="truncate">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Record Retention</span>
+              <span className="text-xs uppercase font-bold text-slate-500 block">Record Retention</span>
               <span className="font-bold text-emerald-800 truncate block">{currentData.retentionRequirement}</span>
             </div>
           </div>
@@ -232,7 +233,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
           <div className="flex items-center gap-2 text-slate-700">
             <Scale className="w-4 h-4 text-emerald-600 shrink-0" />
             <div className="truncate">
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Governing Law</span>
+              <span className="text-xs uppercase font-bold text-slate-500 block">Governing Law</span>
               <span className="font-bold text-slate-900 truncate block">{currentData.governingLaw.split('(')[0].trim()}</span>
             </div>
           </div>
@@ -255,7 +256,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
             <button
               type="button"
               onClick={expandAll}
-              className="text-[11px] font-bold text-slate-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+              className="text-xs font-bold text-slate-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
             >
               Expand All
             </button>
@@ -263,7 +264,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
             <button
               type="button"
               onClick={collapseAll}
-              className="text-[11px] font-bold text-slate-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+              className="text-xs font-bold text-slate-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
             >
               Collapse
             </button>
@@ -271,7 +272,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
               title="Copy text"
             >
               {hasCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -280,7 +281,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
               title="Print terms"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -295,7 +296,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
           <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 text-amber-950 flex items-start gap-3 shadow-2xs">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="text-xs space-y-1">
-              <span className="font-extrabold text-amber-900 block uppercase tracking-wider text-[10px]">
+              <span className="font-extrabold text-amber-900 block uppercase tracking-wider text-xs">
                 Essential Notice for {currentData.countryName} Taxpayers
               </span>
               <p className="leading-relaxed text-amber-900/90">{currentData.shortNotice}</p>
@@ -332,7 +333,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
                       <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2">
                         <span>{section.title}</span>
                       </h2>
-                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed">
                         {section.summary}
                       </p>
                     </div>
@@ -346,12 +347,12 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
                     <div className="px-4 sm:px-5 pb-5 pt-1 space-y-3 border-t border-slate-100 text-xs text-slate-700 leading-relaxed animate-in fade-in duration-150">
                       {section.highlights && section.highlights.length > 0 && (
                         <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100/80 space-y-1.5">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 block">
+                          <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 block">
                             Key Highlights
                           </span>
                           <ul className="space-y-1">
                             {section.highlights.map((h, i) => (
-                              <li key={i} className="flex items-start gap-1.5 text-emerald-950 text-[11px] font-semibold">
+                              <li key={i} className="flex items-start gap-1.5 text-emerald-950 text-xs font-semibold">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                                 <span>{h}</span>
                               </li>

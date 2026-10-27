@@ -271,7 +271,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-black text-white tracking-tight">Tax & Expense Reports</h1>
-          <p className="text-xs text-neutral-400 font-medium">
+          <p className="text-xs text-slate-500 font-medium">
             {config.taxAuthority} & Audit Summaries
           </p>
         </div>
@@ -280,29 +280,29 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloadingPDF}
-            className="px-2.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-rose-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
+            className="px-2.5 py-1.5 rounded-xl bg-white shadow-xs border border-slate-200 text-rose-700 hover:text-white hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
             title="Download PDF Audit Report"
           >
             {isDownloadingPDF ? (
-              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-rose-400" />
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-rose-700" />
             ) : (
               <FileText className="w-4 h-4 shrink-0" />
             )}
-            <span className="text-[11px] font-bold whitespace-nowrap">PDF</span>
+            <span className="text-xs font-bold whitespace-nowrap">PDF</span>
           </button>
 
           <button
             onClick={handleDownloadExcel}
             disabled={isDownloadingExcel}
-            className="px-2.5 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-emerald-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
+            className="px-2.5 py-1.5 rounded-xl bg-white shadow-xs border border-slate-200 text-emerald-600 hover:text-white hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
             title="Download Excel Workbook"
           >
             {isDownloadingExcel ? (
-              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-emerald-400" />
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-emerald-600" />
             ) : (
               <FileSpreadsheet className="w-4 h-4 shrink-0" />
             )}
-            <span className="text-[11px] font-bold whitespace-nowrap">Excel</span>
+            <span className="text-xs font-bold whitespace-nowrap">Excel</span>
           </button>
         </div>
       </div>
@@ -312,14 +312,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         <div
           className={`p-3 rounded-2xl flex items-center gap-2 text-xs animate-in fade-in duration-200 ${
             downloadNotice.type === 'success'
-              ? 'bg-emerald-950/80 border border-emerald-800/80 text-emerald-200'
-              : 'bg-rose-950/80 border border-rose-800/80 text-rose-200'
+              ? 'bg-emerald-50 border border-emerald-200 text-emerald-200'
+              : 'bg-rose-50 border border-rose-200 text-rose-200'
           }`}
         >
           {downloadNotice.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
           )}
           <span className="font-medium">{downloadNotice.message}</span>
         </div>
@@ -354,8 +354,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             onClick={() => setActiveReportTab(tab.id)}
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
               activeReportTab === tab.id
-                ? 'bg-neutral-800 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                : 'bg-neutral-900/80 text-neutral-400 hover:text-white border border-neutral-800'
+                ? 'bg-slate-100 text-emerald-600 border border-emerald-500/30 shadow-xs'
+                : 'bg-white shadow-xs text-slate-500 hover:text-white border border-slate-200'
             }`}
           >
             {tab.label}
@@ -366,8 +366,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       {/* REPORT 1: Expense Summary */}
       {activeReportTab === 'summary' && (
         <div className="space-y-3">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-5 space-y-4">
-            <div className="flex items-center justify-between text-neutral-400 text-xs font-bold">
+          <div className="bg-white shadow-xs border border-slate-200 rounded-3xl p-5 space-y-4">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-bold">
               <span>Overall Expense Position</span>
               <span>{filteredExpenses.length} Records</span>
             </div>
@@ -376,17 +376,17 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               {fmt(filteredTotal)}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-neutral-800 text-xs">
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-200 text-xs">
               <div>
-                <span className="text-neutral-400">Total Business Claimable:</span>
-                <div className="text-base font-bold text-emerald-400 font-mono mt-0.5">
+                <span className="text-slate-500">Total Business Claimable:</span>
+                <div className="text-base font-bold text-emerald-600 font-mono mt-0.5">
                   {fmt(currentPeriodTaxResult.claimableBusinessTotal)}
                 </div>
               </div>
 
               <div>
-                <span className="text-neutral-400">Total {profile.country === 'US' ? 'Sales Tax' : 'GST/HST'}:</span>
-                <div className="text-base font-bold text-teal-400 font-mono mt-0.5">
+                <span className="text-slate-500">Total {profile.country === 'US' ? 'Sales Tax' : 'GST/HST'}:</span>
+                <div className="text-base font-bold text-teal-700 font-mono mt-0.5">
                   {fmt(currentPeriodTaxResult.totalGstIdentified)}
                 </div>
               </div>
@@ -399,41 +399,41 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       {activeReportTab === 'quarterly' && (
         <div className="space-y-4 animate-in fade-in duration-150">
           {/* Executive FY Annual Overview Strip */}
-          <div className="bg-gradient-to-r from-neutral-900 via-neutral-900 to-emerald-950/30 border border-neutral-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-gradient-to-r from-white via-white to-emerald-950/30 border border-slate-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600">
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
                   <h2 className="text-xs font-black text-white uppercase tracking-wide">
                     Quarter-Wise Performance ({selectedFY})
                   </h2>
-                  <p className="text-[10px] text-neutral-400">4 Fiscal Quarters · {profile.country} Rules</p>
+                  <p className="text-xs text-slate-500">4 Fiscal Quarters · {profile.country} Rules</p>
                 </div>
               </div>
 
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                 {quarterlyBreakdown.annualCount} Annual Receipts
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-neutral-800/80 text-xs">
-              <div className="bg-neutral-950/70 p-2.5 rounded-xl border border-neutral-800/80">
-                <span className="text-[10px] text-neutral-400 block">Total Spend</span>
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-xs">
+              <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
+                <span className="text-xs text-slate-500 block">Total Spend</span>
                 <span className="text-sm font-black font-mono text-white mt-0.5 block">
                   {fmt(quarterlyBreakdown.annualTotal)}
                 </span>
               </div>
-              <div className="bg-neutral-950/70 p-2.5 rounded-xl border border-neutral-800/80">
-                <span className="text-[10px] text-neutral-400 block">Claimable Business</span>
-                <span className="text-sm font-black font-mono text-emerald-400 mt-0.5 block">
+              <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
+                <span className="text-xs text-slate-500 block">Claimable Business</span>
+                <span className="text-sm font-black font-mono text-emerald-600 mt-0.5 block">
                   {fmt(quarterlyBreakdown.annualClaimable)}
                 </span>
               </div>
-              <div className="bg-neutral-950/70 p-2.5 rounded-xl border border-neutral-800/80">
-                <span className="text-[10px] text-neutral-400 block">{profile.country === 'US' ? 'Sales Tax' : 'Eligible ITC'}</span>
-                <span className="text-sm font-black font-mono text-teal-400 mt-0.5 block">
+              <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
+                <span className="text-xs text-slate-500 block">{profile.country === 'US' ? 'Sales Tax' : 'Eligible ITC'}</span>
+                <span className="text-sm font-black font-mono text-teal-700 mt-0.5 block">
                   {fmt(quarterlyBreakdown.annualTax)}
                 </span>
               </div>
@@ -450,21 +450,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               return (
                 <div
                   key={q.quarter}
-                  className={`bg-neutral-900 border rounded-2xl p-3.5 space-y-3 transition-all ${
+                  className={`bg-white shadow-xs border rounded-2xl p-3.5 space-y-3 transition-all ${
                     isFiltered
                       ? 'border-emerald-500/80 shadow-md shadow-emerald-950/30 ring-1 ring-emerald-500/30'
-                      : 'border-neutral-800'
+                      : 'border-slate-200'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2 py-0.5 rounded-lg font-mono">
+                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg font-mono">
                           {q.quarter}
                         </span>
                         <span className="text-xs font-bold text-white">{q.info.monthsLabel}</span>
                       </div>
-                      <p className="text-[10px] text-neutral-400 font-mono mt-0.5">
+                      <p className="text-xs text-slate-500 font-mono mt-0.5">
                         {q.info.start} → {q.info.end}
                       </p>
                     </div>
@@ -478,10 +478,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                             : { ...periodFilter, mode: 'quarter', selectedQuarter: q.quarter, isExpanded: true }
                         )
                       }
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                         isFiltered
-                          ? 'bg-emerald-500 text-neutral-950 font-black'
-                          : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                          ? 'bg-emerald-500 text-slate-900 font-black'
+                          : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
                       }`}
                     >
                       {isFiltered ? 'Active Filter ✓' : 'Filter View'}
@@ -489,7 +489,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   </div>
 
                   <div>
-                    <div className="text-[10px] text-neutral-400">Quarterly Spend</div>
+                    <div className="text-xs text-slate-500">Quarterly Spend</div>
                     <div className="text-xl font-black font-mono text-white mt-0.5">
                       {fmt(q.totalExpenses)}
                     </div>
@@ -497,29 +497,29 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
                   {/* Relative Spend Bar */}
                   <div className="space-y-1">
-                    <div className="w-full bg-neutral-950 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
                       <div
                         className="bg-emerald-500 h-full rounded-full transition-all"
                         style={{ width: `${Math.max(5, relativePercent)}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
                       <span>{q.expenseCount} receipts</span>
                       <span>{q.percentageOfAnnual.toFixed(1)}% of FY</span>
                     </div>
                   </div>
 
                   {/* Metrics Row */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-800/80 text-xs">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-xs">
                     <div>
-                      <span className="text-[10px] text-neutral-400">Claimable:</span>
-                      <div className="text-xs font-bold text-emerald-400 font-mono">
+                      <span className="text-xs text-slate-500">Claimable:</span>
+                      <div className="text-xs font-bold text-emerald-600 font-mono">
                         {fmt(q.claimableBusinessTotal)}
                       </div>
                     </div>
                     <div>
-                      <span className="text-[10px] text-neutral-400">{profile.country === 'US' ? 'Sales Tax:' : 'ITC Credit:'}</span>
-                      <div className="text-xs font-bold text-teal-400 font-mono">
+                      <span className="text-xs text-slate-500">{profile.country === 'US' ? 'Sales Tax:' : 'ITC Credit:'}</span>
+                      <div className="text-xs font-bold text-teal-700 font-mono">
                         {fmt(q.eligibleGstItc > 0 ? q.eligibleGstItc : q.totalTaxIdentified)}
                       </div>
                     </div>
@@ -530,15 +530,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
 
           {/* Visual Bar Chart: Q1 vs Q2 vs Q3 vs Q4 */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold text-white uppercase tracking-wide">
                   Quarterly Spend & Deductions Comparison
                 </h3>
-                <p className="text-[10px] text-neutral-400">Visual comparison across all 4 quarters</p>
+                <p className="text-xs text-slate-500">Visual comparison across all 4 quarters</p>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-neutral-400">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
                   <span>Total Spend</span>
@@ -550,7 +550,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 pt-3 pb-1 items-end h-32 border-b border-neutral-800">
+            <div className="grid grid-cols-4 gap-3 pt-3 pb-1 items-end h-32 border-b border-slate-200">
               {(() => {
                 const maxVal = Math.max(
                   ...quarterlyBreakdown.quarters.map((item) => Math.max(item.totalExpenses, item.claimableBusinessTotal)),
@@ -573,7 +573,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                           title={`Claimable: ${fmt(q.claimableBusinessTotal)}`}
                         />
                       </div>
-                      <span className="text-[10px] font-bold text-neutral-300 font-mono">{q.quarter}</span>
+                      <span className="text-xs font-bold text-slate-700 font-mono">{q.quarter}</span>
                     </div>
                   );
                 });
@@ -582,7 +582,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
 
           {/* Quarter-Wise Category Distribution Matrix */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
             <h3 className="text-xs font-bold text-white uppercase tracking-wide">
               Category Spend by Quarter ({quarterlyCategoryMatrix.length} Categories)
             </h3>
@@ -590,29 +590,29 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             <div className="overflow-x-auto no-scrollbar">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-neutral-800 text-[10px] uppercase text-neutral-400 font-bold">
+                  <tr className="border-b border-slate-200 text-xs uppercase text-slate-500 font-bold">
                     <th className="pb-2">Category</th>
                     <th className="pb-2 text-right">Q1</th>
                     <th className="pb-2 text-right">Q2</th>
                     <th className="pb-2 text-right">Q3</th>
                     <th className="pb-2 text-right">Q4</th>
-                    <th className="pb-2 text-right text-emerald-400">Total</th>
+                    <th className="pb-2 text-right text-emerald-600">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800/60 font-mono text-[11px]">
+                <tbody className="divide-y divide-slate-200 font-mono text-xs">
                   {quarterlyCategoryMatrix.slice(0, 8).map((cat) => {
                     const catInfo = (CATEGORY_MAP as Record<string, any>)[cat.category] || CATEGORY_MAP['Other'];
                     return (
-                      <tr key={cat.category} className="hover:bg-neutral-800/40 transition-colors">
+                      <tr key={cat.category} className="hover:bg-slate-100/40 transition-colors">
                         <td className="py-2 text-white font-sans font-medium flex items-center gap-1.5">
                           <span>{catInfo.icon}</span>
                           <span className="truncate max-w-[100px]">{cat.category}</span>
                         </td>
-                        <td className="py-2 text-right text-neutral-400">{cat.q1 > 0 ? fmt(cat.q1) : '—'}</td>
-                        <td className="py-2 text-right text-neutral-400">{cat.q2 > 0 ? fmt(cat.q2) : '—'}</td>
-                        <td className="py-2 text-right text-neutral-400">{cat.q3 > 0 ? fmt(cat.q3) : '—'}</td>
-                        <td className="py-2 text-right text-neutral-400">{cat.q4 > 0 ? fmt(cat.q4) : '—'}</td>
-                        <td className="py-2 text-right text-emerald-400 font-bold">{fmt(cat.total)}</td>
+                        <td className="py-2 text-right text-slate-500">{cat.q1 > 0 ? fmt(cat.q1) : '—'}</td>
+                        <td className="py-2 text-right text-slate-500">{cat.q2 > 0 ? fmt(cat.q2) : '—'}</td>
+                        <td className="py-2 text-right text-slate-500">{cat.q3 > 0 ? fmt(cat.q3) : '—'}</td>
+                        <td className="py-2 text-right text-slate-500">{cat.q4 > 0 ? fmt(cat.q4) : '—'}</td>
+                        <td className="py-2 text-right text-emerald-600 font-bold">{fmt(cat.total)}</td>
                       </tr>
                     );
                   })}
@@ -622,15 +622,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
 
           {/* Statutory Quarterly Compliance & Filing Due Dates */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
+          <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold text-white uppercase tracking-wide">
                   Quarterly Tax Deadlines & Compliance
                 </h3>
-                <p className="text-[10px] text-neutral-400">Statutory calendar for {config.taxAuthority}</p>
+                <p className="text-xs text-slate-500">Statutory calendar for {config.taxAuthority}</p>
               </div>
-              <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full font-mono">
+              <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-mono">
                 {profile.country}
               </span>
             </div>
@@ -639,17 +639,17 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               {quarterlyComplianceSchedule.map((item) => (
                 <div
                   key={item.quarter}
-                  className="bg-neutral-950 border border-neutral-800/80 rounded-xl p-2.5 space-y-1"
+                  className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       <span>{item.quarter} ({item.period})</span>
                     </span>
-                    <span className="text-[10px] font-mono text-amber-400 font-bold">{item.deadline}</span>
+                    <span className="text-xs font-mono text-amber-700 font-bold">{item.deadline}</span>
                   </div>
-                  <div className="text-[11px] text-neutral-300 font-medium">{item.form}</div>
-                  <div className="text-[10px] text-neutral-500">{item.note}</div>
+                  <div className="text-xs text-slate-700 font-medium">{item.form}</div>
+                  <div className="text-xs text-slate-400">{item.note}</div>
                 </div>
               ))}
             </div>
@@ -659,8 +659,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       {/* REPORT 3: Category Summary */}
       {activeReportTab === 'category' && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
+        <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Category Breakdown ({categorySummary.length} categories)
           </h2>
 
@@ -679,14 +679,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full bg-neutral-950 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
                     <div
                       className="bg-emerald-500 h-full rounded-full transition-all"
                       style={{ width: `${Math.min(100, Math.max(3, pct))}%` }}
                     />
                   </div>
 
-                  <div className="flex justify-between text-[10px] text-neutral-400">
+                  <div className="flex justify-between text-xs text-slate-500">
                     <span>{c.count} invoices · {pct.toFixed(1)}% of total</span>
                     <span>Claimable: {fmt(c.claimable)}</span>
                   </div>
@@ -699,20 +699,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       {/* REPORT 4: Business vs Personal */}
       {activeReportTab === 'biz_personal' && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
+        <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-4">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Business vs Personal Classification
           </h2>
 
           <div className="space-y-3">
             {/* 100% Business */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 flex justify-between items-center">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center">
               <div>
-                <div className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                <div className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-400" />
                   <span>100% Business Expenses</span>
                 </div>
-                <div className="text-[11px] text-neutral-400 mt-0.5">Fully tax deductible</div>
+                <div className="text-xs text-slate-500 mt-0.5">Fully tax deductible</div>
               </div>
               <div className="text-right font-mono font-bold text-sm text-white">
                 {fmt(currentPeriodTaxResult.businessExpenses)}
@@ -720,13 +720,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
 
             {/* Mixed Apportioned */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 flex justify-between items-center">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center">
               <div>
-                <div className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                <div className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-amber-400" />
                   <span>Mixed Usage Expenses</span>
                 </div>
-                <div className="text-[11px] text-neutral-400 mt-0.5">Apportioned by usage ratio</div>
+                <div className="text-xs text-slate-500 mt-0.5">Apportioned by usage ratio</div>
               </div>
               <div className="text-right font-mono font-bold text-sm text-white">
                 {fmt(currentPeriodTaxResult.mixedExpenses)}
@@ -734,13 +734,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
 
             {/* Pure Personal */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3 flex justify-between items-center">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center">
               <div>
-                <div className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                <div className="text-xs font-bold text-purple-700 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-purple-400" />
                   <span>Personal Expenses</span>
                 </div>
-                <div className="text-[11px] text-neutral-400 mt-0.5">Non-deductible personal draw</div>
+                <div className="text-xs text-slate-500 mt-0.5">Non-deductible personal draw</div>
               </div>
               <div className="text-right font-mono font-bold text-sm text-white">
                 {fmt(currentPeriodTaxResult.personalExpenses)}
@@ -748,9 +748,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
           </div>
 
-          <div className="p-3 bg-emerald-950/40 border border-emerald-800/50 rounded-xl flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-300">Total Business Tax Allowable:</span>
-            <span className="text-base font-extrabold text-emerald-400 font-mono">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+            <span className="text-xs font-bold text-emerald-600">Total Business Tax Allowable:</span>
+            <span className="text-base font-extrabold text-emerald-600 font-mono">
               {fmt(currentPeriodTaxResult.claimableBusinessTotal)}
             </span>
           </div>
@@ -759,15 +759,15 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       {/* REPORT 5: Tax / GST Summary */}
       {activeReportTab === 'gst' && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
+        <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
+              <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
                 {profile.country === 'US' ? 'Sales Tax & Deduction Summary' : 'Goods & Services Tax (GST) Summary'}
               </h2>
-              <p className="text-[11px] text-neutral-400">{config.taxAuthority}</p>
+              <p className="text-xs text-slate-500">{config.taxAuthority}</p>
             </div>
-            <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full font-mono">
+            <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-mono">
               {profile.country === 'NZ' ? `IRD: ${profile.taxId || 'Unregistered'}` :
                profile.country === 'AU' ? `ABN: ${profile.taxId || 'Unregistered'}` :
                profile.country === 'CA' ? `BN: ${profile.taxId || 'Unregistered'}` :
@@ -776,125 +776,125 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </span>
           </div>
 
-          <div className="divide-y divide-neutral-800 text-xs">
+          <div className="divide-y divide-slate-200 text-xs">
             {profile.country === 'IN' ? (
               <>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Central GST (CGST)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.cgstTotal)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>State GST (SGST)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.sgstTotal)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Integrated GST (IGST)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.igstTotal)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Compensation Cess</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.cessTotal)}</span>
                 </div>
               </>
             ) : profile.country === 'NZ' ? (
               <>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Standard 15% GST on Expenses (Box 11)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Gross Claimable Purchases</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.claimableBusinessTotal)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>IRD Mileage Deduction Rate</span>
-                  <span className="font-mono font-semibold text-emerald-400">NZ$0.95 / km</span>
+                  <span className="font-mono font-semibold text-emerald-600">NZ$0.95 / km</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Entertainment Limitation</span>
-                  <span className="font-mono font-semibold text-amber-400">50% deductible</span>
+                  <span className="font-mono font-semibold text-amber-700">50% deductible</span>
                 </div>
               </>
             ) : profile.country === 'AU' ? (
               <>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Standard 10% GST on Purchases (1B)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Gross Non-Capital Purchases (G11)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.claimableBusinessTotal)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>ATO Cents-per-km Car Rate</span>
-                  <span className="font-mono font-semibold text-emerald-400">AU$0.88 / km</span>
+                  <span className="font-mono font-semibold text-emerald-600">AU$0.88 / km</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Instant Asset Write-Off Limit</span>
-                  <span className="font-mono font-semibold text-blue-400">AU$20,000</span>
+                  <span className="font-mono font-semibold text-blue-700">AU$20,000</span>
                 </div>
               </>
             ) : profile.country === 'CA' ? (
               <>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Federal GST (5%) & Provincial (HST/PST)</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>CRA Input Tax Credits (ITC) Claimable (Line 106)</span>
-                  <span className="font-mono font-semibold text-emerald-400">{fmt(currentPeriodTaxResult.eligibleGstItc)}</span>
+                  <span className="font-mono font-semibold text-emerald-600">{fmt(currentPeriodTaxResult.eligibleGstItc)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>CRA Automobile Allowance Limit</span>
                   <span className="font-mono font-semibold text-white">CA$0.70 / km</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Meals & Entertainment (ITA 67.1)</span>
-                  <span className="font-mono font-semibold text-amber-400">50% deductible</span>
+                  <span className="font-mono font-semibold text-amber-700">50% deductible</span>
                 </div>
               </>
             ) : (
               <>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Sales Tax Paid on Expenses</span>
                   <span className="font-mono font-semibold text-white">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Schedule C Allowable Business Deductions</span>
-                  <span className="font-mono font-semibold text-emerald-400">{fmt(currentPeriodTaxResult.claimableBusinessTotal)}</span>
+                  <span className="font-mono font-semibold text-emerald-600">{fmt(currentPeriodTaxResult.claimableBusinessTotal)}</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>IRS Standard Mileage Rate</span>
                   <span className="font-mono font-semibold text-white">$0.67 / mile</span>
                 </div>
-                <div className="py-2 flex justify-between text-neutral-300">
+                <div className="py-2 flex justify-between text-slate-700">
                   <span>Business Meals Deduction</span>
-                  <span className="font-mono font-semibold text-amber-400">50% deductible</span>
+                  <span className="font-mono font-semibold text-amber-700">50% deductible</span>
                 </div>
               </>
             )}
 
             <div className="py-2.5 flex justify-between font-bold text-white text-sm">
               <span>{profile.country === 'US' ? 'Total Tax Incurred' : 'Total GST/HST Incurred'}</span>
-              <span className="font-mono text-emerald-400">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
+              <span className="font-mono text-emerald-600">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-neutral-800 grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-neutral-950 p-2.5 rounded-xl border border-neutral-800">
-              <span className="text-[11px] text-neutral-400">
+          <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span className="text-xs text-slate-500">
                 {profile.country === 'US' ? 'Eligible Deduction Total:' : 'Eligible Input Tax Credit:'}
               </span>
-              <div className="text-sm font-bold text-emerald-400 font-mono mt-0.5">
+              <div className="text-sm font-bold text-emerald-600 font-mono mt-0.5">
                 {fmt(currentPeriodTaxResult.eligibleGstItc)}
               </div>
             </div>
 
-            <div className="bg-neutral-950 p-2.5 rounded-xl border border-neutral-800">
-              <span className="text-[11px] text-neutral-400">
+            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span className="text-xs text-slate-500">
                 {profile.country === 'US' ? 'Requires Schedule C Audit:' : 'ITC Under Review:'}
               </span>
-              <div className="text-sm font-bold text-amber-400 font-mono mt-0.5">
+              <div className="text-sm font-bold text-amber-700 font-mono mt-0.5">
                 {fmt(currentPeriodTaxResult.needsReviewGst)}
               </div>
             </div>
@@ -904,8 +904,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       {/* REPORT 6: Vendor Summary */}
       {activeReportTab === 'vendor' && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
+        <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Top Vendors by Spend ({vendorSummary.length} vendors)
           </h2>
 
@@ -913,11 +913,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             {vendorSummary.map((v) => (
               <div
                 key={v.merchant}
-                className="bg-neutral-950 border border-neutral-800/80 rounded-xl p-2.5 flex items-center justify-between text-xs"
+                className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between text-xs"
               >
                 <div>
                   <div className="font-bold text-white">{v.merchant}</div>
-                  <div className="text-[10px] text-neutral-400">
+                  <div className="text-xs text-slate-500">
                     {v.count} bills {v.gstin ? `· ${profile.country === 'US' ? 'EIN' : profile.country === 'IN' ? 'GSTIN' : 'Tax ID'}: ${v.gstin}` : ''}
                   </div>
                 </div>
@@ -933,24 +933,24 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
       {/* REPORT 7: Detailed Expense Report */}
       {activeReportTab === 'detailed' && (
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
+        <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Itemized Audit Ledger ({filteredExpenses.length} Records)
           </h2>
 
-          <div className="divide-y divide-neutral-800/80 text-xs">
+          <div className="divide-y divide-slate-200 text-xs">
             {filteredExpenses.map((exp) => (
               <div key={exp.id} className="py-2.5 flex justify-between items-start gap-2">
                 <div>
                   <div className="font-bold text-white">{exp.merchant}</div>
-                  <div className="text-[10px] text-neutral-400">
+                  <div className="text-xs text-slate-500">
                     {exp.date} · {exp.category} · {exp.invoiceNumber || 'No Inv #'}
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
                   <div className="font-mono font-bold text-white">{fmt(exp.amount)}</div>
-                  <div className="text-[10px] text-emerald-400 font-mono">
+                  <div className="text-xs text-emerald-600 font-mono">
                     Claim: {fmt(exp.claimableBusinessAmount)}
                   </div>
                 </div>

@@ -1,36 +1,18 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
-    --color-neutral-950: #f8fafc; /* page base: slate-50 */
-    --color-neutral-900: #ffffff; /* cards/surfaces: pure white */
-    --color-neutral-850: #f8fafc; 
-    --color-neutral-800: #f1f5f9; /* inner card / secondary container: slate-100 */
-    --color-neutral-700: #e2e8f0; /* hover / divider: slate-200 */
-    --color-neutral-600: #cbd5e1; /* borders: slate-300 */
-    --color-neutral-500: #94a3b8; /* subtle icons / placeholders: slate-400 */
-    --color-neutral-400: #64748b; /* muted labels: slate-500 */
-    --color-neutral-300: #475569; /* body text: slate-600 */
-    --color-neutral-200: #334155; /* secondary text: slate-700 */
-    --color-neutral-100: #0f172a; /* deep primary text: slate-900 */
-    --color-neutral-50:  #020617;
+  html, body, #root {
+    background-color: #f8fafc;
+    color: #0f172a;
   }
 
   html, body {
-    background-color: #f8fafc;
-    color: #0f172a;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
-  
+
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-feature-settings: "tnum" 1;
-  }
-
-  input, select, textarea {
-    color: #0f172a;
-    background-color: #ffffff;
-    border-color: #cbd5e1;
   }
 
   input::placeholder, textarea::placeholder {
@@ -39,89 +21,17 @@
 }
 
 /* =========================================================
-   TAXVAULT MODERN LIGHT THEME ENGINE
-   Transforms cards, typography, badges, inputs & overlays
+   TAXVAULT LIGHT THEME
+   Components use light Tailwind classes directly. The rules
+   below are the few remaining global conventions.
    ========================================================= */
 
-/* 1. Global Page & Card Surfaces */
-body, #root {
-  background-color: #f8fafc !important;
-  color: #0f172a;
-}
-
-/* Surface backgrounds */
-.bg-neutral-950 {
-  background-color: #f8fafc !important;
-}
-
-.bg-neutral-900,
-[class*="bg-neutral-900/"] {
-  background-color: #ffffff !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-}
-
-/* Inner containers & secondary button surfaces */
-.bg-neutral-800,
-[class*="bg-neutral-800/"] {
-  background-color: #f1f5f9 !important;
-}
-
-.bg-neutral-700 {
-  background-color: #e2e8f0 !important;
-}
-
-/* 2. Global Borders & Dividers */
-.border-neutral-950,
-.border-neutral-900,
-.border-neutral-800,
-[class*="border-neutral-800"] {
-  border-color: #e2e8f0 !important;
-}
-
-.border-neutral-700,
-[class*="border-neutral-700"] {
-  border-color: #cbd5e1 !important;
-}
-
-.border-neutral-600 {
-  border-color: #94a3b8 !important;
-}
-
-[class*="divide-neutral-800"] {
-  border-color: #e2e8f0 !important;
-}
-
-/* 3. Typography & Text Hierarchy */
-.text-neutral-950 {
-  color: #0f172a !important;
-}
-
-.text-neutral-100 {
-  color: #0f172a !important;
-}
-
-.text-neutral-200 {
-  color: #1e293b !important;
-}
-
-.text-neutral-300 {
-  color: #334155 !important;
-}
-
-.text-neutral-400 {
-  color: #64748b !important;
-}
-
-.text-neutral-500 {
-  color: #94a3b8 !important;
-}
-
-/* Convert default dark text-white to slate-900, EXCEPT on solid colored buttons & badges */
+/* 1. text-white is legacy body copy: render it dark unless it
+      sits on a filled brand surface. */
 .text-white {
   color: #0f172a;
 }
 
-/* Retain pure white text on filled action buttons, icons, and hero elements */
 button.bg-emerald-600,
 button.bg-emerald-500,
 button[class*="bg-emerald-600"],
@@ -144,6 +54,8 @@ button[class*="bg-amber-500"],
 .bg-amber-500 .text-white,
 [class*="bg-gradient-to"] .text-white,
 [class*="from-emerald-"] .text-white,
+.bg-emerald-600.text-white,
+.bg-emerald-500.text-white,
 .keep-white,
 .text-pure-white,
 .razorpay-dark,
@@ -151,169 +63,64 @@ button[class*="bg-amber-500"],
 .razorpay-header,
 .razorpay-pay-btn,
 .razorpay-pay-btn * {
-  color: #ffffff !important;
+  color: #ffffff;
 }
 
 .razorpay-header .text-accent-emerald {
-  color: #34d399 !important;
+  color: #34d399;
 }
 
 .razorpay-header .text-accent-muted {
-  color: #cbd5e1 !important;
+  color: #cbd5e1;
 }
 
 .razorpay-header .text-accent-cyan {
-  color: #67e8f9 !important;
+  color: #67e8f9;
 }
 
-/* 4. Action Buttons & Micro-Interactions */
+/* 2. Filled brand buttons share one emerald */
 button.bg-emerald-500,
-button.bg-emerald-600,
-button[class*="bg-emerald-500"],
-button[class*="bg-emerald-600"] {
-  background-color: #059669 !important;
-  color: #ffffff !important;
+button.bg-emerald-600 {
+  background-color: #059669;
+  color: #ffffff;
   box-shadow: 0 1px 3px 0 rgba(5, 150, 105, 0.25);
 }
 
 button.bg-emerald-500:hover,
 button.bg-emerald-600:hover {
-  background-color: #047857 !important;
+  background-color: #047857;
 }
 
-/* Invert emerald pill buttons that had dark text */
-.bg-emerald-500.text-neutral-950,
-.bg-emerald-600.text-neutral-950 {
-  background-color: #059669 !important;
-  color: #ffffff !important;
-}
-
-/* Secondary neutral buttons */
-button.bg-neutral-800,
-button.bg-neutral-950 {
-  background-color: #f1f5f9 !important;
-  color: #334155 !important;
-  border-color: #e2e8f0 !important;
-}
-
-button.bg-neutral-800:hover,
-button.bg-neutral-950:hover {
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
-}
-
-/* 5. Light Badge & Status Pill Palette */
-/* Emerald / Success */
-[class*="bg-emerald-950"] {
-  background-color: #ecfdf5 !important;
-  border-color: #a7f3d0 !important;
-  color: #047857 !important;
-}
-
-.text-emerald-400,
-.text-emerald-300 {
-  color: #059669 !important;
-}
-
-/* Amber / Warning */
-[class*="bg-amber-950"] {
-  background-color: #fffbeb !important;
-  border-color: #fde68a !important;
-  color: #92400e !important;
-}
-
-.text-amber-400,
-.text-amber-300,
-.text-amber-200 {
-  color: #b45309 !important;
-}
-
-/* Blue / Info */
-[class*="bg-blue-950"] {
-  background-color: #eff6ff !important;
-  border-color: #bfdbfe !important;
-  color: #1d4ed8 !important;
-}
-
-.text-blue-400,
-.text-blue-300 {
-  color: #1d4ed8 !important;
-}
-
-/* Purple / Enterprise */
-[class*="bg-purple-950"] {
-  background-color: #faf5ff !important;
-  border-color: #e9d5ff !important;
-  color: #7e22ce !important;
-}
-
-.text-purple-400,
-.text-purple-300 {
-  color: #7e22ce !important;
-}
-
-/* Rose / Red / Danger */
-[class*="bg-rose-950"],
-[class*="bg-red-950"] {
-  background-color: #fff1f2 !important;
-  border-color: #fecdd3 !important;
-  color: #be123c !important;
-}
-
-.text-rose-400,
-.text-red-400,
-.text-rose-300,
-.text-red-300 {
-  color: #be123c !important;
-}
-
-/* Cyan / Teal */
-[class*="bg-cyan-950"],
-[class*="bg-teal-950"] {
-  background-color: #f0fdfa !important;
-  border-color: #99f6e4 !important;
-  color: #0f766e !important;
-}
-
-.text-cyan-400,
-.text-teal-400 {
-  color: #0f766e !important;
-}
-
-/* 6. Form Controls & Inputs */
+/* 3. Form controls */
 input, select, textarea {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: #10b981 !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  border-color: #10b981;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
-/* 7. Modal & Dialog Overlays (Translucent Dimmed Overlay) */
-.bg-black,
-.bg-black\/95,
-.bg-black\/90,
-.bg-black\/85,
-.bg-black\/80,
-.bg-black\/60 {
-  background-color: rgba(15, 23, 42, 0.5) !important;
-  backdrop-filter: blur(4px) !important;
+/* Keyboard users still need a visible focus ring on everything else */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
 }
 
-/* Modal dialogue container cards */
-[role="dialog"],
-.fixed .bg-neutral-900,
-.fixed [class*="bg-neutral-900"] {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+/* 4. Dialog cards */
+[role="dialog"] {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
-/* 8. Light Custom Scrollbars & No-Scrollbar Utility */
+/* 5. Light Custom Scrollbars & No-Scrollbar Utility */
 ::-webkit-scrollbar {
   width: 5px;
   height: 0px !important; /* Completely hide horizontal scrollbar lines across all containers */

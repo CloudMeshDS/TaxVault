@@ -1274,7 +1274,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="text-[11px] text-emerald-700 font-medium bg-emerald-50 border border-emerald-200/70 py-1.5 px-3 rounded-full flex items-center justify-center gap-1.5">
+            <div className="text-xs text-emerald-700 font-medium bg-emerald-50 border border-emerald-200/70 py-1.5 px-3 rounded-full flex items-center justify-center gap-1.5">
               <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
               <span>Extracting totals & GST details...</span>
             </div>

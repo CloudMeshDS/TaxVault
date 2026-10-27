@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-900 select-none shadow-xs pt-[env(safe-area-inset-top)]">
-      <div className="w-full max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2">
+      <div className="w-full max-w-5xl mx-auto px-4 py-1.5 flex items-center justify-between gap-2">
         {/* Brand & Country Flag */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-black text-sm shadow-md shadow-emerald-500/20 ring-1 ring-emerald-400/40 shrink-0">
@@ -46,12 +46,12 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 leading-none">
               <span className="font-extrabold text-base tracking-tight text-slate-900">TaxVault</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-semibold flex items-center gap-1 whitespace-nowrap">
+              <span className="text-xs px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-semibold flex items-center gap-1 whitespace-nowrap">
                 <span>{flag}</span>
                 <span>{profile.financialYear || 'FY 26-27'}</span>
               </span>
             </div>
-            <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5 mt-0.5 min-w-0">
+            <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5 min-w-0">
               <span className="truncate">{profile.businessName || 'Personal & Business'}</span>
               <span className="shrink-0">·</span>
               <span className="text-emerald-600 font-mono font-semibold shrink-0">{currencyCode}</span>
@@ -64,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenAuth && (
             <button
               onClick={onOpenAuth}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer font-bold text-xs relative"
+              className="w-11 h-11 flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer font-bold text-xs relative"
               title={profile.email ? `Signed in as ${profile.email}` : 'Sign In'}
               aria-label={profile.email ? `Account: ${profile.email}` : 'Sign In'}
             >
@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenSubscription && (
             <button
               onClick={onOpenSubscription}
-              className={`h-9 flex items-center gap-1.5 text-xs px-2.5 rounded-xl border transition-all cursor-pointer font-semibold ${
+              className={`h-11 flex items-center gap-1.5 text-xs px-3 rounded-xl border transition-all cursor-pointer font-semibold ${
                 profile.subscription?.tier === 'pro'
                   ? 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
                   : profile.subscription?.tier === 'enterprise'
@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
               title="Subscription & Upgrade Options"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span className="text-[11px] font-bold">
+              <span className="text-xs font-bold">
                 {profile.subscription?.tier === 'pro'
                   ? 'Pro'
                   : profile.subscription?.tier === 'enterprise'

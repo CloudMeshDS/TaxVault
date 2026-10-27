@@ -116,25 +116,26 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 select-none modal-backdrop-animation">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-xs flex items-center justify-center p-4 select-none modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
               <Download className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base font-black text-white tracking-tight">Download Report</h2>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-xs text-slate-500">
                 Export itemized tax audit packs & spreadsheets
               </p>
             </div>
           </div>
           <button
+            aria-label="Close"
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-500 hover:text-white hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -144,15 +145,15 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
         <div className="space-y-4 overflow-y-auto flex-1 pr-1">
           {/* Notifications */}
           {successMessage && (
-            <div className="bg-emerald-950/70 border border-emerald-800/70 text-emerald-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span className="font-medium">{successMessage}</span>
             </div>
           )}
 
           {errorMessage && (
-            <div className="bg-rose-950/70 border border-rose-800/70 text-rose-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="bg-rose-50 border border-rose-200 text-rose-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
               <span className="font-medium">{errorMessage}</span>
             </div>
           )}
@@ -168,9 +169,9 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
           />
 
           {/* Summary Card for Selected Period */}
-          <div className="bg-neutral-950 border border-neutral-800/80 rounded-2xl p-3 grid grid-cols-2 gap-3 text-xs">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 grid grid-cols-2 gap-3 text-xs">
             <div>
-              <div className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">
+              <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">
                 Matching Receipts
               </div>
               <div className="text-sm font-extrabold text-white mt-0.5">
@@ -178,10 +179,10 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">
+              <div className="text-xs text-slate-400 uppercase font-bold tracking-wider">
                 Total Claimable
               </div>
-              <div className="text-sm font-extrabold text-emerald-400 font-mono mt-0.5">
+              <div className="text-sm font-extrabold text-emerald-600 font-mono mt-0.5">
                 {fmt(taxResult.claimableBusinessTotal)}
               </div>
             </div>
@@ -189,7 +190,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
 
           {/* Export Options */}
           <div className="space-y-2">
-            <label className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider">
+            <label className="text-xs text-slate-500 uppercase font-bold tracking-wider">
               2. Choose Export Format
             </label>
 
@@ -199,25 +200,25 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
                 type="button"
                 onClick={() => handleDownload('excel')}
                 disabled={downloadingFormat !== null}
-                className="group relative p-3.5 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 hover:to-emerald-950/20 border border-neutral-800 hover:border-emerald-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
+                className="group relative p-3.5 rounded-2xl bg-gradient-to-b from-white to-slate-50 hover:to-emerald-950/20 border border-slate-200 hover:border-emerald-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600">
                     {downloadingFormat === 'excel' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
                     ) : (
                       <FileSpreadsheet className="w-4 h-4" />
                     )}
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
                     .XLSX
                   </span>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                  <div className="text-xs font-bold text-white group-hover:text-emerald-600 transition-colors">
                     Excel Workbook
                   </div>
-                  <div className="text-[10px] text-neutral-400 mt-0.5 leading-snug">
+                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                     Multi-sheet CA audit schedule & tax breakdown
                   </div>
                 </div>
@@ -228,25 +229,25 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
                 type="button"
                 onClick={() => handleDownload('pdf')}
                 disabled={downloadingFormat !== null}
-                className="group relative p-3.5 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 hover:to-rose-950/20 border border-neutral-800 hover:border-rose-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
+                className="group relative p-3.5 rounded-2xl bg-gradient-to-b from-white to-slate-50 hover:to-rose-950/20 border border-slate-200 hover:border-rose-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-700">
                     {downloadingFormat === 'pdf' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-rose-700" />
                     ) : (
                       <FileText className="w-4 h-4" />
                     )}
                   </div>
-                  <span className="text-[10px] font-bold text-rose-400 bg-rose-950/60 border border-rose-800/50 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
                     .PDF
                   </span>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">
+                  <div className="text-xs font-bold text-white group-hover:text-rose-700 transition-colors">
                     Audit PDF
                   </div>
-                  <div className="text-[10px] text-neutral-400 mt-0.5 leading-snug">
+                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                     Formal tax report with itemized receipt table
                   </div>
                 </div>
@@ -257,25 +258,25 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
                 type="button"
                 onClick={() => handleDownload('csv')}
                 disabled={downloadingFormat !== null}
-                className="group relative p-3.5 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 hover:to-amber-950/20 border border-neutral-800 hover:border-amber-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
+                className="group relative p-3.5 rounded-2xl bg-gradient-to-b from-white to-slate-50 hover:to-amber-950/20 border border-slate-200 hover:border-amber-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-700">
                     {downloadingFormat === 'csv' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-700" />
                     ) : (
                       <FileCode className="w-4 h-4" />
                     )}
                   </div>
-                  <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
                     .CSV
                   </span>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                  <div className="text-xs font-bold text-white group-hover:text-amber-700 transition-colors">
                     CSV Data
                   </div>
-                  <div className="text-[10px] text-neutral-400 mt-0.5 leading-snug">
+                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                     Clean raw tabular data for accounting imports
                   </div>
                 </div>
@@ -285,15 +286,15 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between">
-          <div className="text-[11px] text-neutral-500 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+          <div className="text-xs text-slate-400 flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>CA & Tax Authority Compliant</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-white text-xs font-bold transition-colors cursor-pointer"
           >
             Close
           </button>

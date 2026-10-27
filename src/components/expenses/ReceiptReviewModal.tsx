@@ -46,6 +46,7 @@ import {
   formatCurrency,
   validateCalculation,
 } from '../../services/taxRules';
+import { pressable } from '../../utils/a11y';
 
 interface ReceiptReviewModalProps {
   isOpen: boolean;
@@ -363,6 +364,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
         </div>
 
         <button
+          aria-label="Close"
           onClick={onClose}
           className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
         >
@@ -380,11 +382,11 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 <div className="flex items-center gap-3">
                   {isPdfDoc ? (
                     <div
-                      onClick={() => setShowReceiptImage(true)}
+                      {...pressable(() => setShowReceiptImage(true))}
                       className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col items-center justify-center text-emerald-600 cursor-pointer shrink-0 shadow-xs hover:bg-emerald-100 transition-colors"
                     >
                       <FileText className="w-6 h-6 text-emerald-600 shrink-0" />
-                      <span className="text-[10px] font-black uppercase tracking-tight mt-0.5 whitespace-nowrap">PDF</span>
+                      <span className="text-xs font-black uppercase tracking-tight mt-0.5 whitespace-nowrap">PDF</span>
                     </div>
                   ) : (
                     <img
@@ -487,7 +489,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                     Merchant / Vendor Name <span className="text-rose-500">*</span>
                   </span>
                   {!isManual && confidence.merchant < 80 && (
-                    <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                       Please verify
                     </span>
                   )}
@@ -816,6 +818,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 <p className="text-xs text-slate-500">Choose from expense classifications</p>
               </div>
               <button
+                aria-label="Close"
                 onClick={() => {
                   setIsCategoryPickerOpen(false);
                   setCategorySearchQuery('');
@@ -840,6 +843,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 />
                 {categorySearchQuery && (
                   <button
+                    aria-label="Clear search"
                     type="button"
                     onClick={() => setCategorySearchQuery('')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
@@ -907,7 +911,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
                           {c.defaultType}
                         </span>
                         {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
@@ -923,12 +927,13 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
 
       {/* Full Receipt Image Preview Submodal */}
       {showReceiptImage && extractedData.originalImage && (
-        <div className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="fixed inset-0 z-70 bg-slate-900/50 backdrop-blur-xs flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between text-white">
             <span className="font-bold text-sm">Original Receipt Image</span>
             <button
+              aria-label="Close"
               onClick={() => setShowReceiptImage(false)}
-              className="p-1.5 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white"
+              className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -941,7 +946,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
               <iframe
                 src={extractedData.originalImage}
                 title="Document PDF Preview"
-                className="w-full h-[75vh] rounded-xl border border-neutral-700 bg-white"
+                className="w-full h-[75vh] rounded-xl border border-slate-300 bg-white"
               />
             ) : (
               <img
@@ -954,7 +959,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
 
           <button
             onClick={() => setShowReceiptImage(false)}
-            className="w-full max-w-sm mx-auto bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 rounded-xl text-sm cursor-pointer"
+            className="w-full max-w-sm mx-auto bg-slate-100 hover:bg-slate-200 text-white font-bold py-3 rounded-xl text-sm cursor-pointer"
           >
             Close Preview
           </button>
