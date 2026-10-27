@@ -21,7 +21,7 @@ export const DuplicateAlertModal: React.FC<DuplicateAlertModalProps> = ({
   if (!isOpen || !existingExpense || !newExpenseCandidate) return null;
 
   return (
-    <div className="fixed inset-0 z-70 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
       <div className="bg-white border-2 border-amber-500/50 rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-white modal-enter-animation">
         {/* Warning Icon & Title */}
         <div className="text-center space-y-2">
@@ -48,7 +48,7 @@ export const DuplicateAlertModal: React.FC<DuplicateAlertModalProps> = ({
             <div className="font-extrabold text-sm text-white truncate">
               {existingExpense.merchant}
             </div>
-            <div className="font-mono font-bold text-sm text-emerald-600">
+            <div className="font-mono font-bold text-sm text-emerald-700">
               {formatCurrency(existingExpense.amount, existingExpense.currency || 'NZD', existingExpense.currencySymbol || '$', true)}
             </div>
           </div>

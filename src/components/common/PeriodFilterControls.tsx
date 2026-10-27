@@ -90,7 +90,7 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
             <button
               type="button"
               onClick={toggleExpanded}
-              className="text-xs font-bold text-emerald-600 hover:text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
               title="Show or hide detailed date picker options"
             >
               <span>{filter.isExpanded ? 'Hide Options' : 'Options'}</span>
@@ -273,14 +273,14 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                         onClick={() => onChange({ ...filter, selectedQuarter: q })}
                         className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                           isSelected
-                            ? 'bg-emerald-500 text-slate-900 shadow-xs'
+                            ? 'bg-brand text-slate-900 shadow-xs'
                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
                         <div>{q}</div>
                         <div
                           className={`text-xs font-normal ${
-                            isSelected ? 'text-slate-900 opacity-80' : 'text-slate-400'
+                            isSelected ? 'text-slate-900 opacity-80' : 'text-slate-500'
                           }`}
                         >
                           {qInfo?.monthsLabel || ''}

@@ -185,7 +185,7 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
@@ -217,8 +217,8 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
 
         {/* Global Feedback */}
         {feedback && (
-          <div className="m-3 p-3 bg-emerald-50 border border-emerald-500/60 rounded-xl text-xs text-emerald-600 font-bold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="m-3 p-3 bg-emerald-50 border border-emerald-500/60 rounded-xl text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>{feedback}</span>
           </div>
         )}
@@ -346,7 +346,7 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                           aria-label="Delete item"
                           type="button"
                           onClick={() => handleDeleteItem(item.id)}
-                          className="text-slate-400 hover:text-rose-700 p-1 cursor-pointer"
+                          className="text-slate-500 hover:text-rose-700 p-1 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -396,7 +396,7 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>Statutory Tax ({taxConfig.standardGSTRate * 100}%):</span>
-                  <span className="font-mono text-emerald-600">+{formatCurrency(taxAmount, profile.country)}</span>
+                  <span className="font-mono text-emerald-700">+{formatCurrency(taxAmount, profile.country)}</span>
                 </div>
                 <div className="flex justify-between text-sm font-extrabold text-white pt-1 border-t border-slate-200">
                   <span>Total Amount Due:</span>
@@ -430,7 +430,7 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
                   <FileSpreadsheet className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                   <p className="text-sm font-semibold text-slate-700">No client invoices created yet</p>
-                  <p className="text-xs text-slate-400 mt-1">Tap "+ Create New Invoice" to start billing clients.</p>
+                  <p className="text-xs text-slate-500 mt-1">Tap "+ Create New Invoice" to start billing clients.</p>
                 </div>
               ) : (
                 invoices.map((inv) => (
@@ -445,7 +445,7 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                           <span
                             className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
                               inv.status === 'paid'
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}
                           >
@@ -462,14 +462,14 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                         <div className="font-mono text-base font-extrabold text-white">
                           {formatCurrency(inv.totalAmount, profile.country)}
                         </div>
-                        <div className="text-xs text-emerald-600 font-mono">
+                        <div className="text-xs text-emerald-700 font-mono">
                           Incl. {formatCurrency(inv.taxAmount, profile.country)} tax
                         </div>
                       </div>
                     </div>
 
                     <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-2">
-                      <span className="text-xs text-slate-400 truncate max-w-[200px]">
+                      <span className="text-xs text-slate-500 truncate max-w-[200px]">
                         {inv.items.length} line item(s): {inv.items[0]?.description}
                       </span>
 
@@ -477,10 +477,10 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                         {inv.status !== 'paid' && (
                           <button
                             onClick={() => handleRecordAsIncome(inv)}
-                            className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 border border-emerald-500/40 text-xs font-bold px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+                            className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 border border-emerald-500/40 text-xs font-bold px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
                             title="Record this invoice total as taxable income in TaxVault"
                           >
-                            <FileCheck2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <FileCheck2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                             <span className="whitespace-nowrap">Mark Paid</span>
                           </button>
                         )}

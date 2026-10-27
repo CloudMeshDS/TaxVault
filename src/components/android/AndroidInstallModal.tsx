@@ -53,7 +53,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Close Button */}
         <button
@@ -65,8 +65,8 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
         </button>
 
         {/* Top Header */}
-        <div className="p-5 border-b border-slate-200 text-center relative overflow-hidden bg-gradient-to-b from-emerald-950/40 to-transparent">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2.5 text-emerald-600">
+        <div className="p-5 border-b border-slate-200 text-center relative overflow-hidden bg-emerald-50">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2.5 text-emerald-700">
             <Smartphone className="w-7 h-7" />
           </div>
           <h3 className="font-bold text-lg text-white">Install TaxVault on Android</h3>
@@ -115,7 +115,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
         {activeTab === 'direct_install' && (
           <div className="p-5 space-y-4">
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-3">
-              <div className="flex items-center justify-center gap-2 text-emerald-600 text-xs font-semibold">
+              <div className="flex items-center justify-center gap-2 text-emerald-700 text-xs font-semibold">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Verified Android WebAPK (Zero Security Warnings)</span>
               </div>
@@ -133,7 +133,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
                     setActiveTab('instructions');
                   }
                 }}
-                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer active:scale-98"
+                className="w-full py-3 px-4 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer active:scale-98"
               >
                 <Zap className="w-4 h-4" />
                 <span>{deferredPrompt ? 'Install TaxVault App Now' : 'Show Instant Browser Install Steps'}</span>
@@ -152,7 +152,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
                 />
                 <button
                   onClick={handleCopyLink}
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-emerald-600 font-medium text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-emerald-700 font-medium text-xs flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedLink ? 'Copied' : 'Copy'}</span>
@@ -167,12 +167,12 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
           <div className="p-5 space-y-4">
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-white">
-                <Layers className="w-4 h-4 text-emerald-600" />
+                <Layers className="w-4 h-4 text-emerald-700" />
                 <span>Standalone Android APK / TWA Package</span>
               </div>
 
               <div className="text-xs text-slate-700 space-y-1 font-mono text-xs bg-white shadow-xs p-2.5 rounded-lg border border-slate-200">
-                <div>Package: <span className="text-emerald-600">nz.taxvault.mobile</span></div>
+                <div>Package: <span className="text-emerald-700">nz.taxvault.mobile</span></div>
                 <div>Target SDK: <span className="text-slate-800">Android 15 (API 35)</span></div>
                 <div>Min SDK: <span className="text-slate-800">Android 8.0 (API 26)</span></div>
                 <div>Architecture: <span className="text-slate-800">Universal (ARM64 / x86_64)</span></div>
@@ -180,7 +180,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
 
               <button
                 onClick={handleDownloadApkBundle}
-                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                className="w-full py-2.5 px-4 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
               >
                 <Download className="w-4 h-4" />
                 <span>{downloadStarted ? 'Downloading Package...' : 'Download Android Package Config'}</span>
@@ -189,7 +189,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
 
             <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed">
               <span className="font-semibold text-slate-800">Official PWABuilder / Bubblewrap APK: </span>
-              You can also paste the app URL into <span className="text-emerald-600 font-mono">pwabuilder.com</span> to generate a signed APK or Google Play AAB bundle in 10 seconds.
+              You can also paste the app URL into <span className="text-emerald-700 font-mono">pwabuilder.com</span> to generate a signed APK or Google Play AAB bundle in 10 seconds.
             </div>
           </div>
         )}
@@ -204,7 +204,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
 
             <div className="space-y-2.5">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-600 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
                   1
                 </div>
                 <div>
@@ -216,19 +216,19 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-600 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
                   2
                 </div>
                 <div>
                   <div className="font-semibold text-slate-800">Tap the 3-Dot Menu (⋮)</div>
                   <div className="text-xs text-slate-500 mt-0.5">
-                    In Chrome, tap the top-right menu and select <span className="text-emerald-600 font-semibold">"Install App"</span> or <span className="text-emerald-600 font-semibold">"Add to Home screen"</span>.
+                    In Chrome, tap the top-right menu and select <span className="text-emerald-700 font-semibold">"Install App"</span> or <span className="text-emerald-700 font-semibold">"Add to Home screen"</span>.
                   </div>
                 </div>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-600 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
                   3
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export const AndroidInstallModal: React.FC<AndroidInstallModalProps> = ({
 
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
           <span>Android 8.0 to Android 15+ Compatible</span>
         </div>
       </div>

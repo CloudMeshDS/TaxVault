@@ -48,7 +48,7 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
     <div className="fixed inset-0 z-90 bg-slate-50 flex flex-col justify-between p-6 select-none animate-in fade-in">
       {/* Top Branding */}
       <div className="text-center pt-8 space-y-2">
-        <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-700 mx-auto flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-emerald-500/20 ring-4 ring-emerald-500/20">
+        <div className="w-16 h-16 rounded-3xl bg-brand mx-auto flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-emerald-500/20 ring-4 ring-emerald-500/20">
           ₹
         </div>
         <h2 className="text-xl font-extrabold text-white tracking-tight">TaxVault Secure Lock</h2>
@@ -78,7 +78,7 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
         {errorMsg ? (
           <p className="text-xs font-semibold text-rose-700 animate-shake">Incorrect PIN. Try again.</p>
         ) : (
-          <p className="text-xs text-slate-400 font-mono">Default PIN: {correctPin || '1234'}</p>
+          <p className="text-xs text-slate-500 font-mono">Default PIN: {correctPin || '1234'}</p>
         )}
       </div>
 
@@ -98,7 +98,7 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
           {/* Biometric Icon */}
           <button
             onClick={handleBiometricSimulate}
-            className="h-16 rounded-2xl bg-white shadow-xs hover:bg-slate-100 active:scale-95 text-emerald-600 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+            className="h-16 rounded-2xl bg-white shadow-xs hover:bg-slate-100 active:scale-95 text-emerald-700 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
             title="Use Face ID / Fingerprint"
           >
             <Fingerprint className="w-6 h-6" />

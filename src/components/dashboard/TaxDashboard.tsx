@@ -98,10 +98,10 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
   return (
     <div className="p-4 space-y-4 pb-20">
       {/* End of Year Tax Season Countdown Banner */}
-      <div className="bg-gradient-to-r from-white via-white to-emerald-950/40 border border-slate-200 rounded-2xl p-4 relative overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 relative overflow-hidden">
         <div className="flex items-start justify-between relative z-10">
           <div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium mb-1">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-medium mb-1">
               <Calendar className="w-3.5 h-3.5" />
               <span>{taxConfig.taxYearLabel}</span>
             </div>
@@ -114,7 +114,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
           </div>
 
           <div className="text-right">
-            <div className="text-2xl font-extrabold font-mono text-emerald-600">
+            <div className="text-2xl font-extrabold font-mono text-emerald-700">
               {daysToDeadline} <span className="text-xs font-normal text-slate-500">days</span>
             </div>
             <div className="text-xs text-slate-500">Until Deadline</div>
@@ -124,14 +124,14 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
         {/* Quick statutory checklist */}
         <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 text-slate-700">
-            <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <FileCheck className="w-3.5 h-3.5 text-emerald-700" />
             <span className="text-xs">
               {profile.gstRegistered ? 'GST Registered' : 'Non-GST'} · {taxConfig.complianceForms[0]?.code} Active
             </span>
           </div>
           <button
             onClick={onOpenAccountantReport}
-            className="text-xs text-emerald-600 hover:text-emerald-600 font-medium flex items-center gap-0.5 cursor-pointer"
+            className="text-xs text-emerald-700 hover:text-emerald-700 font-medium flex items-center gap-0.5 cursor-pointer"
           >
             <span>Review Pack</span>
             <ChevronRight className="w-3 h-3" />
@@ -158,7 +158,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
 
           <button
             onClick={onOpenSubscription}
-            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0 cursor-pointer shadow-sm transition-all"
+            className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-strong text-white font-bold text-xs shrink-0 cursor-pointer shadow-sm transition-all"
           >
             Upgrade Pro
           </button>
@@ -169,7 +169,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
       <div className="grid grid-cols-2 gap-2.5">
         <button
           onClick={onOpenScanner}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold p-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer active:scale-95"
+          className="bg-brand hover:bg-brand-strong text-white font-semibold p-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition-all cursor-pointer active:scale-95"
         >
           <Camera className="w-4 h-4" />
           <span className="text-xs">Scan New Receipt</span>
@@ -179,7 +179,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
           onClick={onOpenAccountantReport}
           className="bg-slate-100 hover:bg-slate-100 border border-slate-300 text-slate-900 font-semibold p-3.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
         >
-          <Share2 className="w-4 h-4 text-emerald-600" />
+          <Share2 className="w-4 h-4 text-emerald-700" />
           <span className="text-xs">Share with CA</span>
         </button>
       </div>
@@ -190,7 +190,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
         <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-3.5">
           <div className="text-xs text-slate-500 flex items-center justify-between">
             <span>Net Taxable Profit</span>
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
           </div>
           <div className="text-lg font-bold font-mono text-white mt-1">
             {taxConfig.currencySymbol}
@@ -207,7 +207,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
             <span>Deductible Expenses</span>
             <Receipt className="w-3.5 h-3.5 text-blue-700" />
           </div>
-          <div className="text-lg font-bold font-mono text-emerald-600 mt-1">
+          <div className="text-lg font-bold font-mono text-emerald-700 mt-1">
             {taxConfig.currencySymbol}
             {taxResult.totalDeductibleExpenses.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </div>
@@ -235,11 +235,11 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
         <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-3.5">
           <div className="text-xs text-slate-500 flex items-center justify-between">
             <span>{taxConfig.countryCode === 'NZ' ? 'GST Position' : 'VAT / Sales Tax'}</span>
-            <span className={`text-xs font-bold ${taxResult.netGstPayableOrRefund <= 0 ? 'text-emerald-600' : 'text-amber-700'}`}>
+            <span className={`text-xs font-bold ${taxResult.netGstPayableOrRefund <= 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
               {taxResult.netGstPayableOrRefund <= 0 ? 'REFUND' : 'PAYABLE'}
             </span>
           </div>
-          <div className={`text-lg font-bold font-mono mt-1 ${taxResult.netGstPayableOrRefund <= 0 ? 'text-emerald-600' : 'text-amber-700'}`}>
+          <div className={`text-lg font-bold font-mono mt-1 ${taxResult.netGstPayableOrRefund <= 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
             {taxConfig.currencySymbol}
             {Math.abs(taxResult.netGstPayableOrRefund).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </div>
@@ -258,7 +258,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-brand inline-block" />
               <span>Revenue</span>
             </span>
             <span className="flex items-center gap-1">
@@ -279,7 +279,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
                   {/* Income bar */}
                   <div
                     style={{ height: `${incHeight}%` }}
-                    className="w-3.5 bg-emerald-500/80 rounded-t-xs hover:bg-emerald-400 transition-all"
+                    className="w-3.5 bg-emerald-500/80 rounded-t-xs hover:bg-brand-strong transition-all"
                     title={`Income: $${item.income}`}
                   />
                   {/* Expense bar */}
@@ -305,7 +305,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
           </div>
           <button
             onClick={onOpenExpenses}
-            className="text-xs text-emerald-600 hover:text-emerald-600 font-medium flex items-center gap-0.5"
+            className="text-xs text-emerald-700 hover:text-emerald-700 font-medium flex items-center gap-0.5"
           >
             <span>View All</span>
             <ChevronRight className="w-3 h-3" />
@@ -339,7 +339,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
                 <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     style={{ width: `${percentOfMax}%` }}
-                    className={`h-full rounded-full ${isEntertainment ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                    className={`h-full rounded-full ${isEntertainment ? 'bg-amber-500' : 'bg-brand'}`}
                   />
                 </div>
               </div>
@@ -351,7 +351,7 @@ export const TaxDashboard: React.FC<TaxDashboardProps> = ({
       {/* New Zealand / Local Jurisdiction Highlights */}
       <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-3.5 text-xs">
         <div className="flex items-center gap-2 text-slate-700 font-semibold mb-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
           <span>{taxConfig.countryName} Compliance Rules</span>
         </div>
         <ul className="space-y-1 text-xs text-slate-500 list-disc list-inside">

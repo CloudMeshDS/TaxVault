@@ -46,14 +46,14 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onOpenAuth}
-              className="w-11 h-11 rounded-full bg-emerald-700 text-slate-50 flex items-center justify-center font-semibold text-sm shrink-0 cursor-pointer hover:bg-emerald-800 transition-colors"
+              className="w-11 h-11 rounded-full bg-brand text-on-fill flex items-center justify-center font-semibold text-sm shrink-0 cursor-pointer hover:bg-brand-strong transition-colors"
               title={profile.email ? `Signed in as ${profile.email}` : 'Sign in'}
               aria-label={profile.email ? `Account: ${profile.email}` : 'Sign in'}
             >
               {profile.email ? initials : <User className="w-5 h-5" />}
             </button>
           ) : (
-            <div className="w-11 h-11 rounded-full bg-emerald-700 text-slate-50 flex items-center justify-center font-semibold text-sm shrink-0" aria-hidden="true">
+            <div className="w-11 h-11 rounded-full bg-brand text-on-fill flex items-center justify-center font-semibold text-sm shrink-0" aria-hidden="true">
               {currencySymbol}
             </div>
           )}

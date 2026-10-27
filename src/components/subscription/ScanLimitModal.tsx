@@ -32,7 +32,7 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
   const limit = profile.subscription?.monthlyReceiptLimit || 10;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-6 text-slate-900 shadow-2xl relative space-y-5 modal-enter-animation">
         {/* Close Button */}
         <button
@@ -76,9 +76,9 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
             <div className="w-full h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full" />
           </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5">
             <span>Free Tier: 10/month</span>
-            <span className="text-emerald-600 font-medium">Pro Tier: Unlimited</span>
+            <span className="text-emerald-700 font-medium">Pro Tier: Unlimited</span>
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
               onClose();
               onUpgradeToPro();
             }}
-            className="w-full group bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black p-3.5 rounded-2xl flex items-center justify-between shadow-xl shadow-emerald-500/25 cursor-pointer transition-all"
+            className="w-full group bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black p-3.5 rounded-2xl flex items-center justify-between shadow-xl shadow-emerald-500/25 cursor-pointer transition-all"
           >
             <div className="flex items-center gap-3 text-left">
               <div className="w-9 h-9 rounded-xl bg-slate-50/15 flex items-center justify-center shrink-0">
@@ -99,11 +99,11 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
               <div>
                 <div className="text-sm font-black leading-tight flex items-center gap-1.5">
                   <span>Upgrade to Pro Version</span>
-                  <span className="text-xs uppercase px-1.5 py-0.2 rounded bg-slate-50 text-emerald-600 font-extrabold">
+                  <span className="text-xs uppercase px-1.5 py-0.2 rounded bg-slate-50 text-emerald-700 font-extrabold">
                     Unlimited
                   </span>
                 </div>
-                <div className="text-xs font-semibold text-white/80 mt-0.5">
+                <div className="text-xs font-semibold text-on-fill/80 mt-0.5">
                   Unlimited AI scans & CA tax audit packs
                 </div>
               </div>
@@ -120,13 +120,13 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
             className="w-full group bg-slate-50 hover:bg-slate-50 active:scale-[0.98] border border-emerald-500/40 hover:border-emerald-500/80 text-white font-bold p-3.5 rounded-2xl flex items-center justify-between cursor-pointer transition-all shadow-sm"
           >
             <div className="flex items-center gap-3 text-left">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shrink-0">
                 <PenTool className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-sm font-extrabold text-white flex items-center gap-1.5">
                   <span>Enter Data Manually</span>
-                  <span className="text-xs px-1.5 py-0.2 rounded bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold">
+                  <span className="text-xs px-1.5 py-0.2 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">
                     Free Forever
                   </span>
                 </div>
@@ -135,7 +135,7 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
                 </div>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-1 transition-transform shrink-0" />
+            <ArrowRight className="w-4 h-4 text-emerald-700 group-hover:translate-x-1 transition-transform shrink-0" />
           </button>
         </div>
 

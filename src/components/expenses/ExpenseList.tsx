@@ -245,7 +245,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
           <button
             onClick={onOpenScanner}
-            className="h-11 pl-3.5 pr-4 rounded-full bg-emerald-700 hover:bg-emerald-800 text-slate-50 font-semibold text-sm flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
+            className="h-11 pl-3.5 pr-4 rounded-full bg-brand hover:bg-brand-strong text-on-fill font-semibold text-sm flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} />
             <span>Scan</span>
@@ -277,7 +277,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
         {/* Natural Language Filter Feedback Tag */}
         {parsedFilters && (
-          <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
             <Sparkles className="w-3 h-3 shrink-0" />
             <span>
               AI Filter applied: {parsedFilters.category ? `Category: ${parsedFilters.category} ` : ''}
@@ -328,7 +328,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
               className={`h-9 px-3.5 rounded-full text-sm font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                 selectedType === t
                   ? t === 'Deleted'
-                    ? 'bg-rose-600 text-slate-50'
+                    ? 'bg-rose-600 text-on-fill'
                     : 'bg-slate-900 text-slate-50'
                   : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
               }`}
@@ -458,7 +458,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
       {/* Advanced Filter Modal */}
       {showFiltersModal && (
-        <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop-animation">
+        <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop-animation">
           <div className="bg-white shadow-xs border border-slate-200 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto modal-enter-animation pb-8 sm:pb-6">
             <div className="flex items-center justify-between text-white border-b border-slate-200 pb-3">
               <h3 className="font-extrabold text-base whitespace-nowrap">Filter Expenses</h3>
@@ -563,7 +563,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
               </button>
               <button
                 onClick={() => setShowFiltersModal(false)}
-                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-black py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
+                className="flex-1 bg-brand hover:bg-brand-strong text-white font-black py-2.5 rounded-xl text-xs whitespace-nowrap cursor-pointer transition-colors"
               >
                 Apply Filters
               </button>

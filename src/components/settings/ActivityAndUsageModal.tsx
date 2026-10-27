@@ -111,12 +111,12 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
   const scanPct = scansLimit === -1 ? 15 : Math.min(100, Math.round((scansUsed / scansLimit) * 100));
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden modal-enter-animation text-slate-900">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-700">
               {activeTab === 'activity' ? <Activity className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
             </div>
             <div>
@@ -143,7 +143,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
             <button
               onClick={() => setActiveTab('activity')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                activeTab === 'activity' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-white'
+                activeTab === 'activity' ? 'bg-brand text-white shadow-xs' : 'text-slate-500 hover:text-white'
               }`}
             >
               <Activity className="w-3.5 h-3.5 shrink-0" />
@@ -152,7 +152,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
             <button
               onClick={() => setActiveTab('usage')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                activeTab === 'usage' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-white'
+                activeTab === 'usage' ? 'bg-brand text-white shadow-xs' : 'text-slate-500 hover:text-white'
               }`}
             >
               <Zap className="w-3.5 h-3.5 shrink-0" />
@@ -203,7 +203,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                     onClick={() => setFilterType(f.id)}
                     className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                       filterType === f.id
-                        ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 font-bold'
+                        ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/40 font-bold'
                         : 'bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-700'
                     }`}
                   >
@@ -217,7 +217,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                 <div className="p-8 text-center bg-slate-50/60 rounded-2xl border border-slate-200">
                   <Activity className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                   <p className="text-xs text-slate-700 font-bold">No activity recorded yet</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Actions like scanning receipts, editing expenses, and subscription upgrades will appear here.
                   </p>
                 </div>
@@ -235,7 +235,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                         <div
                           className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
                             isSuccess
-                              ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20'
                               : isWarning
                               ? 'bg-amber-500/10 text-amber-700 border border-amber-500/20'
                               : 'bg-red-500/10 text-red-700 border border-red-500/20'
@@ -256,7 +256,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                             <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
                               {log.entityType} · {log.action.replace('_', ' ')}
                             </span>
-                            <span className="text-xs text-slate-400 font-mono whitespace-nowrap shrink-0">
+                            <span className="text-xs text-slate-500 font-mono whitespace-nowrap shrink-0">
                               {formatTimeAgo(log.createdAt)}
                             </span>
                           </div>
@@ -287,11 +287,11 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
             /* TAB 2: TOKEN & REQUEST USAGE */
             <div className="space-y-3.5">
               {/* Plan Banner */}
-              <div className="p-3.5 bg-gradient-to-r from-emerald-950/40 via-slate-50 to-slate-50 border border-emerald-500/30 rounded-2xl flex items-center justify-between">
+              <div className="p-3.5 bg-emerald-50 border border-emerald-500/30 rounded-2xl flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-white">Active Plan</span>
-                    <span className="text-xs font-mono bg-emerald-500/20 text-emerald-600 px-2 py-0.5 rounded font-extrabold uppercase">
+                    <span className="text-xs font-mono bg-emerald-500/20 text-emerald-700 px-2 py-0.5 rounded font-extrabold uppercase">
                       {currentTier}
                     </span>
                   </div>
@@ -305,7 +305,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                       onClose();
                       onOpenSubscription();
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
+                    className="px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-sm"
                   >
                     <span>Manage Plan</span>
                     <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
@@ -317,17 +317,17 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
               <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Gemini AI Tokens Used</span>
                   </span>
-                  <span className="font-mono text-emerald-600 font-bold">
+                  <span className="font-mono text-emerald-700 font-bold">
                     {tokensUsed.toLocaleString()} / {tokenLimit === -1 ? 'Unlimited' : tokenLimit.toLocaleString()}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     style={{ width: `${tokenPct}%` }}
-                    className={`h-full rounded-full transition-all ${tokenPct >= 90 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                    className={`h-full rounded-full transition-all ${tokenPct >= 90 ? 'bg-amber-500' : 'bg-brand'}`}
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-500">
@@ -363,10 +363,10 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5 text-emerald-600" />
+                    <Server className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Recent Token Ledger</span>
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">
+                  <span className="text-xs text-slate-500 font-mono">
                     {tokenLogs.length} requests logged
                   </span>
                 </div>
@@ -390,10 +390,10 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                       </div>
 
                       <div className="text-right">
-                        <span className="font-mono text-xs font-bold text-emerald-600">
+                        <span className="font-mono text-xs font-bold text-emerald-700">
                           {t.totalTokens} tokens
                         </span>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           {t.promptTokens} in / {t.completionTokens} out
                         </p>
                       </div>
@@ -408,7 +408,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
         {/* Footer */}
         <div className="p-3 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <Shield className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
             <span>Stored with your TaxVault account</span>
           </div>
           <button

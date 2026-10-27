@@ -130,7 +130,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
       <div className="bg-white text-slate-900 border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative flex flex-col modal-enter-animation">
         
         {/* ========================================================
@@ -222,7 +222,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
         {/* Security Trust Strip */}
         <div className="bg-emerald-50/70 border-b border-emerald-200/80 px-4 py-2 flex items-center justify-between text-xs">
           <span className="flex items-center gap-1.5 text-emerald-800 font-bold">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <ShieldCheck className="w-4 h-4 text-emerald-700" />
             <span>Secure payment by Razorpay</span>
           </span>
           <span className="font-mono text-emerald-900 font-semibold text-xs">
@@ -335,7 +335,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               </div>
 
               <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center gap-2.5">
-                <Info className="w-4 h-4 shrink-0 text-blue-600" />
+                <Info className="w-4 h-4 shrink-0 text-blue-700" />
                 <span className="font-medium">
                   Zero convenience fee on UPI. Instant subscription auto-activation with GST invoice.
                 </span>
@@ -421,7 +421,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                       }`}
                     >
                       <span>{bank}</span>
-                      {selectedBank === bank && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      {selectedBank === bank && <Check className="w-3.5 h-3.5 text-blue-700" />}
                     </button>
                   )
                 )}
@@ -438,7 +438,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
               <h4 className="font-bold text-slate-900 text-sm">{processingStep}</h4>
               <p className="text-xs text-slate-500 mt-1">Please do not refresh or press back.</p>
             </div>
-            <div className="text-xs text-slate-400 font-mono">Gateway: Razorpay Enterprise API v1 (Live)</div>
+            <div className="text-xs text-slate-500 font-mono">Gateway: Razorpay Enterprise API v1 (Live)</div>
           </div>
         )}
 
@@ -455,7 +455,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             }}
             className="razorpay-pay-btn w-full py-3.5 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-blue-950/20 hover:opacity-95 active:scale-[0.99] cursor-pointer transition-all"
           >
-            <Lock className="w-4 h-4 text-emerald-600" />
+            <Lock className="w-4 h-4 text-emerald-700" />
             <span style={{ color: '#ffffff' }} className="font-extrabold text-white text-sm">
               Pay ₹{amountINR.toLocaleString('en-IN')} via Razorpay
             </span>
@@ -473,7 +473,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             }}
             className="w-full py-2.5 rounded-xl border border-dashed hover:bg-emerald-100 font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
-            <Zap className="w-4 h-4 text-emerald-600 fill-current" />
+            <Zap className="w-4 h-4 text-emerald-700 fill-current" />
             <span style={{ color: '#166534' }} className="font-bold">
               ⚡ Instant Razorpay Test Payment (Success)
             </span>

@@ -293,7 +293,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onClick={() => setActiveSection(null)}
             className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-white bg-white shadow-xs hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition-all cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 text-emerald-600" />
+            <ArrowLeft className="w-4 h-4 text-emerald-700" />
             <span>Settings</span>
           </button>
 
@@ -305,14 +305,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {activeSection === 'security' && 'Security & App Lock'}
               {activeSection === 'data' && 'Backup & Data Management'}
             </h2>
-            <span className="text-xs text-slate-400">Preferences</span>
+            <span className="text-xs text-slate-500">Preferences</span>
           </div>
         </div>
 
         {/* Global Feedback Banner */}
         {feedback && (
-          <div className="bg-emerald-50 border border-emerald-500/60 rounded-xl p-3 text-xs text-emerald-600 font-bold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="bg-emerald-50 border border-emerald-500/60 rounded-xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>{feedback}</span>
           </div>
         )}
@@ -344,7 +344,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <Lock className="w-3 h-3 text-amber-500" />
                         <span>Registered Email ID</span>
                       </label>
-                      <span className="text-xs font-mono font-bold text-amber-600 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded">
+                      <span className="text-xs font-mono font-bold text-amber-700 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded">
                         LOCKED
                       </span>
                     </div>
@@ -359,7 +359,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       />
                       <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Account email is permanent and locked for tax compliance.
                     </p>
                   </div>
@@ -392,7 +392,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs uppercase font-bold text-slate-500 flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                  <Shield className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Account Information</span>
                 </span>
               </div>
@@ -411,7 +411,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={onSignOut}
-                    className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-red-900/60 text-red-700 font-semibold text-xs border border-rose-200 cursor-pointer shrink-0 transition-colors flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-red-100 text-red-700 font-semibold text-xs border border-rose-200 cursor-pointer shrink-0 transition-colors flex items-center gap-1.5"
                   >
                     <LogOut className="w-3.5 h-3.5 text-red-700" />
                     <span>Sign Out</span>
@@ -462,7 +462,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span className="text-slate-500 font-medium">Monthly Scan Quota</span>
                   <span className="text-white font-mono font-bold">
                     {profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise' ? (
-                      <span className="text-emerald-600">Unlimited Neural OCR Scans</span>
+                      <span className="text-emerald-700">Unlimited Neural OCR Scans</span>
                     ) : (
                       <span>{scanUsage.used} / {scanUsage.limit} receipts used</span>
                     )}
@@ -473,7 +473,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise'
-                        ? 'w-full bg-emerald-600 hover:bg-emerald-700'
+                        ? 'w-full bg-brand hover:bg-brand-strong'
                         : 'bg-amber-500'
                     }`}
                     style={{
@@ -487,19 +487,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <div className="grid grid-cols-2 gap-2 pt-1 text-xs text-slate-700">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-600">✓</span>
+                    <span className="text-emerald-700">✓</span>
                     <span>Official Tax Audit PDF</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-600">✓</span>
+                    <span className="text-emerald-700">✓</span>
                     <span>4-Sheet Excel Export</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-600">✓</span>
+                    <span className="text-emerald-700">✓</span>
                     <span>Multi-Currency Engine</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-600">✓</span>
+                    <span className="text-emerald-700">✓</span>
                     <span>Cloud Backup Vault</span>
                   </div>
                 </div>
@@ -510,7 +510,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-2.5 space-y-1.5">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
                   <span>Plan & Scan Quota Status</span>
-                  <span className="text-emerald-600 font-mono">
+                  <span className="text-emerald-700 font-mono">
                     {profile.subscription?.tier === 'free' ? `${profile.subscription?.receiptsScannedThisMonth || 0}/10 Used` : 'Unlimited Pro'}
                   </span>
                 </div>
@@ -552,7 +552,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     }}
                     className={`px-2 py-1.5 rounded-lg text-xs font-bold border transition-all text-center cursor-pointer ${
                       profile.subscription?.tier === 'free' && (profile.subscription?.receiptsScannedThisMonth || 0) < 10
-                        ? 'bg-emerald-50 border-emerald-500/80 text-emerald-600 shadow-sm'
+                        ? 'bg-emerald-50 border-emerald-500/80 text-emerald-700 shadow-sm'
                         : 'bg-white shadow-xs border-slate-200 text-slate-500 hover:text-white'
                     }`}
                   >
@@ -726,14 +726,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               {/* Country Legal & Statutory Terms Card */}
               <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 shrink-0">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 shrink-0">
                     <Scale className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <span className="text-xs font-bold text-slate-800 block truncate">
                       {COUNTRY_CONFIGS[country].flag} {COUNTRY_CONFIGS[country].name} Terms &amp; Compliance
                     </span>
-                    <span className="text-xs text-emerald-600 font-semibold block truncate">
+                    <span className="text-xs text-emerald-700 font-semibold block truncate">
                       {profile.termsAccepted ? `✓ Statutory Consent Saved in DB${profile.termsAcceptedDate ? ` (${new Date(profile.termsAcceptedDate).toLocaleDateString()})` : ''}` : 'Statutory retention & non-advisory legal disclaimers'}
                     </span>
                   </div>
@@ -741,7 +741,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowTermsModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
+                  className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-strong text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   View Terms (Database)
                 </button>
@@ -800,7 +800,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 )}
 
-                <div className="text-xs text-slate-400 leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-200">
+                <div className="text-xs text-slate-500 leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-200">
                   🔒 App Lock keeps others from opening TaxVault on this device.
                 </div>
               </div>
@@ -813,7 +813,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </span>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-700">
                     <Camera className="w-4 h-4" />
                   </div>
                   <div>
@@ -824,7 +824,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {onOpenPermissions && (
                   <button
                     onClick={onOpenPermissions}
-                    className="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-600 cursor-pointer transition-colors shrink-0"
+                    className="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 cursor-pointer transition-colors shrink-0"
                   >
                     Check / Grant
                   </button>
@@ -839,14 +839,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </span>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shrink-0">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
                     <div className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span>Gemini 2.5 Flash Vision</span>
                       {hasGeminiKey ? (
-                        <span className="text-xs px-1.5 py-0.2 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-600 font-bold">
+                        <span className="text-xs px-1.5 py-0.2 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold">
                           Active
                         </span>
                       ) : (
@@ -863,7 +863,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsGeminiModalOpen(true)}
-                  className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-50 border border-slate-200 text-emerald-600 cursor-pointer transition-colors shrink-0"
+                  className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-50 border border-slate-200 text-emerald-700 cursor-pointer transition-colors shrink-0"
                 >
                   {hasGeminiKey ? 'Manage Key' : 'Configure'}
                 </button>
@@ -894,7 +894,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onClick={handleExportBackup}
                   className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
-                  <Download className="w-4 h-4 text-emerald-600" />
+                  <Download className="w-4 h-4 text-emerald-700" />
                   <span>Export JSON Backup</span>
                 </button>
 
@@ -978,6 +978,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             setTimeout(() => setFeedback(null), 3000);
           }}
         />
+
+        {/* Countrywise Terms & Conditions Modal (opened from the jurisdiction section) */}
+        <CountryTermsModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          initialCountry={country}
+        />
       </div>
     );
   }
@@ -996,8 +1003,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {feedback && (
-        <div className="bg-emerald-50 border border-emerald-500/60 rounded-xl p-3 text-xs text-emerald-600 font-bold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="bg-emerald-50 border border-emerald-500/60 rounded-xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
           <span>{feedback}</span>
         </div>
       )}
@@ -1032,7 +1039,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-slate-400 group-hover:text-slate-700 transition-colors shrink-0">
+          <div className="flex items-center gap-1 text-slate-500 group-hover:text-slate-700 transition-colors shrink-0">
             <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
@@ -1043,7 +1050,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-700 shrink-0 group-hover:scale-105 transition-transform">
               <User className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1069,7 +1076,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-700 shrink-0 group-hover:scale-105 transition-transform">
               <Sparkles className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1101,7 +1108,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 '🏢 Firm'
               ) : (
                 <>
-                  <Zap className="w-3 h-3 text-amber-600 fill-current" />
+                  <Zap className="w-3 h-3 text-amber-700 fill-current" />
                   <span>Upgrade</span>
                 </>
               )}
@@ -1116,7 +1123,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-700 shrink-0 group-hover:scale-105 transition-transform">
               <Globe className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1142,7 +1149,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200/60 flex items-center justify-center text-teal-600 shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200/60 flex items-center justify-center text-teal-700 shrink-0 group-hover:scale-105 transition-transform">
               <Shield className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1174,7 +1181,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-700 shrink-0 group-hover:scale-105 transition-transform">
               <Download className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -1201,7 +1208,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-700 shrink-0 group-hover:scale-105 transition-transform">
                 <Activity className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -1226,7 +1233,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-700 shrink-0 group-hover:scale-105 transition-transform">
                 <Database className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -1249,16 +1256,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={onSignOut}
-            className="w-full p-4 hover:bg-rose-50/70 active:bg-rose-100/60 text-rose-600 hover:text-rose-700 flex items-center justify-center gap-2 text-xs font-bold transition-colors cursor-pointer"
+            className="w-full p-4 hover:bg-rose-50/70 active:bg-rose-100/60 text-rose-700 hover:text-rose-700 flex items-center justify-center gap-2 text-xs font-bold transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4 text-rose-600" />
+            <LogOut className="w-4 h-4 text-rose-700" />
             <span>Sign Out of Account</span>
           </button>
         )}
       </div>
 
       {/* App Version Info */}
-      <div className="pt-2 text-center text-xs text-slate-300 space-y-0.5">
+      <div className="pt-2 text-center text-xs text-slate-500 space-y-0.5">
         <div>TaxVault · Multi-Jurisdiction Engine</div>
         <div>New Zealand · Australia · Canada · United States · India</div>
       </div>

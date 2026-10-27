@@ -58,7 +58,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 w-full max-w-md rounded-3xl p-6 shadow-2xl relative space-y-5 modal-enter-animation">
         <button
           aria-label="Close"
@@ -70,11 +70,11 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
 
         {/* Icon & Heading */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shadow-lg shadow-emerald-500/10">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shadow-lg shadow-emerald-500/10">
             {saveSuccess ? (
-              <CheckCircle2 className="w-7 h-7 text-emerald-600 animate-in zoom-in" />
+              <CheckCircle2 className="w-7 h-7 text-emerald-700 animate-in zoom-in" />
             ) : (
-              <Sparkles className="w-7 h-7 text-emerald-600" />
+              <Sparkles className="w-7 h-7 text-emerald-700" />
             )}
           </div>
           <h3 className="text-base font-black text-white tracking-tight">
@@ -89,12 +89,12 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
             <span className="flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-emerald-600" />
+              <Key className="w-3.5 h-3.5 text-emerald-700" />
               <span>Google Gemini API Key</span>
             </span>
             <button
               onClick={handlePaste}
-              className="text-xs text-emerald-600 hover:text-emerald-600 cursor-pointer font-bold"
+              className="text-xs text-emerald-700 hover:text-emerald-700 cursor-pointer font-bold"
             >
               Paste from clipboard
             </button>
@@ -125,7 +125,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
         <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-3.5 space-y-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="font-bold text-slate-800">Get a Free Key in 15 seconds:</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 font-semibold">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
               Free Tier
             </span>
           </div>
@@ -138,7 +138,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
             href="https://aistudio.google.com/app/apikey"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-600 pt-1"
+            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-700 pt-1"
           >
             <span>Open Google AI Studio</span>
             <ExternalLink className="w-3 h-3" />
@@ -149,7 +149,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
         <div className="space-y-2 pt-1">
           <button
             onClick={handleSave}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
+            className="w-full bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
           >
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span className="whitespace-nowrap">{apiKeyInput.trim() ? 'Save & Activate AI Key' : 'Clear Key'}</span>

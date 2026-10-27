@@ -194,7 +194,7 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
   const deadlines = COUNTRY_DEADLINES[profile.country] || COUNTRY_DEADLINES['NZ'];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
@@ -231,7 +231,7 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
             <div className="font-bold text-white mt-0.5">{taxConfig.taxAuthority}</div>
           </div>
 
-          <span className="font-mono text-xs text-emerald-600 font-bold bg-white shadow-xs px-2 py-1 rounded-lg border border-slate-200">
+          <span className="font-mono text-xs text-emerald-700 font-bold bg-white shadow-xs px-2 py-1 rounded-lg border border-slate-200">
             {profile.financialYear || taxConfig.taxYearLabel}
           </span>
         </div>
@@ -294,7 +294,7 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
         {/* Footer info */}
         <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
           <span>Official statutory dates based on current legislative calendar</span>
-          <span className="text-slate-400">{taxConfig.countryName}</span>
+          <span className="text-slate-500">{taxConfig.countryName}</span>
         </div>
       </div>
     </div>

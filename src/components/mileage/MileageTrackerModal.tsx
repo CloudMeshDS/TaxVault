@@ -185,7 +185,7 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl max-h-[92vh] overflow-hidden flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Top Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
@@ -217,8 +217,8 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
 
         {/* Feedback Alert */}
         {feedback && (
-          <div className="m-3 p-3 bg-emerald-50 border border-emerald-500/60 rounded-xl text-xs text-emerald-600 font-bold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="m-3 p-3 bg-emerald-50 border border-emerald-500/60 rounded-xl text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>{feedback}</span>
           </div>
         )}
@@ -239,7 +239,7 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
 
           <div className="bg-white shadow-xs border border-slate-200 p-2.5 rounded-xl">
             <div className="text-xs text-slate-500 uppercase font-semibold">Tax Deduction</div>
-            <div className="text-base font-extrabold text-emerald-600 font-mono mt-0.5">
+            <div className="text-base font-extrabold text-emerald-700 font-mono mt-0.5">
               {formatCurrency(totalDeduction, profile.country)}
             </div>
           </div>
@@ -390,7 +390,7 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
               <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
                 <Car className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 <p className="text-sm font-semibold text-slate-700">No vehicle trips logged yet</p>
-                <p className="text-xs text-slate-400 mt-1">Tap "+ Log New Trip" to start your compliant mileage record.</p>
+                <p className="text-xs text-slate-500 mt-1">Tap "+ Log New Trip" to start your compliant mileage record.</p>
               </div>
             ) : (
               trips.map((trip) => (
@@ -431,16 +431,16 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
 
                     <div className="flex items-center gap-2">
                       {trip.loggedAsExpenseId ? (
-                        <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" />
                           <span>Added to Expenses</span>
                         </span>
                       ) : (
                         <button
                           onClick={() => handleClaimAsExpense(trip)}
-                          className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 border border-emerald-500/40 text-xs font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+                          className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 border border-emerald-500/40 text-xs font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
                         >
-                          <FileCheck2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <FileCheck2 className="w-3 h-3 text-emerald-700 shrink-0" />
                           <span className="whitespace-nowrap">Claim Expense</span>
                         </button>
                       )}
@@ -448,7 +448,7 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
                       <button
                         aria-label="Delete Trip"
                         onClick={() => handleDeleteTrip(trip.id)}
-                        className="text-slate-400 hover:text-rose-700 p-1 cursor-pointer transition-colors"
+                        className="text-slate-500 hover:text-rose-700 p-1 cursor-pointer transition-colors"
                         title="Delete Trip"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -464,10 +464,10 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
         {/* Footer info banner */}
         <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
             <span>Meets IRD / ATO / CRA / IRS statutory logbook rules</span>
           </span>
-          <span className="text-slate-400">Tier 1 deduction method</span>
+          <span className="text-slate-500">Tier 1 deduction method</span>
         </div>
       </div>
     </div>

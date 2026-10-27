@@ -47,7 +47,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <span className={`relative flex items-center justify-center w-14 h-8 rounded-full transition-colors ${isActive ? 'bg-emerald-50' : ''}`}>
                 <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.25 : 1.75} />
                 {tab.badge && (
-                  <span className="absolute -top-0.5 right-2 bg-rose-600 text-slate-50 font-semibold text-[0.6875rem] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ring-2 ring-white">
+                  <span className="absolute -top-0.5 right-2 bg-rose-600 text-on-fill font-semibold text-[0.6875rem] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ring-2 ring-white">
                     {tab.badge}
                   </span>
                 )}

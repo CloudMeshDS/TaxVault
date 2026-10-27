@@ -49,7 +49,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative space-y-5 modal-enter-animation text-center">
         {/* Dismiss Button */}
         <button
@@ -61,11 +61,11 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
         </button>
 
         {/* Header Icon */}
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 shadow-lg shadow-emerald-500/10">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shadow-lg shadow-emerald-500/10">
           {grantedSuccess ? (
-            <CheckCircle2 className="w-8 h-8 text-emerald-600 animate-in zoom-in" />
+            <CheckCircle2 className="w-8 h-8 text-emerald-700 animate-in zoom-in" />
           ) : (
-            <ShieldCheck className="w-8 h-8 text-emerald-600" />
+            <ShieldCheck className="w-8 h-8 text-emerald-700" />
           )}
         </div>
 
@@ -85,7 +85,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
         {!grantedSuccess && (
           <div className="space-y-2.5 text-left pt-1">
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50/70 border border-slate-200">
-              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0 mt-0.5">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-700 shrink-0 mt-0.5">
                 <Camera className="w-4 h-4" />
               </div>
               <div>
@@ -131,7 +131,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
             <button
               onClick={handleGrantPermissions}
               disabled={isRequesting}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+              className="w-full bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
             >
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <span className="whitespace-nowrap">{isRequesting ? 'Requesting...' : 'Grant Permissions'}</span>

@@ -286,7 +286,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             {isDownloadingPDF ? (
               <Loader2 className="w-4 h-4 animate-spin shrink-0 text-rose-700" />
             ) : (
-              <FileText className="w-4 h-4 shrink-0 text-rose-600" />
+              <FileText className="w-4 h-4 shrink-0 text-rose-700" />
             )}
             <span className="whitespace-nowrap">PDF</span>
           </button>
@@ -298,7 +298,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             title="Download Excel Workbook"
           >
             {isDownloadingExcel ? (
-              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-emerald-600" />
+              <Loader2 className="w-4 h-4 animate-spin shrink-0 text-emerald-700" />
             ) : (
               <FileSpreadsheet className="w-4 h-4 shrink-0 text-emerald-700" />
             )}
@@ -317,7 +317,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           }`}
         >
           {downloadNotice.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
           ) : (
             <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
           )}
@@ -379,7 +379,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-200 text-xs">
               <div>
                 <span className="text-slate-500">Total Business Claimable:</span>
-                <div className="text-base font-bold text-emerald-600 font-mono mt-0.5">
+                <div className="text-base font-bold text-emerald-700 font-mono mt-0.5">
                   {fmt(currentPeriodTaxResult.claimableBusinessTotal)}
                 </div>
               </div>
@@ -399,10 +399,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       {activeReportTab === 'quarterly' && (
         <div className="space-y-4 animate-in fade-in duration-150">
           {/* Executive FY Annual Overview Strip */}
-          <div className="bg-gradient-to-r from-white via-white to-emerald-950/30 border border-slate-200 rounded-2xl p-4 space-y-3">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700">
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
@@ -413,7 +413,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
               </div>
 
-              <span className="text-xs font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                 {quarterlyBreakdown.annualCount} Annual Receipts
               </span>
             </div>
@@ -427,7 +427,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </div>
               <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-xs text-slate-500 block">Claimable Business</span>
-                <span className="text-sm font-black font-mono text-emerald-600 mt-0.5 block">
+                <span className="text-sm font-black font-mono text-emerald-700 mt-0.5 block">
                   {fmt(quarterlyBreakdown.annualClaimable)}
                 </span>
               </div>
@@ -459,7 +459,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg font-mono">
+                        <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg font-mono">
                           {q.quarter}
                         </span>
                         <span className="text-xs font-bold text-white">{q.info.monthsLabel}</span>
@@ -480,7 +480,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       }
                       className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                         isFiltered
-                          ? 'bg-emerald-500 text-slate-900 font-black'
+                          ? 'bg-brand text-slate-900 font-black'
                           : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
                       }`}
                     >
@@ -499,7 +499,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <div className="space-y-1">
                     <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
                       <div
-                        className="bg-emerald-500 h-full rounded-full transition-all"
+                        className="bg-brand h-full rounded-full transition-all"
                         style={{ width: `${Math.max(5, relativePercent)}%` }}
                       />
                     </div>
@@ -513,7 +513,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 text-xs">
                     <div>
                       <span className="text-xs text-slate-500">Claimable:</span>
-                      <div className="text-xs font-bold text-emerald-600 font-mono">
+                      <div className="text-xs font-bold text-emerald-700 font-mono">
                         {fmt(q.claimableBusinessTotal)}
                       </div>
                     </div>
@@ -544,7 +544,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <span>Total Spend</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="w-2 h-2 rounded-full bg-brand" />
                   <span>Claimable</span>
                 </span>
               </div>
@@ -569,7 +569,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         />
                         <div
                           style={{ height: `${claimHeight}%` }}
-                          className="w-3.5 bg-emerald-500/90 rounded-t-sm hover:bg-emerald-400 transition-all cursor-pointer"
+                          className="w-3.5 bg-emerald-500/90 rounded-t-sm hover:bg-brand-strong transition-all cursor-pointer"
                           title={`Claimable: ${fmt(q.claimableBusinessTotal)}`}
                         />
                       </div>
@@ -596,7 +596,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     <th className="pb-2 text-right">Q2</th>
                     <th className="pb-2 text-right">Q3</th>
                     <th className="pb-2 text-right">Q4</th>
-                    <th className="pb-2 text-right text-emerald-600">Total</th>
+                    <th className="pb-2 text-right text-emerald-700">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 font-mono text-xs">
@@ -612,7 +612,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         <td className="py-2 text-right text-slate-500">{cat.q2 > 0 ? fmt(cat.q2) : '—'}</td>
                         <td className="py-2 text-right text-slate-500">{cat.q3 > 0 ? fmt(cat.q3) : '—'}</td>
                         <td className="py-2 text-right text-slate-500">{cat.q4 > 0 ? fmt(cat.q4) : '—'}</td>
-                        <td className="py-2 text-right text-emerald-600 font-bold">{fmt(cat.total)}</td>
+                        <td className="py-2 text-right text-emerald-700 font-bold">{fmt(cat.total)}</td>
                       </tr>
                     );
                   })}
@@ -630,7 +630,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </h3>
                 <p className="text-xs text-slate-500">Statutory calendar for {config.taxAuthority}</p>
               </div>
-              <span className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-mono">
+              <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-mono">
                 {profile.country}
               </span>
             </div>
@@ -649,7 +649,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     <span className="text-xs font-mono text-amber-700 font-bold">{item.deadline}</span>
                   </div>
                   <div className="text-xs text-slate-700 font-medium">{item.form}</div>
-                  <div className="text-xs text-slate-400">{item.note}</div>
+                  <div className="text-xs text-slate-500">{item.note}</div>
                 </div>
               ))}
             </div>
@@ -681,7 +681,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   {/* Progress Bar */}
                   <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-emerald-500 h-full rounded-full transition-all"
+                      className="bg-brand h-full rounded-full transition-all"
                       style={{ width: `${Math.min(100, Math.max(3, pct))}%` }}
                     />
                   </div>
@@ -749,8 +749,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
 
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-600">Total Business Tax Allowable:</span>
-            <span className="text-base font-extrabold text-emerald-600 font-mono">
+            <span className="text-xs font-bold text-emerald-700">Total Business Tax Allowable:</span>
+            <span className="text-base font-extrabold text-emerald-700 font-mono">
               {fmt(currentPeriodTaxResult.claimableBusinessTotal)}
             </span>
           </div>
@@ -767,7 +767,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </h2>
               <p className="text-xs text-slate-500">{config.taxAuthority}</p>
             </div>
-            <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-mono">
+            <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-mono">
               {profile.country === 'NZ' ? `IRD: ${profile.taxId || 'Unregistered'}` :
                profile.country === 'AU' ? `ABN: ${profile.taxId || 'Unregistered'}` :
                profile.country === 'CA' ? `BN: ${profile.taxId || 'Unregistered'}` :
@@ -808,7 +808,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>IRD Mileage Deduction Rate</span>
-                  <span className="font-mono font-semibold text-emerald-600">NZ$0.95 / km</span>
+                  <span className="font-mono font-semibold text-emerald-700">NZ$0.95 / km</span>
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>Entertainment Limitation</span>
@@ -827,7 +827,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>ATO Cents-per-km Car Rate</span>
-                  <span className="font-mono font-semibold text-emerald-600">AU$0.88 / km</span>
+                  <span className="font-mono font-semibold text-emerald-700">AU$0.88 / km</span>
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>Instant Asset Write-Off Limit</span>
@@ -842,7 +842,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>CRA Input Tax Credits (ITC) Claimable (Line 106)</span>
-                  <span className="font-mono font-semibold text-emerald-600">{fmt(currentPeriodTaxResult.eligibleGstItc)}</span>
+                  <span className="font-mono font-semibold text-emerald-700">{fmt(currentPeriodTaxResult.eligibleGstItc)}</span>
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>CRA Automobile Allowance Limit</span>
@@ -861,7 +861,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>Schedule C Allowable Business Deductions</span>
-                  <span className="font-mono font-semibold text-emerald-600">{fmt(currentPeriodTaxResult.claimableBusinessTotal)}</span>
+                  <span className="font-mono font-semibold text-emerald-700">{fmt(currentPeriodTaxResult.claimableBusinessTotal)}</span>
                 </div>
                 <div className="py-2 flex justify-between text-slate-700">
                   <span>IRS Standard Mileage Rate</span>
@@ -876,7 +876,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
             <div className="py-2.5 flex justify-between font-bold text-white text-sm">
               <span>{profile.country === 'US' ? 'Total Tax Incurred' : 'Total GST/HST Incurred'}</span>
-              <span className="font-mono text-emerald-600">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
+              <span className="font-mono text-emerald-700">{fmt(currentPeriodTaxResult.totalGstIdentified)}</span>
             </div>
           </div>
 
@@ -885,7 +885,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <span className="text-xs text-slate-500">
                 {profile.country === 'US' ? 'Eligible Deduction Total:' : 'Eligible Input Tax Credit:'}
               </span>
-              <div className="text-sm font-bold text-emerald-600 font-mono mt-0.5">
+              <div className="text-sm font-bold text-emerald-700 font-mono mt-0.5">
                 {fmt(currentPeriodTaxResult.eligibleGstItc)}
               </div>
             </div>
@@ -950,7 +950,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
                 <div className="text-right shrink-0">
                   <div className="font-mono font-bold text-white">{fmt(exp.amount)}</div>
-                  <div className="text-xs text-emerald-600 font-mono">
+                  <div className="text-xs text-emerald-700 font-mono">
                     Claim: {fmt(exp.claimableBusinessAmount)}
                   </div>
                 </div>

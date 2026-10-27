@@ -539,7 +539,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
       <div className="relative w-full max-w-sm z-10 space-y-7">
         {/* Brand Header */}
         <div className="text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-700 flex items-center justify-center mx-auto text-white shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-brand flex items-center justify-center mx-auto text-white shadow-sm">
             <Shield className="w-7 h-7" strokeWidth={2.25} />
           </div>
 
@@ -619,7 +619,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
 
           {successMessage && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 font-semibold flex items-center gap-2 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -640,7 +640,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                  className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none transition-all"
                 />
               </div>
 
@@ -657,7 +657,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       setErrorMessage(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
                   >
                     Forgot password?
                   </button>
@@ -671,13 +671,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-500 font-mono focus:outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
                     aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2.5 cursor-pointer"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 p-2.5 cursor-pointer"
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -687,7 +687,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] disabled:opacity-50 text-white font-semibold h-12 px-4 rounded-xl text-base transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-brand hover:bg-brand-strong active:scale-[0.99] disabled:opacity-50 text-white font-semibold h-12 px-4 rounded-xl text-base transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
                 {isLoading ? (
                   <>
@@ -706,10 +706,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <div className="pt-3.5 border-t border-slate-200/80 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600 font-bold">
                   <span className="flex items-center gap-1.5 text-emerald-700">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Instant Demo Accounts</span>
                   </span>
-                  <span className="text-xs text-slate-400 font-medium">1-click login</span>
+                  <span className="text-xs text-slate-500 font-medium">1-click login</span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">
@@ -768,7 +768,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-emerald-600" />
+                    <User className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Full Name</span>
                   </label>
                   <input
@@ -777,13 +777,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupFullName}
                     onChange={(e) => setSignupFullName(e.target.value)}
                     placeholder="e.g. Rajesh Sharma"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none transition-all"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <Building2 className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Business Name</span>
                   </label>
                   <input
@@ -792,7 +792,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupBusinessName}
                     onChange={(e) => setSignupBusinessName(e.target.value)}
                     placeholder="e.g. Sharma Tech"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -800,7 +800,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               {/* Tax Jurisdiction & Country Select - HIGH CONTRAST DARK FONT */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                  <Globe className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Tax Jurisdiction & Country</span>
                 </label>
                 <div className="relative">
@@ -825,7 +825,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-emerald-600" />
+                  <Mail className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Email Address</span>
                 </label>
                 <input
@@ -834,13 +834,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                  className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                  <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Password (min. 6 chars)</span>
                 </label>
                 <div className="relative">
@@ -851,12 +851,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     placeholder="Create a secure password"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-500 font-mono focus:outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowSignupPassword(!showSignupPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 p-1 cursor-pointer"
                   >
                     {showSignupPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
@@ -866,7 +866,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               {/* Confirm Password Field */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                  <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
                   <span>Confirm Password</span>
                 </label>
                 <div className="relative">
@@ -877,7 +877,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupConfirmPassword}
                     onChange={(e) => setSignupConfirmPassword(e.target.value)}
                     placeholder="Re-enter your password"
-                    className={`w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl px-3.5 py-2 pr-10 text-xs text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all ${
+                    className={`w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border rounded-xl px-3.5 py-2 pr-10 text-xs text-slate-900 placeholder:text-slate-500 font-mono focus:outline-none transition-all ${
                       signupConfirmPassword && signupPassword !== signupConfirmPassword
                         ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
                         : signupConfirmPassword && signupPassword === signupConfirmPassword
@@ -888,19 +888,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   <button
                     type="button"
                     onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 p-1 cursor-pointer"
                   >
                     {showSignupConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
                 {signupConfirmPassword && signupPassword !== signupConfirmPassword && (
-                  <p className="text-xs text-rose-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-rose-700 font-semibold flex items-center gap-1 mt-0.5">
                     <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
                     <span>Passwords do not match</span>
                   </p>
                 )}
                 {signupConfirmPassword && signupPassword === signupConfirmPassword && (
-                  <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1 mt-0.5">
                     <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
                     <span>Passwords match</span>
                   </p>
@@ -929,7 +929,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                         setErrorMessage(null);
                       }
                     }}
-                    className="mt-0.5 w-4 h-4 text-emerald-600 bg-white border-slate-300 rounded focus:ring-2 focus:ring-emerald-500/30 cursor-pointer accent-emerald-600 shrink-0"
+                    className="mt-0.5 w-4 h-4 text-emerald-700 bg-white border-slate-300 rounded focus:ring-2 focus:ring-emerald-500/30 cursor-pointer accent-emerald-600 shrink-0"
                   />
                   <label htmlFor="signup-terms-checkbox" className="text-xs text-slate-700 leading-snug cursor-pointer select-none">
                     <span>I agree to the </span>
@@ -938,7 +938,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       onClick={() => setShowTermsModal(true)}
                       className="text-emerald-700 font-bold hover:underline inline-flex items-center gap-0.5"
                     >
-                      <Scale className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <Scale className="w-3 h-3 text-emerald-700 shrink-0" />
                       <span>Terms &amp; Conditions</span>
                     </button>
                     <span> and </span>
@@ -955,13 +955,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
 
                 <div className="flex items-center justify-between text-xs text-slate-500 px-1">
                   <span className="flex items-center gap-1">
-                    <span className="text-emerald-600 font-bold">✓</span>
+                    <span className="text-emerald-700 font-bold">✓</span>
                     <span>Includes {TAX_CONFIGS[signupCountry]?.taxAuthority || 'Tax Authority'} record keeping &amp; disclaimer</span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowTermsModal(true)}
-                    className="text-emerald-600 font-bold hover:underline"
+                    className="text-emerald-700 font-bold hover:underline"
                   >
                     Read Terms →
                   </button>
@@ -971,7 +971,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-50 text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 mt-3"
+                className="w-full bg-brand hover:bg-brand-strong active:scale-[0.99] disabled:opacity-50 text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 mt-3"
               >
                 {isLoading ? (
                   <>
@@ -992,7 +992,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           {tab === 'forgot' && (
             <div className="space-y-4 animate-in fade-in">
               <div className="text-center space-y-1 pb-1">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700 flex items-center justify-center mx-auto mb-2 border border-emerald-200 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-2 border border-emerald-200 shadow-xs">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div className="flex items-center justify-center gap-2">
@@ -1002,7 +1002,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                       : 'bg-amber-50 text-amber-800 border-amber-200'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${emailJsService.isConfigured() ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${emailJsService.isConfigured() ? 'bg-brand' : 'bg-amber-500 animate-pulse'}`} />
                     <span>EmailJS Portal</span>
                   </span>
                 </div>
@@ -1030,14 +1030,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs animate-in slide-in-from-top-2">
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                     <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                      <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+                      <ExternalLink className="w-3.5 h-3.5 text-emerald-700" />
                       <span>EmailJS Portal Credentials</span>
                     </span>
                     <a
                       href="https://dashboard.emailjs.com/admin"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 underline"
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-700 underline"
                     >
                       emailjs.com/admin
                     </a>
@@ -1083,7 +1083,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   <button
                     type="button"
                     onClick={handleSaveEmailJsConfig}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs transition-colors"
+                    className="w-full py-2 bg-brand hover:bg-brand-strong text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs transition-colors"
                   >
                     {configSaved ? 'Saved to Local Storage!' : 'Save EmailJS Portal Keys'}
                   </button>
@@ -1095,13 +1095,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs space-y-1">
                   <div className="flex items-center justify-between text-emerald-800 font-bold">
                     <span className="flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
                       <span>EmailJS Test Mode Code</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => setResetCode(simulatedCode)}
-                      className="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded font-extrabold hover:bg-emerald-700 cursor-pointer"
+                      className="text-xs bg-brand text-white px-2 py-0.5 rounded font-extrabold hover:bg-brand-strong cursor-pointer"
                     >
                       Auto-Fill Code
                     </button>
@@ -1119,7 +1119,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-emerald-600" />
+                    <Mail className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Registered Email Address</span>
                   </label>
                   <input
@@ -1128,7 +1128,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none transition-all"
                   />
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
                     A secure password reset link will be sent to your email. You must open that link to verify your identity and set a new password.
@@ -1138,7 +1138,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] disabled:opacity-50 text-white font-semibold h-12 px-4 rounded-xl text-base transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+                  className="w-full bg-brand hover:bg-brand-strong active:scale-[0.99] disabled:opacity-50 text-white font-semibold h-12 px-4 rounded-xl text-base transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
                 >
                   {isLoading ? (
                     <>
@@ -1174,11 +1174,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           {tab === 'email-sent' && (
             <div className="space-y-5 text-center animate-in fade-in zoom-in-95 duration-200 py-2">
               <div className="relative inline-block">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25">
+                <div className="w-16 h-16 rounded-2xl bg-brand text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25">
                   <Mail className="w-8 h-8 animate-bounce" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white shadow flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                 </div>
               </div>
 
@@ -1211,7 +1211,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               {emailDeliveryNotice && (
                 <div className="p-3 bg-amber-50/90 border border-amber-300 rounded-xl text-left space-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>Email Delivery Alert</span>
                   </div>
                   <p className="text-xs text-amber-800 leading-relaxed">
@@ -1228,7 +1228,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-left space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                     <span className="flex items-center gap-1.5 text-emerald-700">
-                      <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+                      <ExternalLink className="w-3.5 h-3.5 text-emerald-700" />
                       <span>Direct Recovery Link</span>
                     </span>
                     <span className="text-xs font-mono text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded">
@@ -1240,7 +1240,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   </p>
                   <a
                     href={activeRecoveryLink}
-                    className="block p-2 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition-colors shadow-xs"
+                    className="block p-2 text-center bg-brand hover:bg-brand-strong text-white font-bold rounded-lg text-xs transition-colors shadow-xs"
                   >
                     Open Supabase Recovery Link →
                   </a>
@@ -1292,7 +1292,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-emerald-600" />
+                    <Mail className="w-3.5 h-3.5 text-emerald-700" />
                     <span>Registered Account Email</span>
                   </span>
                   {resetEmail && (
@@ -1308,14 +1308,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     placeholder="Enter registered email (e.g. user@example.com)"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 font-medium focus:outline-none transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                  <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
                   <span>New Password (min 6 characters)</span>
                 </label>
                 <div className="relative">
@@ -1326,12 +1326,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password"
-                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-500 font-mono focus:outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 p-1 cursor-pointer"
                   >
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -1341,7 +1341,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-50 text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 mt-3"
+                className="w-full bg-brand hover:bg-brand-strong active:scale-[0.99] disabled:opacity-50 text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 mt-3"
               >
                 {isLoading ? (
                   <>

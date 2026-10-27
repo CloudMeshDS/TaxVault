@@ -242,7 +242,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
         </div>
 
         {savedSuccess && (
-          <span className="text-xs text-emerald-600 font-medium flex items-center gap-1 animate-pulse">
+          <span className="text-xs text-emerald-700 font-medium flex items-center gap-1 animate-pulse">
             <CheckCircle className="w-3.5 h-3.5" />
             <span>Updated!</span>
           </span>
@@ -252,7 +252,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
       {/* 1. Geolocation & Country Selector */}
       <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-          <Globe className="w-4 h-4 text-emerald-600" />
+          <Globe className="w-4 h-4 text-emerald-700" />
           <span>Tax Jurisdiction & Statutory Regulations</span>
         </div>
         <p className="text-xs text-slate-500">
@@ -274,7 +274,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
               >
                 <div className="text-lg">{cfg.flag}</div>
                 <div className="font-semibold text-xs text-slate-900 mt-1">{cfg.countryName}</div>
-                <div className="text-xs text-slate-400 font-mono">
+                <div className="text-xs text-slate-500 font-mono">
                   {cfg.taxAuthority.split('(')[0]} · {cfg.currencyCode}
                 </div>
               </button>
@@ -336,7 +336,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
               <div className="font-medium text-slate-800">
                 {taxConfig.countryCode === 'NZ' ? 'Registered for NZ GST (15%)' : 'Registered for Sales Tax / VAT'}
               </div>
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-slate-500">
                 {taxConfig.countryCode === 'NZ'
                   ? 'Mandatory turnover threshold > NZ$60,000/yr'
                   : 'Enables input and output tax reconciliation'}
@@ -363,12 +363,12 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
       <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <Sparkles className="w-4 h-4 text-emerald-700" />
             <span>Subscription Plan & Limits</span>
           </div>
           <span className={`text-xs font-mono px-2 py-0.5 rounded font-bold uppercase ${
             profile.subscription.tier === 'pro'
-              ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30'
+              ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/30'
               : profile.subscription.tier === 'enterprise'
               ? 'bg-blue-500/20 text-blue-700 border border-blue-500/30'
               : 'bg-amber-500/20 text-amber-700 border border-amber-500/30'
@@ -397,7 +397,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
           {onOpenSubscription && (
             <button
               onClick={onOpenSubscription}
-              className="w-full mt-2 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              className="w-full mt-2 py-2 px-3 rounded-lg bg-brand hover:bg-brand-strong text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>{profile.subscription.tier === 'free' ? 'Upgrade to Compliance Pro' : 'Manage Subscription Plan'}</span>
@@ -410,15 +410,15 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
       <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-            <Key className="w-4 h-4 text-emerald-600" />
+            <Key className="w-4 h-4 text-emerald-700" />
             <span>Connected Social Authentication</span>
           </div>
           {profile.authProvider ? (
-            <span className="text-xs font-mono text-emerald-600 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded uppercase">
+            <span className="text-xs font-mono text-emerald-700 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded uppercase">
               {profile.authProvider} Connected
             </span>
           ) : (
-            <span className="text-xs text-slate-400 font-mono">Guest / Local</span>
+            <span className="text-xs text-slate-500 font-mono">Guest / Local</span>
           )}
         </div>
 
@@ -441,7 +441,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
             {onOpenAuth && (
               <button
                 onClick={onOpenAuth}
-                className="py-1 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-emerald-600 hover:text-emerald-600 text-xs font-medium cursor-pointer transition-colors"
+                className="py-1 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-emerald-700 hover:text-emerald-700 text-xs font-medium cursor-pointer transition-colors"
               >
                 Switch Account
               </button>
@@ -463,7 +463,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
               <button
                 type="button"
                 onClick={onOpenAuth}
-                className="py-2 px-3 rounded-lg bg-slate-900/50 backdrop-blur-xs hover:bg-slate-50 active:scale-[0.98] text-white border border-slate-300 hover:border-slate-400 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
+                className="py-2 px-3 rounded-lg bg-black/50 backdrop-blur-xs hover:bg-slate-50 active:scale-[0.98] text-white border border-slate-300 hover:border-slate-400 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
               >
                 <AppleIcon className="w-3.5 h-3.5 shrink-0 text-white fill-white" />
                 <span>Apple</span>
@@ -476,17 +476,17 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
       {/* 3. Multi-Factor Authentication & Biometrics */}
       <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-          <Shield className="w-4 h-4 text-emerald-600" />
+          <Shield className="w-4 h-4 text-emerald-700" />
           <span>Security & Authentication Guard</span>
         </div>
 
         <div className="space-y-2.5">
           <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200">
             <div className="flex items-center gap-2.5">
-              <Fingerprint className="w-4 h-4 text-emerald-600" />
+              <Fingerprint className="w-4 h-4 text-emerald-700" />
               <div>
                 <div className="text-xs font-medium text-slate-800">Biometric Login</div>
-                <div className="text-xs text-slate-400">Face ID (iOS) / Fingerprint (Android)</div>
+                <div className="text-xs text-slate-500">Face ID (iOS) / Fingerprint (Android)</div>
               </div>
             </div>
             <input
@@ -505,7 +505,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
               <Key className="w-4 h-4 text-amber-700" />
               <div>
                 <div className="text-xs font-medium text-slate-800">Multi-Factor Authentication (MFA)</div>
-                <div className="text-xs text-slate-400">Time-based one-time passcode (TOTP) verification</div>
+                <div className="text-xs text-slate-500">Time-based one-time passcode (TOTP) verification</div>
               </div>
             </div>
             <input
@@ -526,10 +526,10 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
         <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-              <Smartphone className="w-4 h-4 text-emerald-600" />
+              <Smartphone className="w-4 h-4 text-emerald-700" />
               <span>Android App Installation (.apk / WebAPK)</span>
             </div>
-            <span className="text-xs font-mono text-emerald-600">Android 8+</span>
+            <span className="text-xs font-mono text-emerald-700">Android 8+</span>
           </div>
 
           <p className="text-xs text-slate-500">
@@ -538,7 +538,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
 
           <button
             onClick={onOpenAndroidInstall}
-            className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+            className="w-full py-2.5 px-3 rounded-lg bg-brand hover:bg-brand-strong text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
           >
             <Smartphone className="w-4 h-4" />
             <span>Open Android App Installer & APK Package</span>
@@ -551,13 +551,13 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
             <div className="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
-              <Database className="w-3.5 h-3.5 text-emerald-600" />
+              <Database className="w-3.5 h-3.5 text-emerald-700" />
             </div>
             <span>Supabase Cloud Database & APIs</span>
           </div>
           <span className={`text-xs font-mono px-2 py-0.5 rounded-full flex items-center gap-1 font-medium ${
             supabaseStatus.isConnected
-              ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+              ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30'
               : 'bg-amber-500/10 text-amber-700 border border-amber-500/30'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${supabaseStatus.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
@@ -572,17 +572,17 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
         {/* Project Details */}
         <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2 text-xs font-mono">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">Project URL:</span>
+            <span className="text-slate-500">Project URL:</span>
             <span className="text-slate-800 truncate max-w-[210px]">{supabaseStatus.projectUrl || 'https://egtmuxewuremxgodpjxj.supabase.co'}</span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">API Key:</span>
+            <span className="text-slate-500">API Key:</span>
             <span className="text-slate-500 font-mono">sb_publishable_zoLZ...GU81</span>
           </div>
           {statusNotice && (
             <div className={`p-2 rounded text-xs border font-sans ${
               statusNotice.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 : 'bg-amber-50 border-amber-200 text-amber-700'
             }`}>
               {statusNotice.message}
@@ -597,14 +597,14 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
             disabled={isTestingConn}
             className="py-2 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-300"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isTestingConn ? 'animate-spin text-emerald-600' : 'text-slate-500'}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isTestingConn ? 'animate-spin text-emerald-700' : 'text-slate-500'}`} />
             <span>{isTestingConn ? 'Testing...' : 'Test API'}</span>
           </button>
 
           <button
             onClick={handleSyncToSupabase}
             disabled={isPushing}
-            className="py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+            className="py-2 px-2.5 rounded-lg bg-brand hover:bg-brand-strong text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
           >
             <Upload className={`w-3.5 h-3.5 ${isPushing ? 'animate-spin' : ''}`} />
             <span>{isPushing ? 'Syncing...' : 'Sync to Cloud'}</span>
@@ -625,7 +625,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowSchema(!showSchema)}
-              className="text-xs text-emerald-600 hover:text-emerald-600 flex items-center gap-1 font-medium cursor-pointer"
+              className="text-xs text-emerald-700 hover:text-emerald-700 flex items-center gap-1 font-medium cursor-pointer"
             >
               <span>{showSchema ? '▾ Hide Supabase SQL Schema' : '▸ View Supabase SQL Schema (1-Click)'}</span>
             </button>
@@ -646,9 +646,9 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
                 <span>Run in Supabase SQL Editor:</span>
                 <button
                   onClick={handleCopySQL}
-                  className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-emerald-600 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                  className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-emerald-700 text-xs flex items-center gap-1 cursor-pointer transition-colors"
                 >
-                  {copiedSQL ? <CheckCircle className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  {copiedSQL ? <CheckCircle className="w-3 h-3 text-emerald-700" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedSQL ? 'Copied to Clipboard!' : 'Copy Schema SQL'}</span>
                 </button>
               </div>
@@ -684,7 +684,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
           <button
             onClick={onManualBackup}
             disabled={isSyncing}
-            className="py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="py-2 px-3 rounded-lg bg-brand hover:bg-brand-strong text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Syncing...' : 'Backup Now'}</span>

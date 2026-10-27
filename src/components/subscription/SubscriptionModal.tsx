@@ -168,7 +168,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
         <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
           {/* Close Button */}
           <button
@@ -182,7 +182,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           {razorpaySuccessData ? (
             /* Celebration & Razorpay Payment Success Receipt View */
             <div className="p-6 text-center space-y-4">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600 shadow-lg shadow-emerald-950/30">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-700 shadow-lg shadow-emerald-950/30">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
 
@@ -203,7 +203,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-2 text-xs font-mono">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                   <span className="text-slate-500">Razorpay Payment ID</span>
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
                     <span>{razorpaySuccessData.response.razorpay_payment_id}</span>
                     <button
                       onClick={() => {
@@ -216,7 +216,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       className="text-slate-500 hover:text-white p-0.5 rounded cursor-pointer"
                       title="Copy Payment ID"
                     >
-                      {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500">Billing Cycle</span>
-                  <span className="text-emerald-600 capitalize font-bold">{razorpaySuccessData.billingCycle} Plan</span>
+                  <span className="text-emerald-700 capitalize font-bold">{razorpaySuccessData.billingCycle} Plan</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -243,26 +243,26 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                 <div className="flex items-center justify-between pt-1 border-t border-slate-200">
                   <span className="text-slate-500">Status</span>
-                  <span className="text-emerald-600 font-bold">Captured & Active ✓</span>
+                  <span className="text-emerald-700 font-bold">Captured & Active ✓</span>
                 </div>
               </div>
 
               {/* Instant Features Unlocked */}
               <div className="bg-emerald-50 border border-emerald-500/30 rounded-2xl p-3.5 text-left text-xs space-y-1.5 text-emerald-200">
                 <div className="font-bold text-white flex items-center gap-1.5 mb-1 text-xs">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <Sparkles className="w-4 h-4 text-emerald-700" />
                   <span>Unlocked Pro Features</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                   <span>Unlimited Receipt Scanning with Gemini Flash AI</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                   <span>Chartered Accountant Audit Pack & Tax PDF Export</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                   <span>Multi-Sheet Excel Audit Worksheets & Spot FX</span>
                 </div>
               </div>
@@ -272,7 +272,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   setRazorpaySuccessData(null);
                   onClose();
                 }}
-                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white font-bold text-xs cursor-pointer shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-brand hover:bg-brand-strong active:scale-98 text-white font-bold text-xs cursor-pointer shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
               >
                 <span>Start Scanning Receipts</span>
                 <ArrowRight className="w-4 h-4" />
@@ -282,8 +282,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             /* Main Subscription Plans Screen */
             <>
               {/* Top Header */}
-              <div className="p-5 border-b border-slate-200 text-center relative overflow-hidden bg-gradient-to-b from-emerald-950/30 to-transparent">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-600">
+              <div className="p-5 border-b border-slate-200 text-center relative overflow-hidden bg-emerald-50">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-700">
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <h3 className="font-bold text-lg text-white">Upgrade Your TaxVault Plan</h3>
@@ -310,7 +310,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <div className="mt-3.5 p-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-left max-w-sm mx-auto">
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-slate-500">Free Tier Monthly Scans</span>
-                      <span className="font-mono text-emerald-600 font-bold">
+                      <span className="font-mono text-emerald-700 font-bold">
                         {scansUsed} / {scansLimit} used ({scansRemaining} left)
                       </span>
                     </div>
@@ -318,7 +318,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <div
                         style={{ width: `${percentUsed}%` }}
                         className={`h-full rounded-full transition-all ${
-                          percentUsed >= 90 ? 'bg-amber-500' : 'bg-emerald-500'
+                          percentUsed >= 90 ? 'bg-amber-500' : 'bg-brand'
                         }`}
                       />
                     </div>
@@ -343,12 +343,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     onClick={() => setBillingCycle('annual')}
                     className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                       billingCycle === 'annual'
-                        ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                        ? 'bg-brand text-white shadow-xs font-bold'
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     <span className="whitespace-nowrap">Annual</span>
-                    <span className="text-xs bg-emerald-50 text-emerald-600 border border-emerald-400/40 px-1.5 py-0.2 rounded font-bold whitespace-nowrap shrink-0">
+                    <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-400/40 px-1.5 py-0.2 rounded font-bold whitespace-nowrap shrink-0">
                       SAVE 17%
                     </span>
                   </button>
@@ -382,7 +382,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                     <div className="text-right">
                       <span className="text-lg font-extrabold font-mono text-white">$0</span>
-                      <span className="text-xs text-slate-400"> / forever</span>
+                      <span className="text-xs text-slate-500"> / forever</span>
                     </div>
                   </div>
 
@@ -395,11 +395,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <Check className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       <span>Standard CSV expense export</span>
                     </li>
-                    <li className="flex items-center gap-2 text-slate-400">
+                    <li className="flex items-center gap-2 text-slate-500">
                       <X className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                       <span>No CA Audit PDF with official sign-off</span>
                     </li>
-                    <li className="flex items-center gap-2 text-slate-400">
+                    <li className="flex items-center gap-2 text-slate-500">
                       <X className="w-3.5 h-3.5 text-slate-300 shrink-0" />
                       <span>No Multi-sheet Excel (.xlsx) pack</span>
                     </li>
@@ -424,7 +424,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       : 'bg-slate-50 border-emerald-500/40 hover:border-emerald-500 shadow-md'
                   }`}
                 >
-                  <div className="absolute -top-2.5 right-4 bg-emerald-500 text-white text-xs font-extrabold px-2 py-0.5 rounded-full tracking-wider uppercase">
+                  <div className="absolute -top-2.5 right-4 bg-brand text-white text-xs font-extrabold px-2 py-0.5 rounded-full tracking-wider uppercase">
                     RECOMMENDED FOR TAX SEASON
                   </div>
 
@@ -433,7 +433,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-white">Tax Compliance Pro</span>
                         {currentTier === 'pro' && (
-                          <span className="text-xs font-mono bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 rounded font-bold">
+                          <span className="text-xs font-mono bg-emerald-500/20 text-emerald-700 px-1.5 py-0.5 rounded font-bold">
                             CURRENT PLAN
                           </span>
                         )}
@@ -445,7 +445,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                     <div className="text-right">
                       <div className="flex items-baseline justify-end gap-1">
-                        <span className="text-xl font-black font-mono text-emerald-600">
+                        <span className="text-xl font-black font-mono text-emerald-700">
                           ₹{billingCycle === 'annual' ? '11,999' : '1,199'}
                         </span>
                         <span className="text-xs text-slate-500">
@@ -472,27 +472,27 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
                   <ul className="mt-3 space-y-1.5 text-xs text-slate-800 border-t border-slate-200 pt-2.5">
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span className="font-medium text-white">Unlimited receipt scans & OCR</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span className="font-medium text-white">Official Chartered Accountant Audit PDF</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span className="font-medium text-white">Multi-Sheet Excel (.xlsx) tax audit pack</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span>Direct CA Reviewer Token & Link sharing</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span>Live multi-currency spot rate conversions</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                       <span>Cloud backup & sync</span>
                     </li>
                   </ul>
@@ -501,7 +501,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <button
                       onClick={() => handleOpenRazorpay('pro')}
                       disabled={isProcessing}
-                      className="mt-3.5 w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-950/40 cursor-pointer active:scale-98 whitespace-nowrap"
+                      className="mt-3.5 w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-950/40 cursor-pointer active:scale-98 whitespace-nowrap"
                     >
                       <Zap className="w-3.5 h-3.5 shrink-0 fill-current text-amber-700" />
                       <span className="whitespace-nowrap">
@@ -509,8 +509,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                       </span>
                     </button>
                   ) : (
-                    <div className="mt-3 py-2 px-3 text-center text-xs text-emerald-600 font-semibold bg-emerald-500/10 rounded-xl border border-emerald-500/20 flex items-center justify-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <div className="mt-3 py-2 px-3 text-center text-xs text-emerald-700 font-semibold bg-emerald-500/10 rounded-xl border border-emerald-500/20 flex items-center justify-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                       <span>Active Pro Subscription · Paid via Razorpay</span>
                     </div>
                   )}
@@ -544,11 +544,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                         <span className="text-xl font-extrabold font-mono text-white">
                           ₹{billingCycle === 'annual' ? '31,999' : '3,199'}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500">
                           {billingCycle === 'annual' ? ' / yr' : ' / mo'}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-400 font-mono">
+                      <div className="text-xs text-slate-500 font-mono">
                         (${billingCycle === 'annual' ? '399' : '39.99'} USD)
                       </div>
                     </div>

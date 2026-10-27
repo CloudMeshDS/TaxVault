@@ -294,7 +294,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
             <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
               <div
-                className={`h-full rounded-full ${scanUsage.remaining === 0 ? 'bg-rose-500' : 'bg-emerald-600'}`}
+                className={`h-full rounded-full ${scanUsage.remaining === 0 ? 'bg-rose-500' : 'bg-brand'}`}
                 style={{ width: `${Math.min(100, (scanUsage.used / Math.max(1, scanUsage.limit)) * 100)}%` }}
               />
             </div>
@@ -531,7 +531,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             onClick={() => setSelectedQuarter(q)}
                             className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               selectedQuarter === q
-                                ? 'bg-emerald-500 text-slate-900 shadow-xs font-black'
+                                ? 'bg-brand text-slate-900 shadow-xs font-black'
                                 : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
                             }`}
                           >
@@ -558,10 +558,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           }`}
                         >
                           <div className="flex items-center justify-between text-xs">
-                            <span className={`font-bold ${isCurrent ? 'text-emerald-600' : 'text-slate-700'}`}>
+                            <span className={`font-bold ${isCurrent ? 'text-emerald-700' : 'text-slate-700'}`}>
                               {qData.quarter}
                             </span>
-                            <span className="text-slate-400 text-xs">{qData.info.monthsLabel}</span>
+                            <span className="text-slate-500 text-xs">{qData.info.monthsLabel}</span>
                           </div>
                           <div className="text-xs font-mono font-bold text-white mt-1 truncate">
                             {fmt(qData.totalExpenses)}
@@ -581,7 +581,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Select Financial Year ({profile.country} Rules)</span>
-                    <span className="text-emerald-600 font-mono">
+                    <span className="text-emerald-700 font-mono">
                       {profile.country === 'AU' ? '1 Jul – 30 Jun' : '1 Apr – 31 Mar'}
                     </span>
                   </div>
@@ -604,7 +604,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Select Calendar Year</span>
-                    <span className="text-emerald-600 font-mono">1 Jan – 31 Dec</span>
+                    <span className="text-emerald-700 font-mono">1 Jan – 31 Dec</span>
                   </div>
                   <select
                     value={selectedCY}
@@ -646,7 +646,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                   {/* Range preset shortcuts */}
                   <div className="flex items-center gap-1.5 pt-1 text-xs flex-wrap">
-                    <span className="text-slate-400">Presets:</span>
+                    <span className="text-slate-500">Presets:</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -697,7 +697,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <button
           type="button"
           onClick={onOpenScanner}
-          className="w-full h-14 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-semibold rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer text-base"
+          className="w-full h-14 bg-brand hover:bg-brand-strong active:scale-[0.99] text-white font-semibold rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer text-base"
         >
           <Camera className="w-5 h-5 shrink-0" />
           <span>Scan a receipt</span>

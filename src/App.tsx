@@ -45,7 +45,7 @@ const SupabaseSqlModal = lazy(() => import('./components/settings/SupabaseSqlMod
 const SettingsView = lazy(() => import('./components/settings/SettingsView').then((m) => ({ default: m.SettingsView })));
 
 const TabFallback = () => (
-  <div className="flex items-center justify-center py-20 text-slate-400">
+  <div className="flex items-center justify-center py-20 text-slate-500">
     <Loader2 className="w-6 h-6 animate-spin" />
   </div>
 );
@@ -1001,7 +1001,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen min-h-[100dvh] bg-canvas text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* Biometric / PIN Lock Screen */}
       {isAppLocked && (
         <PinLockModal
@@ -1269,8 +1269,8 @@ export default function App() {
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl border border-slate-200/80 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="relative w-16 h-16 mx-auto">
               <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 animate-ping" />
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-center text-emerald-600 shadow-md">
-                <ScanLine className="w-8 h-8 animate-pulse text-emerald-600" />
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-300 flex items-center justify-center text-emerald-700 shadow-md">
+                <ScanLine className="w-8 h-8 animate-pulse text-emerald-700" />
               </div>
             </div>
 
@@ -1282,7 +1282,7 @@ export default function App() {
             </div>
 
             <div className="text-xs text-emerald-700 font-medium bg-emerald-50 border border-emerald-200/70 py-1.5 px-3 rounded-full flex items-center justify-center gap-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" />
               <span>Extracting totals & GST details...</span>
             </div>
           </div>

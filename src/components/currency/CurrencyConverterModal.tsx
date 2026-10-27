@@ -51,10 +51,10 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
         <button
           onClick={handleRefreshRates}
           disabled={isRefreshing}
-          className="px-2.5 py-1.5 bg-white shadow-xs border border-slate-200 rounded-xl text-slate-700 hover:text-emerald-600 flex items-center gap-1.5 text-xs transition-colors cursor-pointer"
+          className="px-2.5 py-1.5 bg-white shadow-xs border border-slate-200 rounded-xl text-slate-700 hover:text-emerald-700 flex items-center gap-1.5 text-xs transition-colors cursor-pointer"
           title="Refresh Exchange Rates"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-700' : ''}`} />
           <span className="inline font-medium">Refresh</span>
         </button>
       </div>
@@ -95,7 +95,7 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
               <select
                 value={targetCurrency}
                 onChange={e => setTargetCurrency(e.target.value)}
-                className="bg-transparent text-emerald-600 font-semibold focus:outline-none cursor-pointer"
+                className="bg-transparent text-emerald-700 font-semibold focus:outline-none cursor-pointer"
               >
                 {SUPPORTED_CURRENCIES.map(c => (
                   <option key={c.code} value={c.code} className="bg-white shadow-xs text-white">
@@ -104,7 +104,7 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
                 ))}
               </select>
             </div>
-            <div className="text-xl font-bold font-mono text-emerald-600">
+            <div className="text-xl font-bold font-mono text-emerald-700">
               {convertedAmount.toFixed(2)}
             </div>
           </div>
@@ -114,7 +114,7 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
         <div className="flex items-center justify-between pt-1 text-xs">
           <button
             onClick={handleSwapCurrencies}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-emerald-700 transition-colors cursor-pointer"
           >
             <ArrowRightLeft className="w-3.5 h-3.5" />
             <span>Swap Currencies</span>
@@ -130,7 +130,7 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
       <div className="bg-white shadow-xs border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between text-xs border-b border-slate-200 pb-2">
           <span className="font-semibold text-slate-800">International Rate Board ({baseCurrency} Base)</span>
-          <span className="text-xs text-slate-400">Updated: {lastUpdated}</span>
+          <span className="text-xs text-slate-500">Updated: {lastUpdated}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -145,7 +145,7 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
                   <span className="text-base">{curr.flag}</span>
                   <div>
                     <div className="font-medium text-slate-800 text-xs">{curr.code}</div>
-                    <div className="text-xs text-slate-400">{curr.name.split(' ')[0]}</div>
+                    <div className="text-xs text-slate-500">{curr.name.split(' ')[0]}</div>
                   </div>
                 </div>
 
@@ -161,7 +161,7 @@ export const CurrencyConverterModal: React.FC<CurrencyConverterModalProps> = ({
       {/* Compliance Note */}
       <div className="p-3 bg-white shadow-xs border border-slate-200 rounded-xl text-xs text-slate-500">
         <div className="font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5 text-emerald-600" />
+          <Globe className="w-3.5 h-3.5 text-emerald-700" />
           <span>Accounting Standards Compliance</span>
         </div>
         <p className="text-xs leading-relaxed">
