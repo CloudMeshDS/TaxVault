@@ -136,6 +136,7 @@ interface SettingsViewProps {
   onResetData: () => void;
   onClearData: () => void;
   onSignOut?: () => void;
+  onDeleteAccount?: () => Promise<{ success: boolean; error?: string }>;
   onOpenSubscription?: () => void;
   onOpenAuth?: () => void;
   onOpenPermissions?: () => void;
@@ -151,6 +152,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onResetData,
   onClearData,
   onSignOut,
+  onDeleteAccount,
   onOpenSubscription,
   onOpenAuth,
   onOpenPermissions,
@@ -186,6 +188,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isSeedingCountry, setIsSeedingCountry] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    if (!onDeleteAccount || deleteConfirmText !== 'DELETE') return;
+    setIsDeletingAccount(true);
+    setDeleteAccountError(null);
+    const result = await onDeleteAccount();
+    setIsDeletingAccount(false);
+    if (!result.success) setDeleteAccountError(result.error || 'Could not delete your account. Please try again.');
+  };
 
   const handleCountryChange = (c: SupportedCountry) => {
     setCountry(c);
@@ -787,7 +801,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
 
                 <div className="text-xs text-slate-400 leading-relaxed bg-slate-50/60 p-2.5 rounded-xl border border-slate-200">
-                  🔒 All tax vouchers, receipts, and financial documents are encrypted securely on your device.
+                  🔒 App Lock keeps others from opening TaxVault on this device.
                 </div>
               </div>
             </div>
@@ -881,7 +895,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 px-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
                   <Download className="w-4 h-4 text-emerald-600" />
-                  <span>Export Encrypted JSON Backup</span>
+                  <span>Export JSON Backup</span>
                 </button>
 
                 <button
@@ -913,6 +927,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
               </div>
             </div>
+
+            {onDeleteAccount && (
+              <div className="bg-white border border-rose-200 rounded-2xl p-4 space-y-3 shadow-sm">
+                <span className="text-xs uppercase font-bold text-rose-700">
+                  Delete Account
+                </span>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Permanently deletes your TaxVault account, sign-in, receipts, expenses, mileage,
+                  invoices and plan history. This cannot be undone. Export a backup first if you
+                  need your records for your tax return.
+                </p>
+                <label htmlFor="delete-account-confirm" className="text-xs text-slate-700 block">
+                  Type <span className="font-mono font-bold">DELETE</span> to confirm
+                </label>
+                <input
+                  id="delete-account-confirm"
+                  type="text"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value.trim().toUpperCase())}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono"
+                  placeholder="DELETE"
+                />
+                {deleteAccountError && (
+                  <p role="alert" className="text-xs text-rose-700">{deleteAccountError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
+                  className="w-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors text-xs"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>{isDeletingAccount ? 'Deleting account…' : 'Permanently Delete My Account'}</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1130,7 +1182,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Data Backup & Reset
               </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                Export JSON backup, load demo vouchers or clear data
+                Export a backup, clear data or delete your account
               </div>
             </div>
           </div>
@@ -1157,7 +1209,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   Activity Audit Trail & Quotas
                 </div>
                 <div className="text-xs text-slate-500 truncate mt-0.5">
-                  View immutable audit logs & AI token meter
+                  View activity log & AI usage
                 </div>
               </div>
             </div>

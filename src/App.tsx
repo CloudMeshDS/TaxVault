@@ -952,6 +952,12 @@ export default function App() {
     setSettingsSection(null);
   };
 
+  const handleDeleteAccount = async () => {
+    const result = await apiClient.deleteAccount();
+    if (result.success) await handleSignOut();
+    return result;
+  };
+
   // Export Excel helper
   const handleExportExcel = async () => {
     try {
@@ -1084,6 +1090,7 @@ export default function App() {
                 onResetData={handleResetData}
                 onClearData={handleClearData}
                 onSignOut={handleSignOut}
+                onDeleteAccount={handleDeleteAccount}
                 onOpenSubscription={() => openSubscriptionModal()}
                 onOpenAuth={() => setIsAuthOpen(true)}
                 onOpenPermissions={() => setIsPermissionPromptOpen(true)}

@@ -493,7 +493,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     </li>
                     <li className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>AES-256 encrypted cloud backup vault</span>
+                      <span>Cloud backup & sync</span>
                     </li>
                   </ul>
 

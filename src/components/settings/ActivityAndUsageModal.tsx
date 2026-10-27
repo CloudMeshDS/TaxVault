@@ -124,7 +124,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
                 {activeTab === 'activity' ? 'Activity Audit Trail' : 'Token & Request Usage'}
               </h2>
               <p className="text-xs text-slate-500">
-                {activeTab === 'activity' ? 'Immutable cloud log of all user & AI actions' : 'AI consumption meter and quota tracking'}
+                {activeTab === 'activity' ? 'Cloud log of your account and AI actions' : 'AI consumption meter and quota tracking'}
               </p>
             </div>
           </div>
@@ -409,7 +409,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
         <div className="p-3 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
             <Shield className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>Encrypted Supabase audit ledger</span>
+            <span>Stored with your TaxVault account</span>
           </div>
           <button
             onClick={onClose}

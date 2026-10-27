@@ -929,27 +929,21 @@ class SupabaseService {
   }
 
   /**
-   * Supabase OAuth: Sign in with Google or Apple
-   * Pre-validates if provider is enabled to prevent raw 400 "Unsupported provider" redirect pages
+   * Supabase OAuth: Sign in with Google or Apple.
+   * Returns the provider's redirect URL on success. Pre-validates that the provider is enabled
+   * so the user gets a clear error instead of a raw 400 "Unsupported provider" page; it never
+   * signs anyone in without the provider.
    */
-  public async signInWithOAuth(provider: 'google' | 'apple') {
+  public async signInWithOAuth(provider: 'google' | 'apple'): Promise<{ success: boolean; url?: string; error?: string }> {
+    const providerName = provider === 'google' ? 'Google' : 'Apple';
     const client = this.getClient();
     if (!client) {
-      return { success: true, provider, fallback: true };
+      return { success: false, error: `${providerName} sign-in is unavailable right now. Please sign in with email.` };
     }
 
     try {
-      // Check if provider is enabled in Supabase Dashboard
-      const isEnabled = await this.isOAuthProviderEnabled(provider);
-      if (!isEnabled) {
-        // Provider is disabled in Supabase project dashboard.
-        // Return fallback so the app does not redirect to a raw 400 error page!
-        return {
-          success: true,
-          provider,
-          fallback: true,
-          notice: `Provider '${provider}' is not enabled in your Supabase Auth dashboard. Logged in with instant ${provider === 'google' ? 'Google' : 'Apple'} access.`,
-        };
+      if (!(await this.isOAuthProviderEnabled(provider))) {
+        return { success: false, error: `${providerName} sign-in is not available yet. Please sign in with email.` };
       }
 
       const { data, error } = await client.auth.signInWithOAuth({
@@ -959,13 +953,13 @@ class SupabaseService {
         },
       });
 
-      if (error) {
-        return { success: true, provider, fallback: true, error: error.message };
+      if (error || !data?.url) {
+        return { success: false, error: error?.message || `${providerName} sign-in could not be started.` };
       }
 
-      return { success: true, url: data?.url };
+      return { success: true, url: data.url };
     } catch (err: any) {
-      return { success: true, provider, fallback: true };
+      return { success: false, error: err?.message || `${providerName} sign-in could not be started.` };
     }
   }
 

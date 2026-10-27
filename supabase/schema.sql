@@ -814,7 +814,7 @@ INSERT INTO public.subscription_plans (
     "Multi-sheet Excel (.xlsx) tax audit pack",
     "Direct CA Reviewer Link & 6-digit PIN sharing",
     "Live multi-currency spot rate conversions",
-    "AES-256 encrypted cloud backup vault",
+    "Cloud backup & sync",
     "New Zealand IRD, Australia ATO, Canada CRA, US IRS & India GST rules"
   ]'::jsonb,
   'RECOMMENDED FOR TAX SEASON',

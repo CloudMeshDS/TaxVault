@@ -223,7 +223,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
         <div className="bg-emerald-50/70 border-b border-emerald-200/80 px-4 py-2 flex items-center justify-between text-xs">
           <span className="flex items-center gap-1.5 text-emerald-800 font-bold">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>256-Bit SSL Bank Grade Security</span>
+            <span>Secure payment by Razorpay</span>
           </span>
           <span className="font-mono text-emerald-900 font-semibold text-xs">
             RBI & PCI-DSS Compliant

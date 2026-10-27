@@ -704,7 +704,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 )}
               </button>
 
-              {/* Quick Demo Access Section */}
+              {/* Quick Demo Access Section (developer builds only: these are fictional on-device profiles) */}
+              {import.meta.env.DEV && (
               <div className="pt-3.5 border-t border-slate-200/80 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600 font-bold">
                   <span className="flex items-center gap-1.5 text-emerald-700">
@@ -760,6 +761,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   </button>
                 </div>
               </div>
+              )}
             </form>
           )}
 
@@ -1365,8 +1367,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
         <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
           <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
             <Lock className="w-4 h-4 text-emerald-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-xs">256-bit AES</div>
-            <div className="text-xs text-slate-500">Bank-grade security</div>
+            <div className="font-bold text-slate-800 text-xs">Private</div>
+            <div className="text-xs text-slate-500">Only you can see your data</div>
           </div>
           <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
             <Sparkles className="w-4 h-4 text-teal-600 mx-auto" />

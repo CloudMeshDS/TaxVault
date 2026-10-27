@@ -460,6 +460,31 @@ export const apiClient = {
   },
 
   /**
+   * Permanently delete the signed-in account and all its data (DELETE /api/account).
+   * On-device demo accounts have no server account, so only their local data is cleared.
+   */
+  async deleteAccount(): Promise<{ success: boolean; error?: string }> {
+    if (!(await supabaseService.getAccessToken())) {
+      storageService.clearAllData();
+      return { success: true };
+    }
+    try {
+      const res = await authedFetch('/api/account', {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.success) {
+        return { success: false, error: body.error || 'Could not delete your account. Please try again.' };
+      }
+      storageService.clearAllData();
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Could not reach TaxVault. Check your connection and try again.' };
+    }
+  },
+
+  /**
    * AI Natural Language Search Query (POST /api/ai-search)
    */
   async parseSearchQuery(query: string): Promise<any> {

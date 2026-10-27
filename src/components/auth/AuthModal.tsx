@@ -92,7 +92,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showEmailJsConfig, setShowEmailJsConfig] = useState(false);
   const [emailJsConfig, setEmailJsConfig] = useState(emailJsService.getConfig());
   const [configSaved, setConfigSaved] = useState(false);
-  const [password, setPassword] = useState('TaxVaultDemo2026!');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -144,72 +144,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const isIos = platform === 'ios';
   const isLoggedIn = Boolean(currentProfile.email && currentProfile.email.trim().length > 0 && currentProfile.email !== 'guest@taxvault.app');
 
-  const handleGoogleAuth = async () => {
+  // Google / Apple: redirect to the provider; the session is picked up when it returns.
+  // On any failure show the error; never sign in without the provider.
+  const handleOAuth = async (provider: 'google' | 'apple') => {
     setIsVerifying(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      const res = await supabaseService.signInWithOAuth('google');
+      const res = await supabaseService.signInWithOAuth(provider);
       if (res.url) {
         window.location.href = res.url;
         return;
       }
-
-      setSuccessMessage('Signed in with Google!');
-      const profileRes = await supabaseService.fetchProfile();
-      const updatedProfile = profileRes.profile || {
-        ...currentProfile,
-        email: currentProfile.email && currentProfile.email !== 'admin@taxvault.app' ? currentProfile.email : 'alex.turner@gmail.com',
-        fullName: currentProfile.fullName || 'Alex Turner',
-        authProvider: 'google' as const,
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      };
-
-      setIsSwitchingAccount(false);
-      setTimeout(() => {
-        onAuthenticated(updatedProfile);
-        onClose();
-      }, 700);
+      setErrorMessage(res.error || 'Sign-in could not be started. Please sign in with email.');
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Google authentication error');
+      setErrorMessage(err?.message || 'Sign-in could not be started. Please sign in with email.');
     } finally {
       setIsVerifying(false);
     }
   };
-
-  const handleAppleAuth = async () => {
-    setIsVerifying(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    try {
-      const res = await supabaseService.signInWithOAuth('apple');
-      if (res.url) {
-        window.location.href = res.url;
-        return;
-      }
-
-      setSuccessMessage('Signed in with Apple ID!');
-      const profileRes = await supabaseService.fetchProfile();
-      const updatedProfile = profileRes.profile || {
-        ...currentProfile,
-        email: currentProfile.email && currentProfile.email !== 'admin@taxvault.app' ? currentProfile.email : 'alex.turner@privaterelay.appleid.com',
-        fullName: currentProfile.fullName || 'Alex Turner',
-        authProvider: 'apple' as const,
-      };
-
-      setIsSwitchingAccount(false);
-      setTimeout(() => {
-        onAuthenticated(updatedProfile);
-        onClose();
-      }, 700);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Apple Sign-In error');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  const handleGoogleAuth = () => handleOAuth('google');
+  const handleAppleAuth = () => handleOAuth('apple');
 
   const handleSignOut = async () => {
     setIsVerifying(true);
@@ -580,7 +536,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
                   <span className="font-bold text-white block">Account Connected & Syncing</span>
-                  <span>Your vouchers and financial records are automatically encrypted and backed up in real time.</span>
+                  <span>Your vouchers and financial records are saved to your TaxVault account.</span>
                 </div>
               </div>
 
@@ -672,8 +628,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <h4 className="text-sm font-extrabold text-white">Sign In to TaxVault</h4>
                 <p className="text-xs text-slate-500">
                   {SHOW_OAUTH_PROVIDERS
-                    ? 'Select Google or Apple for instant encrypted cloud sync'
-                    : 'Sign in to access your tax vault & encrypted records'}
+                    ? 'Continue with Google or Apple, or use your email'
+                    : 'Sign in to access your tax vault'}
                 </p>
               </div>
 
@@ -758,7 +714,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </>
               )}
 
-              {/* Credentials Banner */}
+              {/* Demo Credentials Banner (developer builds only) */}
+              {import.meta.env.DEV && (
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
                 <div className="flex items-center justify-between text-slate-500">
                   <span className="font-semibold text-slate-700 flex items-center gap-1">
@@ -778,6 +735,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div>Pass: <span className="text-emerald-600 font-semibold">TaxVaultDemo2026!</span></div>
                 </div>
               </div>
+              )}
 
               <form onSubmit={handleEmailAuth} className="space-y-3">
                 <div>

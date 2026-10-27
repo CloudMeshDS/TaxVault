@@ -665,13 +665,12 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
             <Cloud className="w-4 h-4 text-blue-700" />
-            <span>Encrypted Cloud Backup Vault</span>
+            <span>Cloud Backup</span>
           </div>
-          <span className="text-xs font-mono text-emerald-600">AES-256 Validated</span>
         </div>
 
         <p className="text-xs text-slate-500">
-          All financial receipts, calculations, and tax schedules are encrypted on-device and mirrored to secure cloud backups.
+          Your receipts, calculations and tax schedules are backed up to your TaxVault account.
         </p>
 
         <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
@@ -702,7 +701,7 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
 
         {/* Restore from File */}
         <div className="pt-2 border-t border-slate-200">
-          <label className="text-xs text-slate-500 block mb-1">Restore from Previous Encrypted Backup</label>
+          <label className="text-xs text-slate-500 block mb-1">Restore from a Previous Backup</label>
           <input
             type="file"
             accept=".json"
