@@ -72,14 +72,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   const taxTabLabel =
     profile.country === 'NZ'
-      ? '5. IRD GST Return'
+      ? 'IRD GST Return'
       : profile.country === 'AU'
-      ? '5. ATO BAS Summary'
+      ? 'ATO BAS Summary'
       : profile.country === 'CA'
-      ? '5. CRA GST/HST & PST'
+      ? 'CRA GST/HST & PST'
       : profile.country === 'US'
-      ? '5. IRS Schedule C & Tax'
-      : '5. GST Summary';
+      ? 'IRS Schedule C & Tax'
+      : 'GST Summary';
 
   const selectedFY =
     periodFilter.mode === 'fy'
@@ -266,13 +266,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4 pb-24 max-w-xl mx-auto select-none">
+    <div className="px-4 pt-4 space-y-4 pb-28 max-w-xl mx-auto select-none">
       {/* Title & Export Actions Bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-black text-white tracking-tight">Tax & Expense Reports</h1>
-          <p className="text-xs text-slate-500 font-medium">
-            {config.taxAuthority} & Audit Summaries
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Reports</h1>
+          <p className="text-sm text-slate-500 truncate">
+            {config.taxAuthority}
           </p>
         </div>
 
@@ -280,29 +280,29 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloadingPDF}
-            className="px-2.5 py-1.5 rounded-xl bg-white shadow-xs border border-slate-200 text-rose-700 hover:text-white hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
+            className="h-11 px-4 rounded-full bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
             title="Download PDF Audit Report"
           >
             {isDownloadingPDF ? (
               <Loader2 className="w-4 h-4 animate-spin shrink-0 text-rose-700" />
             ) : (
-              <FileText className="w-4 h-4 shrink-0" />
+              <FileText className="w-4 h-4 shrink-0 text-rose-600" />
             )}
-            <span className="text-xs font-bold whitespace-nowrap">PDF</span>
+            <span className="whitespace-nowrap">PDF</span>
           </button>
 
           <button
             onClick={handleDownloadExcel}
             disabled={isDownloadingExcel}
-            className="px-2.5 py-1.5 rounded-xl bg-white shadow-xs border border-slate-200 text-emerald-600 hover:text-white hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
+            className="h-11 px-4 rounded-full bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap shrink-0 disabled:opacity-50"
             title="Download Excel Workbook"
           >
             {isDownloadingExcel ? (
               <Loader2 className="w-4 h-4 animate-spin shrink-0 text-emerald-600" />
             ) : (
-              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <FileSpreadsheet className="w-4 h-4 shrink-0 text-emerald-700" />
             )}
-            <span className="text-xs font-bold whitespace-nowrap">Excel</span>
+            <span className="whitespace-nowrap">Excel</span>
           </button>
         </div>
       </div>
@@ -330,7 +330,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         filter={periodFilter}
         onChange={setPeriodFilter}
         country={profile.country}
-        title="Filter Report Period"
+        title="Report period"
         recordCount={filteredExpenses.length}
         showBadge={true}
       />
@@ -341,21 +341,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs -mx-1 px-1"
       >
         {[
-          { id: 'summary' as const, label: '1. Expense Summary' },
-          { id: 'quarterly' as const, label: '2. Quarterly Breakdown' },
-          { id: 'category' as const, label: '3. Category Summary' },
-          { id: 'biz_personal' as const, label: '4. Business vs Personal' },
+          { id: 'summary' as const, label: 'Summary' },
+          { id: 'quarterly' as const, label: 'Quarterly' },
+          { id: 'category' as const, label: 'Categories' },
+          { id: 'biz_personal' as const, label: 'Business vs personal' },
           { id: 'gst' as const, label: taxTabLabel },
-          { id: 'vendor' as const, label: '6. Vendor Summary' },
-          { id: 'detailed' as const, label: '7. Detailed Report' },
+          { id: 'vendor' as const, label: 'Vendors' },
+          { id: 'detailed' as const, label: 'All records' },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveReportTab(tab.id)}
-            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
               activeReportTab === tab.id
-                ? 'bg-slate-100 text-emerald-600 border border-emerald-500/30 shadow-xs'
-                : 'bg-white shadow-xs text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
             }`}
           >
             {tab.label}

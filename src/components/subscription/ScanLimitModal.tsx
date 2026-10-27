@@ -90,11 +90,11 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
               onClose();
               onUpgradeToPro();
             }}
-            className="w-full group bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-slate-900 font-black p-3.5 rounded-2xl flex items-center justify-between shadow-xl shadow-emerald-500/25 cursor-pointer transition-all"
+            className="w-full group bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black p-3.5 rounded-2xl flex items-center justify-between shadow-xl shadow-emerald-500/25 cursor-pointer transition-all"
           >
             <div className="flex items-center gap-3 text-left">
               <div className="w-9 h-9 rounded-xl bg-slate-50/15 flex items-center justify-center shrink-0">
-                <Zap className="w-5 h-5 text-slate-900 fill-slate-50" />
+                <Zap className="w-5 h-5 text-white fill-white" />
               </div>
               <div>
                 <div className="text-sm font-black leading-tight flex items-center gap-1.5">
@@ -103,12 +103,12 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
                     Unlimited
                   </span>
                 </div>
-                <div className="text-xs font-semibold text-slate-900/80 mt-0.5">
+                <div className="text-xs font-semibold text-white/80 mt-0.5">
                   Unlimited AI scans & CA tax audit packs
                 </div>
               </div>
             </div>
-            <ArrowRight className="w-5 h-5 text-slate-900 stroke-[2.5] group-hover:translate-x-1 transition-transform shrink-0" />
+            <ArrowRight className="w-5 h-5 text-white stroke-[2.5] group-hover:translate-x-1 transition-transform shrink-0" />
           </button>
 
           {/* OPTION 2: Enter Expense Manually (Free & Unlimited) */}

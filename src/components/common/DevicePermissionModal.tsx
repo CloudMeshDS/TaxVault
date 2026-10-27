@@ -131,7 +131,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
             <button
               onClick={handleGrantPermissions}
               disabled={isRequesting}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-slate-900 font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
             >
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <span className="whitespace-nowrap">{isRequesting ? 'Requesting...' : 'Grant Permissions'}</span>

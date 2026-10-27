@@ -535,32 +535,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-gradient-to-b from-slate-50 via-slate-100/70 to-slate-50 text-slate-900 flex flex-col justify-center items-center px-4 py-8 select-none font-sans">
-      <div className="relative w-full max-w-md z-10 space-y-6">
+    <div className="min-h-screen min-h-[100dvh] bg-[var(--color-canvas)] text-slate-900 flex flex-col justify-center items-center px-4 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] select-none font-sans">
+      <div className="relative w-full max-w-sm z-10 space-y-7">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="relative inline-block">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-400/40 flex items-center justify-center mx-auto text-white shadow-xl shadow-emerald-600/25 ring-4 ring-emerald-500/15">
-              <Shield className="w-8 h-8" />
-            </div>
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white shadow-xs animate-pulse" />
+        <div className="text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-700 flex items-center justify-center mx-auto text-white shadow-sm">
+            <Shield className="w-7 h-7" strokeWidth={2.25} />
           </div>
 
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center justify-center gap-2">
-              <span>TaxVault</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-extrabold">
-                v3.0
-              </span>
+          <div className="space-y-1.5">
+            <h1 className="text-[1.75rem] leading-tight font-bold tracking-tight text-slate-900">
+              TaxVault
             </h1>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">
-              Mobile Receipt & Personal Finance Tax Engine
+            <p className="text-sm text-slate-500">
+              Receipts, expenses and tax, in one place.
             </p>
           </div>
         </div>
 
         {/* Auth Mode Toggle: Sign In / Create Account / Recovery */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
           {tab === 'forgot' || tab === 'email-sent' || tab === 'reset-password' ? (
             <div className="flex items-center justify-between pb-1 border-b border-slate-100">
               <button
@@ -580,7 +574,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               </span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 p-1.5 bg-slate-100 border border-slate-200/80 rounded-2xl text-xs font-bold">
+            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl text-sm">
               <button
                 type="button"
                 onClick={() => {
@@ -588,10 +582,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
-                className={`py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   tab === 'login'
-                    ? 'bg-white text-slate-900 shadow-sm font-black border border-slate-200/70'
-                    : 'text-slate-500 hover:text-slate-900 font-semibold'
+                    ? 'bg-white text-slate-900 shadow-sm font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 font-medium'
                 }`}
               >
                 <span>Sign In</span>
@@ -604,10 +598,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
-                className={`py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   tab === 'signup'
-                    ? 'bg-white text-slate-900 shadow-sm font-black border border-slate-200/70'
-                    : 'text-slate-500 hover:text-slate-900 font-semibold'
+                    ? 'bg-white text-slate-900 shadow-sm font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 font-medium'
                 }`}
               >
                 <span>Create Account</span>
@@ -634,25 +628,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           {tab === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Email Address</span>
+                <label htmlFor="login-email" className="text-sm font-medium text-slate-700 block">
+                  Email
                 </label>
                 <input
+                  id="login-email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                  className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Password</span>
+                  <label htmlFor="login-password" className="text-sm font-medium text-slate-700">
+                    Password
                   </label>
                   <button
                     type="button"
@@ -664,22 +659,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     }}
                     className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
                   >
-                    Forgot Password?
+                    Forgot password?
                   </button>
                 </div>
                 <div className="relative">
                   <input
+                    id="login-password"
                     type={showLoginPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
                     required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2.5 cursor-pointer"
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -689,7 +687,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-50 text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] disabled:opacity-50 text-white font-semibold h-12 px-4 rounded-xl text-base transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
                 {isLoading ? (
                   <>
@@ -698,8 +696,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   </>
                 ) : (
                   <>
-                    <span>Sign In to TaxVault</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <span>Sign in</span>
                   </>
                 )}
               </button>
@@ -780,7 +777,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupFullName}
                     onChange={(e) => setSignupFullName(e.target.value)}
                     placeholder="e.g. Rajesh Sharma"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                   />
                 </div>
 
@@ -795,7 +792,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupBusinessName}
                     onChange={(e) => setSignupBusinessName(e.target.value)}
                     placeholder="e.g. Sharma Tech"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -837,7 +834,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                  className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                 />
               </div>
 
@@ -854,7 +851,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     placeholder="Create a secure password"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2 pr-10 text-xs text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
                   />
                   <button
                     type="button"
@@ -1131,7 +1128,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                   />
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
                     A secure password reset link will be sent to your email. You must open that link to verify your identity and set a new password.
@@ -1141,7 +1138,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-50 text-white font-extrabold py-3 px-4 rounded-xl text-sm transition-all cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 mt-2"
+                  className="w-full bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] disabled:opacity-50 text-white font-semibold h-12 px-4 rounded-xl text-base transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
                 >
                   {isLoading ? (
                     <>
@@ -1311,7 +1308,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     placeholder="Enter registered email (e.g. user@example.com)"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 font-medium focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1329,7 +1326,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password"
-                    className="w-full bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-3.5 py-2.5 pr-10 text-sm text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 pr-10 text-base text-slate-900 placeholder:text-slate-400 font-mono focus:outline-none transition-all"
                   />
                   <button
                     type="button"
@@ -1363,34 +1360,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           )}
         </div>
 
-        {/* Security & Feature Highlights */}
-        <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
-          <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
-            <Lock className="w-4 h-4 text-emerald-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-xs">Private</div>
-            <div className="text-xs text-slate-500">Only you can see your data</div>
+        {/* Supported countries & legal */}
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
+            <span>Available in</span>
+            <span className="flex items-center gap-1.5 text-base leading-none" aria-label="New Zealand, Australia, Canada, United States and India">
+              <span aria-hidden="true">🇳🇿</span>
+              <span aria-hidden="true">🇦🇺</span>
+              <span aria-hidden="true">🇨🇦</span>
+              <span aria-hidden="true">🇺🇸</span>
+              <span aria-hidden="true">🇮🇳</span>
+            </span>
           </div>
-          <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
-            <Sparkles className="w-4 h-4 text-teal-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-xs">Neural OCR</div>
-            <div className="text-xs text-slate-500">Auto GST extraction</div>
-          </div>
-          <div className="bg-white border border-slate-200/90 shadow-2xs rounded-2xl p-3 space-y-1">
-            <Globe className="w-4 h-4 text-blue-600 mx-auto" />
-            <div className="font-bold text-slate-800 text-xs">5 Countries</div>
-            <div className="text-xs text-slate-500">Statutory tax rules</div>
-          </div>
-        </div>
-
-        {/* Country Legal & Terms Link */}
-        <div className="text-center pt-1 pb-2">
           <button
             type="button"
             onClick={() => setShowTermsModal(true)}
-            className="text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+            className="text-xs text-slate-500 hover:text-emerald-700 underline underline-offset-2 decoration-slate-300 transition-colors cursor-pointer py-1"
           >
-            <Scale className="w-3.5 h-3.5 text-slate-400" />
-            <span>Country-Specific Terms of Service &amp; Statutory Disclaimers</span>
+            Terms of Service &amp; Privacy
           </button>
         </div>
       </div>

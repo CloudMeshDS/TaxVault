@@ -579,9 +579,9 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                   }
                   onClose();
                 }}
-                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 active:scale-[0.98] text-slate-900 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 transition-all"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 transition-all"
               >
-                <CheckCircle2 className="w-4 h-4 text-slate-900" />
+                <CheckCircle2 className="w-4 h-4 text-white" />
                 <span>Save All ({batchQueue.length}) to Vault</span>
               </button>
             </div>
@@ -604,9 +604,9 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 <div className="flex flex-col gap-2 pt-1">
                   <button
                     onClick={takePhotoNative}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-slate-900 font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
                   >
-                    <Camera className="w-4 h-4 text-slate-900 shrink-0" />
+                    <Camera className="w-4 h-4 text-white shrink-0" />
                     <span className="whitespace-nowrap">Take Camera Photo</span>
                   </button>
                   <button
@@ -841,11 +841,11 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
             {/* Proceed to OCR Check Button */}
             <button
               onClick={handleConfirmAndProcess}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-slate-900 font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap"
             >
-              <CheckCircle2 className="w-5 h-5 text-slate-900 stroke-[2.5] shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-white stroke-[2.5] shrink-0" />
               <span className="text-sm font-black whitespace-nowrap">Read Receipt with AI</span>
-              <ArrowRight className="w-4 h-4 text-slate-900 shrink-0" />
+              <ArrowRight className="w-4 h-4 text-white shrink-0" />
             </button>
           </div>
         )}

@@ -29,6 +29,7 @@ import {
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { ReportDownloadModal } from './ReportDownloadModal';
 import { pressable } from '../../utils/a11y';
+import { formatDisplayDate } from '../../utils/format';
 
 interface ExpenseListProps {
   expenses: ExpenseRecord[];
@@ -208,49 +209,46 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
   }, [filteredExpenses, selectedType]);
 
   return (
-    <div className="p-4 space-y-4 pb-24 max-w-xl mx-auto select-none">
+    <div className="px-4 pt-4 space-y-4 pb-28 max-w-xl mx-auto select-none">
       {/* Header & Record Count */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-black text-white tracking-tight">Expense Records</h1>
-          <p className="text-xs text-slate-500 font-medium">
-            {filteredExpenses.length} receipts
-            {deletedCount > 0 && selectedType !== 'Deleted' && (
-              <span className="text-rose-700/90 font-medium ml-1">({deletedCount} deleted)</span>
-            )}
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Expenses</h1>
+          <p className="text-sm text-slate-500 truncate">
+            {filteredExpenses.length} {filteredExpenses.length === 1 ? 'receipt' : 'receipts'}
+            {deletedCount > 0 && selectedType !== 'Deleted' && ` (${deletedCount} deleted)`}
             {' · '}
-            Total{' '}
-            <strong className="text-white font-mono">{fmt(totalFilteredAmount)}</strong>
+            <span className="font-semibold text-slate-900 font-mono">{fmt(totalFilteredAmount)}</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
-            aria-label="Download Report (Excel / PDF / CSV)"
+            aria-label="Download report (Excel / PDF / CSV)"
             onClick={() => setIsReportDownloadOpen(true)}
-            className="p-2 rounded-xl bg-white shadow-xs border border-slate-200 text-slate-700 hover:text-white transition-colors cursor-pointer shrink-0"
-            title="Download Report (Excel / PDF / CSV)"
+            className="w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
+            title="Download report"
           >
-            <Download className="w-4 h-4 shrink-0" />
+            <Download className="w-5 h-5" />
           </button>
 
           {onOpenManualEntry && (
             <button
+              aria-label="Add expense manually"
               onClick={onOpenManualEntry}
-              className="bg-white shadow-xs hover:bg-slate-100 border border-slate-200 text-slate-800 hover:text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap shrink-0"
-              title="Add Expense Manually"
+              className="w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors cursor-pointer"
+              title="Add expense manually"
             >
-              <PenTool className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-              <span className="whitespace-nowrap">Manual</span>
+              <PenTool className="w-5 h-5" />
             </button>
           )}
 
           <button
             onClick={onOpenScanner}
-            className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap shrink-0"
+            className="h-11 pl-3.5 pr-4 rounded-full bg-emerald-700 hover:bg-emerald-800 text-slate-50 font-semibold text-sm flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
           >
-            <Plus className="w-4 h-4 stroke-[3] shrink-0" />
-            <span className="whitespace-nowrap">Scan</span>
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            <span>Scan</span>
           </button>
         </div>
       </div>
@@ -258,13 +256,13 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       {/* Natural Language Search Input */}
       <div className="space-y-1.5">
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by merchant, invoice # or ask AI..."
-            className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-9 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors shadow-inner"
+            placeholder="Search expenses"
+            className="w-full bg-white border border-slate-200 rounded-full pl-10 pr-10 h-11 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
           />
           {searchQuery && (
             <button
@@ -296,12 +294,12 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-xs"
           >
-            <span className="text-slate-400 text-xs uppercase font-bold shrink-0">Try:</span>
+            
             {sampleSearchQueries.map((s) => (
               <button
                 key={s}
                 onClick={() => setSearchQuery(s)}
-                className="bg-white shadow-xs hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-700 px-2 py-0.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0"
+                className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 h-8 px-3 rounded-full whitespace-nowrap transition-colors cursor-pointer shrink-0"
               >
                 {s}
               </button>
@@ -327,12 +325,12 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             <button
               key={t}
               onClick={() => setSelectedType(t as any)}
-              className={`px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                 selectedType === t
                   ? t === 'Deleted'
-                    ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-xs'
-                    : 'bg-slate-100 text-emerald-600 border border-emerald-500/30 shadow-xs'
-                  : 'bg-white shadow-xs text-slate-500 hover:text-slate-700 border border-slate-200'
+                    ? 'bg-rose-600 text-slate-50'
+                    : 'bg-slate-900 text-slate-50'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
               }`}
             >
               {t} {t === 'Deleted' && `(${deletedCount})`}
@@ -341,14 +339,14 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
         </div>
 
         {/* Pinned Action Controls: Always visible without sideways scrolling */}
-        <div className="flex items-center gap-1.5 shrink-0 pl-1 border-l border-slate-200">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setShowDateFilter(!showDateFilter)}
-            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1.5 text-sm h-9 px-3 rounded-full border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               periodFilter.mode !== 'all' || showDateFilter
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-600 font-bold shadow-xs'
-                : 'bg-white shadow-xs border-slate-200 text-slate-700 hover:text-white'
+                ? 'bg-emerald-50 border-emerald-600 text-emerald-800 font-semibold'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
             title="Filter by Date (Same as Home Screen)"
           >
@@ -360,10 +358,10 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
           <button
             onClick={() => setShowFiltersModal(true)}
-            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1.5 text-sm h-9 px-3 rounded-full border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
               onlyGst || selectedCategory !== 'All' || amountRange !== 'all'
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-600 font-bold shadow-xs'
-                : 'bg-white shadow-xs border-slate-200 text-slate-700 hover:text-white'
+                ? 'bg-emerald-50 border-emerald-600 text-emerald-800 font-semibold'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
@@ -379,7 +377,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
             filter={periodFilter}
             onChange={setPeriodFilter}
             country={profile?.country || 'NZ'}
-            title="Date Filter"
+            title="Date"
             recordCount={filteredExpenses.length}
             showBadge={true}
           />
@@ -387,118 +385,76 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       )}
 
       {/* Expense List Records */}
-      <div className="space-y-2">
-        {filteredExpenses.length === 0 ? (
-          <div className="p-8 text-center bg-white shadow-xs border border-slate-200 rounded-3xl space-y-3">
-            <Receipt className="w-12 h-12 text-slate-300 mx-auto" />
-            <div>
-              <p className="text-sm font-bold text-slate-700">No matching expenses found</p>
-              <p className="text-xs text-slate-400 mt-1">Try clearing filters or search query</p>
-            </div>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedType('All');
-                setSelectedCategory('All');
-                setOnlyGst(false);
-                setAmountRange('all');
-              }}
-              className="text-xs font-semibold text-emerald-600 hover:underline cursor-pointer"
-            >
-              Reset all filters
-            </button>
+      {filteredExpenses.length === 0 ? (
+        <div className="px-6 py-10 text-center bg-white border border-slate-200 rounded-2xl space-y-3">
+          <Receipt className="w-10 h-10 text-slate-300 mx-auto" />
+          <div>
+            <p className="text-sm font-semibold text-slate-800">No matching expenses</p>
+            <p className="text-sm text-slate-500 mt-1">Try a different search or clear your filters.</p>
           </div>
-        ) : (
-          filteredExpenses.map((exp) => {
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedType('All');
+              setSelectedCategory('All');
+              setOnlyGst(false);
+              setAmountRange('all');
+            }}
+            className="text-sm font-semibold text-emerald-700 hover:underline cursor-pointer py-1"
+          >
+            Clear filters
+          </button>
+        </div>
+      ) : (
+        <ul className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">
+          {filteredExpenses.map((exp) => {
             const catInfo = CATEGORY_MAP[exp.category] || CATEGORY_MAP['Other'];
             const isDeleted = exp.status === 'deleted' || Boolean(exp.isDeleted);
+            const hasTax = exp.cgst > 0 || exp.igst > 0 || (exp.taxAmount && exp.taxAmount > 0) || (exp.gstAmount && exp.gstAmount > 0) || exp.vendorGSTIN || exp.vendorTaxId;
+            const needsReview = exp.caReviewStatus === 'Needs CA Review';
             return (
-              <div
+              <li
                 key={exp.id}
                 {...pressable(() => onSelectExpense(exp))}
-                className={`border rounded-2xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99] group shadow-sm ${
-                  isDeleted
-                    ? 'bg-white shadow-xs hover:bg-white/70 border-rose-200 opacity-80'
-                    : 'bg-white shadow-xs hover:bg-slate-50 border-slate-200'
-                }`}
+                className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer transition-colors hover:bg-slate-50 active:bg-slate-100 ${isDeleted ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-inner ${
-                      isDeleted ? 'bg-white shadow-xs border border-rose-200 opacity-60' : 'bg-slate-100'
-                    }`}
-                  >
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
                     {catInfo.icon}
                   </div>
-
                   <div className="min-w-0">
-                    <div
-                      className={`font-extrabold text-sm truncate transition-colors ${
-                        isDeleted ? 'line-through text-slate-500 group-hover:text-rose-700' : 'text-white group-hover:text-emerald-600'
-                      }`}
-                    >
+                    <div className={`font-semibold text-sm truncate ${isDeleted ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                       {exp.merchant}
                     </div>
-
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                      <span>{exp.date}</span>
-                      <span>·</span>
-                      <span className="truncate">{exp.category}</span>
+                    <div className="text-xs text-slate-500 truncate">
+                      {formatDisplayDate(exp.date, profile?.country)} · {exp.category}
                     </div>
                   </div>
                 </div>
 
                 <div className="text-right shrink-0">
-                  <div
-                    className={`font-extrabold text-sm font-mono ${
-                      isDeleted ? 'line-through text-slate-500' : 'text-white'
-                    }`}
-                  >
+                  <div className={`font-semibold text-sm font-mono ${isDeleted ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                     {formatCurrency(exp.amount, exp.currency || currCode, exp.currencySymbol || currSymbol, false)}
                   </div>
-
-                  <div className="flex items-center justify-end gap-1.5 mt-1">
+                  <div className="text-xs text-slate-500 flex items-center justify-end gap-1">
                     {isDeleted ? (
-                      <span className="text-xs font-black uppercase tracking-wider px-2 py-0.2 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-                        Deleted
-                      </span>
+                      <span className="text-rose-700 font-medium">Deleted</span>
                     ) : (
                       <>
-                        {/* Business/Personal badge */}
-                        <span
-                          className={`text-xs font-semibold px-1.5 py-0.2 rounded-md ${
-                            exp.expenseType === 'Business'
-                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                              : exp.expenseType === 'Mixed'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-purple-50 text-purple-700 border border-purple-200'
-                          }`}
-                        >
-                          {exp.expenseType === 'Mixed' ? `${exp.businessPercentage}% Biz` : exp.expenseType}
-                        </span>
-
-                        {/* Tax indicator */}
-                        {(exp.cgst > 0 || exp.igst > 0 || (exp.taxAmount && exp.taxAmount > 0) || (exp.gstAmount && exp.gstAmount > 0) || exp.vendorGSTIN || exp.vendorTaxId) && (
-                          <span className="text-xs font-bold px-1 py-0.2 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">
-                            {exp.taxType || (profile?.country === 'US' ? 'TAX' : 'GST')}
-                          </span>
-                        )}
-
-                        {/* Review flag */}
-                        {exp.caReviewStatus === 'Needs CA Review' && (
-                          <span className="text-xs font-bold px-1 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                            {profile?.country === 'US' ? 'CPA' : profile?.country === 'AU' ? 'TAX' : 'CA'}
-                          </span>
+                        <span>{exp.expenseType === 'Mixed' ? `${exp.businessPercentage}% business` : exp.expenseType}</span>
+                        {hasTax && <span>· {exp.taxType || (profile?.country === 'US' ? 'Tax' : 'GST')}</span>}
+                        {needsReview && (
+                          <span className="ml-0.5 w-2 h-2 rounded-full bg-amber-500" title="Needs accountant review" aria-label="Needs accountant review" />
                         )}
                       </>
                     )}
                   </div>
                 </div>
-              </div>
+              </li>
             );
-          })
-        )}
-      </div>
+          })}
+        </ul>
+      )}
 
       {/* Advanced Filter Modal */}
       {showFiltersModal && (

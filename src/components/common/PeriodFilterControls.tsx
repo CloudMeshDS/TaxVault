@@ -61,31 +61,30 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {title && (
-              <span className="text-xs font-bold tracking-wide uppercase text-slate-500">
+              <span className="text-sm font-medium text-slate-500">
                 {title}
               </span>
             )}
             {showBadge && (
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Filter className="w-2.5 h-2.5" />
+              <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full">
                 <span>{badgeLabel}</span>
               </span>
             )}
           </div>
           {recordCount !== undefined && (
-            <span className="text-xs text-emerald-600 font-medium font-mono">
-              {recordCount} {recordCount === 1 ? 'Receipt' : 'Receipts'}
+            <span className="text-sm text-slate-500 font-mono">
+              {recordCount} {recordCount === 1 ? 'receipt' : 'receipts'}
             </span>
           )}
         </div>
       )}
 
       {/* Main Filter Card */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-2.5 space-y-2 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-3">
         {/* Always visible top header bar for Options / Customization toggle */}
-        <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200">
-          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-            Select Period Mode
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold text-slate-900">
+            Period
           </span>
           {filter.mode !== 'all' && (
             <button
@@ -110,10 +109,10 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'all'
-                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
-                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <span className="whitespace-nowrap">All Time</span>
@@ -122,10 +121,10 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('month')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'month'
-                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
-                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -135,10 +134,10 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('quarter')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'quarter'
-                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
-                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Layers className="w-3.5 h-3.5 shrink-0" />
@@ -148,10 +147,10 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('fy')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'fy'
-                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
-                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <span className="whitespace-nowrap">Financial Year</span>
@@ -160,10 +159,10 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('cy')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'cy'
-                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
-                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <span className="whitespace-nowrap">Calendar Year</span>
@@ -172,10 +171,10 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('range')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               filter.mode === 'range'
-                ? 'bg-emerald-500 text-slate-900 shadow-sm font-bold'
-                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                ? 'bg-slate-900 text-slate-50'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -275,7 +274,7 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                         className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
                           isSelected
                             ? 'bg-emerald-500 text-slate-900 shadow-xs'
-                            : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
                         <div>{q}</div>

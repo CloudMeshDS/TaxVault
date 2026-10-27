@@ -473,7 +473,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise'
-                        ? 'w-full bg-gradient-to-r from-emerald-500 to-teal-400'
+                        ? 'w-full bg-emerald-600 hover:bg-emerald-700'
                         : 'bg-amber-500'
                     }`}
                     style={{
@@ -986,12 +986,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // STAGE 1: SETTINGS LIST VIEW (DEFAULT)
   // ==========================================
   return (
-    <div className="p-4 space-y-4 pb-28 max-w-xl mx-auto select-none animate-in fade-in duration-200">
+    <div className="px-4 pt-4 space-y-4 pb-28 max-w-xl mx-auto select-none animate-in fade-in duration-200">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-extrabold text-white tracking-tight">Settings</h1>
-        <p className="text-xs text-slate-500 font-medium">
-          Manage your profile, jurisdiction, plan, and data
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings</h1>
+        <p className="text-sm text-slate-500">
+          Profile, country, plan and data
         </p>
       </div>
 

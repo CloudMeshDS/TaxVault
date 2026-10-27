@@ -137,15 +137,12 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4 pb-24 max-w-xl mx-auto select-none">
+    <div className="px-4 pt-4 space-y-4 pb-28 max-w-xl mx-auto select-none">
       {/* Title */}
       <div>
-        <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
-          <span>Share with CA</span>
-          <Users className="w-5 h-5 text-emerald-600" />
-        </h1>
-        <p className="text-xs text-slate-500 font-medium">
-          Generate professional reports & zip vouchers for your tax consultant
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Share with your accountant</h1>
+        <p className="text-sm text-slate-500">
+          Send reports and receipt files to your tax adviser
         </p>
       </div>
 
@@ -307,7 +304,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
         <button
           onClick={handleDownloadZip}
           disabled={isGeneratingZip}
-          className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-slate-900 font-black py-4 px-5 rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/25 transition-all cursor-pointer text-sm whitespace-nowrap"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black py-4 px-5 rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/25 transition-all cursor-pointer text-sm whitespace-nowrap"
         >
           <Archive className="w-5 h-5 stroke-[2.5] shrink-0" />
           <span className="whitespace-nowrap">{isGeneratingZip ? 'Generating ZIP...' : 'Download CA Audit ZIP'}</span>

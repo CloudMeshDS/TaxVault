@@ -1,18 +1,42 @@
 @import "tailwindcss";
 
+/* =========================================================
+   DESIGN TOKENS
+   One sans family everywhere; numbers use tabular figures
+   instead of a code font. Small text is 13px, and the
+   heaviest weight is bold so screens read calm, not shouty.
+   ========================================================= */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --font-mono: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+
+  --font-weight-extrabold: 700;
+  --font-weight-black: 700;
+
+  --color-canvas: #f5f6f8;
+}
+
 @layer base {
   html, body, #root {
-    background-color: #f8fafc;
+    background-color: var(--color-canvas);
     color: #0f172a;
   }
 
   html, body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: var(--font-sans);
   }
 
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-feature-settings: "tnum" 1;
+  code, pre {
+    font-family: var(--font-code);
+  }
+
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
   }
 
   input::placeholder, textarea::placeholder {
@@ -43,6 +67,12 @@ button[class*="bg-red-600"],
 button[class*="bg-purple-600"],
 button[class*="bg-indigo-600"],
 button[class*="bg-amber-500"],
+button[class*="bg-emerald-700"],
+button[class*="bg-emerald-800"],
+button[class*="bg-rose-700"],
+[class*="bg-emerald-700"] .text-white,
+[class*="bg-emerald-800"] .text-white,
+.bg-emerald-700.text-white,
 .bg-emerald-600 .text-white,
 .bg-emerald-500 .text-white,
 .bg-blue-600 .text-white,
