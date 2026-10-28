@@ -48,7 +48,7 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
       'Multi-sheet Excel (.xlsx) tax audit pack',
       'Real-time multi-currency conversion',
       'Direct CA Reviewer Link & 6-digit PIN sharing',
-      'AES-256 encrypted cloud backup vault',
+      'Cloud backup & sync',
       'New Zealand IRD & Global compliance rules',
     ],
   },
@@ -76,7 +76,7 @@ export const COMPARISON_FEATURES: PlanFeature[] = [
   { name: 'Multi-Sheet Excel (.xlsx) Tax Pack', includedInFree: false, includedInPro: true, includedInEnterprise: true },
   { name: 'Direct CA Reviewer Token & Link Share', includedInFree: false, includedInPro: true, includedInEnterprise: true },
   { name: 'Live Multi-Currency Conversion Engine', includedInFree: false, includedInPro: true, includedInEnterprise: true },
-  { name: 'AES-256 Cloud Backup Vault', includedInFree: false, includedInPro: true, includedInEnterprise: true },
+  { name: 'Cloud Backup & Sync', includedInFree: false, includedInPro: true, includedInEnterprise: true },
   { name: 'Direct Xero / MYOB API Sync', includedInFree: false, includedInPro: false, includedInEnterprise: true },
 ];
 

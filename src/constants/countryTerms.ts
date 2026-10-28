@@ -72,13 +72,13 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Your financial information and uploaded receipts are protected under New Zealand privacy principles.',
         highlights: [
           'Compliance with the 13 Information Privacy Principles (IPPs) of the Privacy Act 2020.',
-          'Data is securely transmitted and encrypted using TLS 1.3 and AES-256 cloud encryption.',
+          'Data is encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
           'You may export, download, or delete your receipts and profile data at any time.',
         ],
         content: [
           'We collect and process your personal and business data strictly in accordance with the New Zealand Privacy Act 2020 and its 13 Information Privacy Principles (IPPs).',
           'Information collected includes your business name, IRD number, email address, receipt images, mileage routes, and transaction amounts necessary to organize your personal finance records.',
-          'We will never sell, rent, or trade your personal receipt records to third-party advertisers. Your data is synced across your authenticated devices using encrypted cloud storage protocols.',
+          'We will never sell, rent, or trade your personal receipt records to third-party advertisers. Your data is synced to your signed-in devices over encrypted (HTTPS) connections.',
         ],
       },
       {
@@ -176,7 +176,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Your information is governed by the 13 Australian Privacy Principles.',
         highlights: [
           'Strict compliance with the Australian Privacy Act 1988 (Cth).',
-          'ABN and financial data stored using enterprise-grade encryption.',
+          'ABN and financial data are encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
           'You have the right to request access to and correction of your personal information.',
         ],
         content: [
@@ -270,7 +270,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Personal and financial data is handled under PIPEDA principles.',
         highlights: [
           'Compliance with Canada’s Personal Information Protection and Electronic Documents Act (PIPEDA).',
-          'End-to-end encryption for stored CRA Business Numbers and financial logs.',
+          'CRA Business Numbers and financial logs are encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
         ],
         content: [
           'Your personal information is collected, used, and disclosed in compliance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy legislation (such as Quebec Law 25, BC PIPA, and Alberta PIPA).',
@@ -365,7 +365,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Commitment to data privacy under California (CCPA/CPRA) and state regulations.',
         highlights: [
           'We do not sell your personal financial records or contact info.',
-          'Encrypted cloud transmission via HTTPS/TLS 1.3 and AES-256 database storage.',
+          'Data is encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
           'Users can request a copy of their data or delete their accounts at any time.',
         ],
         content: [
@@ -464,7 +464,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Protection of personal and business data under Indian data protection laws.',
         highlights: [
           'Compliance with Digital Personal Data Protection Act 2023 (DPDP) and IT Act 2000.',
-          'PAN, GSTIN, and banking transactions are protected with multi-layer encryption.',
+          'PAN, GSTIN and banking transactions are encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
           'Right to data summary, correction, and account erasure.',
         ],
         content: [

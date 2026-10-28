@@ -195,30 +195,31 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-xl max-h-[92vh] overflow-hidden flex flex-col text-neutral-100 shadow-2xl relative modal-enter-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl max-h-[92vh] overflow-hidden flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Header */}
-        <div className="p-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/60">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-teal-700">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white flex items-center gap-2">
                 <span>Bank Reconciliation</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-cyan-300 border border-teal-200 font-semibold">
                   Statement Matcher
                 </span>
               </h3>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-xs text-slate-500">
                 Match bank account statements against your scanned receipts
               </p>
             </div>
           </div>
 
           <button
+            aria-label="Close"
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1.5 rounded-xl hover:bg-neutral-800 cursor-pointer"
+            className="text-slate-500 hover:text-white p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -226,44 +227,44 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
 
         {/* Global Feedback Toast */}
         {feedback && (
-          <div className="m-3 p-3 bg-emerald-950/80 border border-emerald-500/60 rounded-xl text-xs text-emerald-300 font-bold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="m-3 p-3 bg-emerald-50 border border-emerald-500/60 rounded-xl text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
             <span>{feedback}</span>
           </div>
         )}
 
         {/* Health Score & Summary */}
-        <div className="p-4 bg-neutral-950 border-b border-neutral-800/80 grid grid-cols-3 gap-2 text-center">
-          <div className="bg-neutral-900 border border-neutral-800 p-2.5 rounded-xl">
-            <div className="text-[10px] text-neutral-400 uppercase font-semibold">Reconciliation Rate</div>
-            <div className="text-base font-extrabold text-cyan-400 font-mono mt-0.5">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-3 gap-2 text-center">
+          <div className="bg-white shadow-xs border border-slate-200 p-2.5 rounded-xl">
+            <div className="text-xs text-slate-500 uppercase font-semibold">Reconciliation Rate</div>
+            <div className="text-base font-extrabold text-teal-700 font-mono mt-0.5">
               {reconciliationRate}%
             </div>
           </div>
 
-          <div className="bg-neutral-900 border border-neutral-800 p-2.5 rounded-xl">
-            <div className="text-[10px] text-neutral-400 uppercase font-semibold">Matched (Receipts Found)</div>
-            <div className="text-base font-extrabold text-emerald-400 font-mono mt-0.5">
-              {matchedCount} <span className="text-xs font-normal text-neutral-400">lines</span>
+          <div className="bg-white shadow-xs border border-slate-200 p-2.5 rounded-xl">
+            <div className="text-xs text-slate-500 uppercase font-semibold">Matched (Receipts Found)</div>
+            <div className="text-base font-extrabold text-emerald-700 font-mono mt-0.5">
+              {matchedCount} <span className="text-xs font-normal text-slate-500">lines</span>
             </div>
           </div>
 
-          <div className="bg-neutral-900 border border-neutral-800 p-2.5 rounded-xl">
-            <div className="text-[10px] text-neutral-400 uppercase font-semibold">Unmatched (No Receipt)</div>
-            <div className="text-base font-extrabold text-amber-400 font-mono mt-0.5">
-              {unmatchedCount} <span className="text-xs font-normal text-neutral-400">lines</span>
+          <div className="bg-white shadow-xs border border-slate-200 p-2.5 rounded-xl">
+            <div className="text-xs text-slate-500 uppercase font-semibold">Unmatched (No Receipt)</div>
+            <div className="text-base font-extrabold text-amber-700 font-mono mt-0.5">
+              {unmatchedCount} <span className="text-xs font-normal text-slate-500">lines</span>
             </div>
           </div>
         </div>
 
         {/* Toolbar: Import CSV & Filter buttons (Responsive for mobile portrait) */}
-        <div className="p-3 border-b border-neutral-800 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+        <div className="p-3 border-b border-slate-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
           {/* Segmented Filter */}
-          <div className="flex items-center gap-1 bg-neutral-950 p-1 rounded-xl border border-neutral-800 text-xs shrink-0">
+          <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs shrink-0">
             <button
               onClick={() => setFilterMode('all')}
               className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                filterMode === 'all' ? 'bg-neutral-800 text-white shadow-xs font-bold' : 'text-neutral-400 hover:text-white'
+                filterMode === 'all' ? 'bg-slate-100 text-white shadow-xs font-bold' : 'text-slate-500 hover:text-white'
               }`}
             >
               All ({transactions.length})
@@ -271,26 +272,26 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
             <button
               onClick={() => setFilterMode('unmatched')}
               className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap shrink-0 ${
-                filterMode === 'unmatched' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold' : 'text-neutral-400 hover:text-white'
+                filterMode === 'unmatched' ? 'bg-amber-500/20 text-amber-700 border border-amber-500/40 font-bold' : 'text-slate-500 hover:text-white'
               }`}
             >
-              <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+              <AlertTriangle className="w-3 h-3 text-amber-700 shrink-0" />
               <span className="whitespace-nowrap">Unmatched ({unmatchedCount})</span>
             </button>
             <button
               onClick={() => setFilterMode('matched')}
               className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap shrink-0 ${
-                filterMode === 'matched' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' : 'text-neutral-400 hover:text-white'
+                filterMode === 'matched' ? 'bg-emerald-500/20 text-emerald-700 border border-emerald-500/40 font-bold' : 'text-slate-500 hover:text-white'
               }`}
             >
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-3 h-3 text-emerald-700 shrink-0" />
               <span className="whitespace-nowrap">Matched ({matchedCount})</span>
             </button>
           </div>
 
           {/* Import CSV trigger */}
           <label className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0">
-            <Upload className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <Upload className="w-3.5 h-3.5 text-teal-700 shrink-0" />
             <span className="whitespace-nowrap">Upload CSV</span>
             <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
           </label>
@@ -299,16 +300,16 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
         {/* Transactions List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
           {filteredTransactions.length === 0 ? (
-            <div className="p-8 text-center bg-neutral-950 rounded-2xl border border-neutral-800">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-neutral-300">No transactions in this filter</p>
-              <p className="text-xs text-neutral-500 mt-1">All bank entries are either reconciled or none loaded.</p>
+            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+              <CheckCircle2 className="w-8 h-8 text-emerald-700 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-slate-700">No transactions in this filter</p>
+              <p className="text-xs text-slate-500 mt-1">All bank entries are either reconciled or none loaded.</p>
             </div>
           ) : (
             filteredTransactions.map((tx) => (
               <div
                 key={tx.id}
-                className="bg-neutral-950 border border-neutral-800/80 rounded-2xl p-3.5 flex items-center justify-between gap-3 hover:border-neutral-700 transition-colors"
+                className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 hover:border-slate-200 transition-colors"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -316,22 +317,22 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
                       {tx.description}
                     </span>
                     {tx.matchStatus === 'matched' ? (
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />
                         <span>Matched</span>
                       </span>
                     ) : (
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800/60 flex items-center gap-1">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
                         <AlertTriangle className="w-2.5 h-2.5" />
                         <span>Missing Receipt</span>
                       </span>
                     )}
                   </div>
 
-                  <div className="text-[11px] text-neutral-400 mt-1 flex items-center gap-2">
+                  <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
                     <span>{tx.date}</span>
                     <span>·</span>
-                    <span className="text-neutral-300">{tx.categoryGuess || 'Business Expense'}</span>
+                    <span className="text-slate-700">{tx.categoryGuess || 'Business Expense'}</span>
                   </div>
                 </div>
 
@@ -343,10 +344,10 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
                   {tx.matchStatus === 'unmatched' && (
                     <button
                       onClick={() => handleConvertBankToExpense(tx)}
-                      className="mt-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors flex items-center gap-1"
+                      className="mt-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 border border-amber-500/40 text-xs font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors flex items-center gap-1"
                       title="Convert this bank transaction into a recorded tax deduction"
                     >
-                      <Plus className="w-3 h-3 text-amber-400" />
+                      <Plus className="w-3 h-3 text-amber-700" />
                       <span>Convert to Expense</span>
                     </button>
                   )}
@@ -357,7 +358,7 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
         </div>
 
         {/* Footer info */}
-        <div className="p-3 bg-neutral-950 border-t border-neutral-800 text-[10px] text-neutral-400 flex items-center justify-between">
+        <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
           <span>Automatic audit reconciliation: matches date ±4 days and exact amount</span>
           <button
             onClick={() => {
@@ -366,7 +367,7 @@ export const BankReconciliationModal: React.FC<BankReconciliationModalProps> = (
               setFeedback('Re-ran reconciliation matching!');
               setTimeout(() => setFeedback(null), 2500);
             }}
-            className="text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer flex items-center gap-1"
+            className="text-teal-700 hover:text-cyan-300 font-semibold cursor-pointer flex items-center gap-1"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Re-match</span>

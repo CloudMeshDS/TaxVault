@@ -2530,6 +2530,42 @@ export function createApi(): express.Express {
     return res.json({ success: true, message: 'Your expense data was cleared.' });
   });
 
+  // 10b. API: Permanently delete the signed-in user's account and data (DELETE /api/account)
+  // Required by the App Store and Google Play. Removes every row the user owns, then the
+  // Supabase auth user, so the same email can sign up again as a new account.
+  app.delete('/api/account', rateLimit('delete-account', 3, 15 * 60 * 1000), requireUser, async (req, res) => {
+    const { id: userId, email } = req.user!;
+    try {
+      const deletions: Array<[string, string, string]> = [
+        ['expenses', 'customer_tax_id', userId],
+        ['incomes', 'user_id', userId],
+        ['mileage_trips', 'user_id', userId],
+        ['client_invoices', 'user_id', userId],
+        ['bank_transactions', 'user_id', userId],
+        ['token_request_logs', 'user_id', userId],
+        ['activity_logs', 'user_id', userId],
+        ['customer_agreements', 'user_id', userId],
+        ...(email ? [['customer_agreements', 'user_email', email] as [string, string, string]] : []),
+        // Deleting the profile cascades to subscriptions, transactions and usage.
+        ['profiles', 'id', userId],
+      ];
+      for (const [table, column, value] of deletions) {
+        const { error } = await supabaseAdmin!.from(table).delete().eq(column, value);
+        if (error) throw new Error(`Could not delete ${table}: ${error.message}`);
+      }
+
+      const { error: authError } = await supabaseAdmin!.auth.admin.deleteUser(userId);
+      if (authError) throw new Error(`Could not delete sign-in account: ${authError.message}`);
+
+      setCachedExpenses(userId, []);
+      tokenCache.clear();
+      return res.json({ success: true, message: 'Your TaxVault account and data were permanently deleted.' });
+    } catch (err: any) {
+      console.error('Account deletion failed:', err);
+      return res.status(500).json({ success: false, error: err?.message || 'Could not delete your account. Please try again.' });
+    }
+  });
+
   // 11. API: Calculated Reports Position for the signed-in user (GET /api/reports)
   app.get('/api/reports', requireUser, (req, res) => {
     const list = getCachedExpenses(req.user!.id);

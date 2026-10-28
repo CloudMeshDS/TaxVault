@@ -194,43 +194,44 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
   const deadlines = COUNTRY_DEADLINES[profile.country] || COUNTRY_DEADLINES['NZ'];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col text-neutral-100 shadow-2xl relative modal-enter-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Header */}
-        <div className="p-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950/60">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+            <div className="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-700">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white flex items-center gap-2">
                 <span>Tax Compliance Calendar</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-950/80 text-teal-300 border border-teal-800/60 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-300 border border-teal-200 font-semibold">
                   {taxConfig.flag} {profile.country} Rules
                 </span>
               </h3>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-xs text-slate-500">
                 Official filing deadlines and statutory return schedules
               </p>
             </div>
           </div>
 
           <button
+            aria-label="Close"
             onClick={onClose}
-            className="text-neutral-400 hover:text-white p-1.5 rounded-xl hover:bg-neutral-800 cursor-pointer"
+            className="text-slate-500 hover:text-white p-1.5 rounded-xl hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Authority Overview Bar */}
-        <div className="p-3 bg-neutral-950 border-b border-neutral-800/80 flex items-center justify-between text-xs">
+        <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
           <div>
-            <div className="text-[10px] text-neutral-400">Governing Tax Authority</div>
+            <div className="text-xs text-slate-500">Governing Tax Authority</div>
             <div className="font-bold text-white mt-0.5">{taxConfig.taxAuthority}</div>
           </div>
 
-          <span className="font-mono text-[11px] text-emerald-400 font-bold bg-neutral-900 px-2 py-1 rounded-lg border border-neutral-800">
+          <span className="font-mono text-xs text-emerald-700 font-bold bg-white shadow-xs px-2 py-1 rounded-lg border border-slate-200">
             {profile.financialYear || taxConfig.taxYearLabel}
           </span>
         </div>
@@ -244,28 +245,28 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
             return (
               <div
                 key={item.id}
-                className="bg-neutral-950 border border-neutral-800/80 rounded-2xl p-4 space-y-2.5 hover:border-neutral-700 transition-colors"
+                className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5 hover:border-slate-200 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-xs text-white">{item.title}</span>
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-900 text-teal-300 border border-neutral-800">
+                      <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-white shadow-xs text-teal-300 border border-slate-200">
                         {item.formCode}
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-neutral-400 mt-1">
+                    <div className="text-xs text-slate-500 mt-1">
                       Due: <strong className="text-white font-mono">{item.dueDate}</strong> · {item.authority}
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
                     <span
-                      className={`text-[10px] font-bold px-2 py-1 rounded-full border inline-flex items-center gap-1 ${
+                      className={`text-xs font-bold px-2 py-1 rounded-full border inline-flex items-center gap-1 ${
                         isUrgent
-                          ? 'bg-rose-950/80 text-rose-300 border-rose-800/60'
-                          : 'bg-teal-950/80 text-teal-300 border-teal-800/60'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : 'bg-teal-50 text-teal-300 border-teal-200'
                       }`}
                     >
                       <Clock className="w-3 h-3" />
@@ -274,13 +275,13 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
                   </div>
                 </div>
 
-                <p className="text-[11px] text-neutral-300 leading-relaxed bg-neutral-900/60 p-2.5 rounded-xl border border-neutral-800/60">
+                <p className="text-xs text-slate-700 leading-relaxed bg-white shadow-xs p-2.5 rounded-xl border border-slate-200">
                   {item.description}
                 </p>
 
-                <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
                   <span>Category: {item.category}</span>
-                  <span className="text-teal-400 flex items-center gap-1">
+                  <span className="text-teal-700 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     <span>Compliance Tracked</span>
                   </span>
@@ -291,9 +292,9 @@ export const TaxCalendarModal: React.FC<TaxCalendarModalProps> = ({
         </div>
 
         {/* Footer info */}
-        <div className="p-3 bg-neutral-950 border-t border-neutral-800 text-[10px] text-neutral-400 flex items-center justify-between">
+        <div className="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
           <span>Official statutory dates based on current legislative calendar</span>
-          <span className="text-neutral-500">{taxConfig.countryName}</span>
+          <span className="text-slate-500">{taxConfig.countryName}</span>
         </div>
       </div>
     </div>

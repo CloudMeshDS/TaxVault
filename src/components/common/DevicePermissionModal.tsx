@@ -49,22 +49,23 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
-      <div className="bg-neutral-900 border border-neutral-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative space-y-5 modal-enter-animation text-center">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative space-y-5 modal-enter-animation text-center">
         {/* Dismiss Button */}
         <button
+          aria-label="Close"
           onClick={handleSkip}
-          className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header Icon */}
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700 shadow-lg shadow-emerald-500/10">
           {grantedSuccess ? (
-            <CheckCircle2 className="w-8 h-8 text-emerald-400 animate-in zoom-in" />
+            <CheckCircle2 className="w-8 h-8 text-emerald-700 animate-in zoom-in" />
           ) : (
-            <ShieldCheck className="w-8 h-8 text-emerald-400" />
+            <ShieldCheck className="w-8 h-8 text-emerald-700" />
           )}
         </div>
 
@@ -73,7 +74,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
           <h3 className="text-lg font-black tracking-tight text-white">
             {grantedSuccess ? 'Permissions Granted!' : 'Enable Device Permissions'}
           </h3>
-          <p className="text-xs text-neutral-400 leading-relaxed">
+          <p className="text-xs text-slate-500 leading-relaxed">
             {grantedSuccess
               ? 'TaxVault is ready to scan paper receipts and process your tax documents.'
               : 'To give you the best experience, TaxVault requires camera and document storage permissions.'}
@@ -83,25 +84,25 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
         {/* Permission Item Breakdown */}
         {!grantedSuccess && (
           <div className="space-y-2.5 text-left pt-1">
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-neutral-950/70 border border-neutral-800/80">
-              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50/70 border border-slate-200">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-700 shrink-0 mt-0.5">
                 <Camera className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-xs font-bold text-white">Camera Access</div>
-                <div className="text-[11px] text-neutral-400 mt-0.5 leading-snug">
+                <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                   Scan physical receipts & tax invoices instantly with auto-edge detection.
                 </div>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-2xl bg-neutral-950/70 border border-neutral-800/80">
-              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400 shrink-0 mt-0.5">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50/70 border border-slate-200">
+              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-700 shrink-0 mt-0.5">
                 <FolderArchive className="w-4 h-4" />
               </div>
               <div>
                 <div className="text-xs font-bold text-white">Storage & Files</div>
-                <div className="text-[11px] text-neutral-400 mt-0.5 leading-snug">
+                <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                   Upload PDF tax bills from device files and save annual tax audit packs.
                 </div>
               </div>
@@ -112,12 +113,12 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
         {/* Error Notification if Denied */}
         {errorMessage && (
           <div className="space-y-2">
-            <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800/80 text-amber-200 text-xs text-left animate-in fade-in">
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs text-left animate-in fade-in">
               {errorMessage}
             </div>
             <button
               onClick={handleSkip}
-              className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer whitespace-nowrap"
+              className="w-full bg-slate-100 hover:bg-slate-200 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer whitespace-nowrap"
             >
               Continue with Upload
             </button>
@@ -130,7 +131,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
             <button
               onClick={handleGrantPermissions}
               disabled={isRequesting}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-neutral-950 font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+              className="w-full bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
             >
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <span className="whitespace-nowrap">{isRequesting ? 'Requesting...' : 'Grant Permissions'}</span>
@@ -138,7 +139,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
 
             <button
               onClick={handleSkip}
-              className="w-full text-neutral-400 hover:text-neutral-200 font-semibold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer whitespace-nowrap text-center"
+              className="w-full text-slate-500 hover:text-slate-700 font-semibold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer whitespace-nowrap text-center"
             >
               Maybe Later
             </button>

@@ -92,7 +92,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showEmailJsConfig, setShowEmailJsConfig] = useState(false);
   const [emailJsConfig, setEmailJsConfig] = useState(emailJsService.getConfig());
   const [configSaved, setConfigSaved] = useState(false);
-  const [password, setPassword] = useState('TaxVaultDemo2026!');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -144,72 +144,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const isIos = platform === 'ios';
   const isLoggedIn = Boolean(currentProfile.email && currentProfile.email.trim().length > 0 && currentProfile.email !== 'guest@taxvault.app');
 
-  const handleGoogleAuth = async () => {
+  // Google / Apple: redirect to the provider; the session is picked up when it returns.
+  // On any failure show the error; never sign in without the provider.
+  const handleOAuth = async (provider: 'google' | 'apple') => {
     setIsVerifying(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      const res = await supabaseService.signInWithOAuth('google');
+      const res = await supabaseService.signInWithOAuth(provider);
       if (res.url) {
         window.location.href = res.url;
         return;
       }
-
-      setSuccessMessage('Signed in with Google!');
-      const profileRes = await supabaseService.fetchProfile();
-      const updatedProfile = profileRes.profile || {
-        ...currentProfile,
-        email: currentProfile.email && currentProfile.email !== 'admin@taxvault.app' ? currentProfile.email : 'alex.turner@gmail.com',
-        fullName: currentProfile.fullName || 'Alex Turner',
-        authProvider: 'google' as const,
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      };
-
-      setIsSwitchingAccount(false);
-      setTimeout(() => {
-        onAuthenticated(updatedProfile);
-        onClose();
-      }, 700);
+      setErrorMessage(res.error || 'Sign-in could not be started. Please sign in with email.');
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Google authentication error');
+      setErrorMessage(err?.message || 'Sign-in could not be started. Please sign in with email.');
     } finally {
       setIsVerifying(false);
     }
   };
-
-  const handleAppleAuth = async () => {
-    setIsVerifying(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    try {
-      const res = await supabaseService.signInWithOAuth('apple');
-      if (res.url) {
-        window.location.href = res.url;
-        return;
-      }
-
-      setSuccessMessage('Signed in with Apple ID!');
-      const profileRes = await supabaseService.fetchProfile();
-      const updatedProfile = profileRes.profile || {
-        ...currentProfile,
-        email: currentProfile.email && currentProfile.email !== 'admin@taxvault.app' ? currentProfile.email : 'alex.turner@privaterelay.appleid.com',
-        fullName: currentProfile.fullName || 'Alex Turner',
-        authProvider: 'apple' as const,
-      };
-
-      setIsSwitchingAccount(false);
-      setTimeout(() => {
-        onAuthenticated(updatedProfile);
-        onClose();
-      }, 700);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Apple Sign-In error');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  const handleGoogleAuth = () => handleOAuth('google');
+  const handleAppleAuth = () => handleOAuth('apple');
 
   const handleSignOut = async () => {
     setIsVerifying(true);
@@ -466,30 +422,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm p-6 text-neutral-100 shadow-2xl relative overflow-hidden modal-enter-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-sm p-6 text-slate-900 shadow-2xl relative overflow-hidden modal-enter-animation">
         {/* Close Button */}
         <button
+          aria-label="Close"
           onClick={onClose}
-          className="absolute top-4 right-4 text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-neutral-800 cursor-pointer"
+          className="absolute top-4 right-4 text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Top brand */}
         <div className="text-center mb-5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-400">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-700">
             <Shield className="w-6 h-6" />
           </div>
           <h3 className="font-bold text-base text-white">TaxVault Account</h3>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Cloud Sync & Document Security
           </p>
         </div>
 
         {/* Segmented Mode Selector Buttons or Recovery Header */}
         {mode === 'forgot_password' ? (
-          <div className="flex items-center justify-between p-2 bg-neutral-950 border border-neutral-800 rounded-xl mb-4 text-xs">
+          <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-xl mb-4 text-xs">
             <button
               type="button"
               onClick={() => {
@@ -497,12 +454,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setErrorMessage(null);
                 setSuccessMessage(null);
               }}
-              className="text-neutral-400 hover:text-white flex items-center gap-1.5 cursor-pointer font-medium"
+              className="text-slate-500 hover:text-white flex items-center gap-1.5 cursor-pointer font-medium"
             >
               <ArrowRight className="w-3.5 h-3.5 rotate-180" />
               <span>Back to Sign In</span>
             </button>
-            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800/60">
+            <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               Account Recovery
             </span>
           </div>
@@ -515,29 +472,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* ALREADY LOGGED IN: SHOW ACCOUNT DETAILS & SESSION STATUS */
             /* ======================================================== */
             <div className="space-y-4 animate-in fade-in">
-              <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-3.5 shadow-sm">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3.5 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                  <span className="text-xs uppercase font-bold tracking-wider text-slate-500">
                     Logged-in Account
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 flex items-center gap-1.5 shadow-xs">
+                  <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-1.5 shadow-xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     <span>Logged In</span>
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center font-black text-emerald-400 text-lg shadow-inner shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center font-black text-emerald-700 text-lg shadow-inner shrink-0">
                     {currentProfile.fullName ? currentProfile.fullName.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div className="space-y-0.5 flex-1 min-w-0">
                     <div className="text-sm font-extrabold text-white truncate">
                       {currentProfile.fullName || 'TaxVault User'}
                     </div>
-                    <div className="text-xs text-neutral-400 font-mono truncate">
+                    <div className="text-xs text-slate-500 font-mono truncate">
                       {currentProfile.email}
                     </div>
-                    <div className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5 pt-0.5">
+                    <div className="text-xs text-emerald-700 font-medium flex items-center gap-1.5 pt-0.5">
                       {currentProfile.authProvider === 'google' ? (
                         <>
                           <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
@@ -550,7 +507,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         </>
                       ) : (
                         <>
-                          <Mail className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                          <Mail className="w-3.5 h-3.5 shrink-0 text-emerald-700" />
                           <span>Verified Email Account</span>
                         </>
                       )}
@@ -558,15 +515,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-2.5 border-t border-neutral-800/80 grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="bg-neutral-900/60 p-2 rounded-xl border border-neutral-800/60">
-                    <span className="text-[10px] text-neutral-500 block">Organization</span>
+                <div className="pt-2.5 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white shadow-xs p-2 rounded-xl border border-slate-200">
+                    <span className="text-xs text-slate-500 block">Organization</span>
                     <span className="text-white font-semibold truncate block mt-0.5">
                       {currentProfile.businessName || 'Personal'}
                     </span>
                   </div>
-                  <div className="bg-neutral-900/60 p-2 rounded-xl border border-neutral-800/60">
-                    <span className="text-[10px] text-neutral-500 block">Tax Jurisdiction</span>
+                  <div className="bg-white shadow-xs p-2 rounded-xl border border-slate-200">
+                    <span className="text-xs text-slate-500 block">Tax Jurisdiction</span>
                     <span className="text-white font-semibold block mt-0.5">
                       {currentProfile.country} · {currentProfile.financialYear || 'FY 26-27'}
                     </span>
@@ -575,18 +532,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {/* Status Message */}
-              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/50 flex items-start gap-2 text-[11px] text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-2 text-xs text-emerald-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
                   <span className="font-bold text-white block">Account Connected & Syncing</span>
-                  <span>Your vouchers and financial records are automatically encrypted and backed up in real time.</span>
+                  <span>Your vouchers and financial records are saved to your TaxVault account.</span>
                 </div>
               </div>
 
               {/* Separate Buttons for Google and Apple (Hidden via feature flag) */}
               {SHOW_OAUTH_PROVIDERS && (
-                <div className="space-y-1.5 pt-1 border-t border-neutral-800/80">
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                <div className="space-y-1.5 pt-1 border-t border-slate-200">
+                  <div className="text-xs uppercase font-bold tracking-wider text-slate-500">
                     Switch or Connect with:
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -595,7 +552,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       id="btn-account-google"
                       onClick={handleGoogleAuth}
                       disabled={isVerifying}
-                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-neutral-100 active:scale-[0.98] text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all border border-neutral-200"
+                      className="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-900 active:scale-[0.98] text-slate-900 font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all border border-slate-700"
                     >
                       <GoogleIcon className="w-4 h-4 shrink-0" />
                       <span>Google</span>
@@ -606,7 +563,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       id="btn-account-apple"
                       onClick={handleAppleAuth}
                       disabled={isVerifying}
-                      className="py-2.5 px-3 rounded-xl bg-black hover:bg-neutral-950 active:scale-[0.98] text-white border border-neutral-700 font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
+                      className="py-2.5 px-3 rounded-xl bg-black/50 backdrop-blur-xs hover:bg-slate-50 active:scale-[0.98] text-white border border-slate-300 font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
                     >
                       <AppleIcon className="w-4 h-4 shrink-0 text-white fill-white" />
                       <span>Apple</span>
@@ -620,13 +577,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white rounded-xl font-bold text-xs transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5 whitespace-nowrap"
+                  className="w-full py-2.5 px-4 bg-brand hover:bg-brand-strong active:scale-[0.98] text-white rounded-xl font-bold text-xs transition-all cursor-pointer shadow-md flex items-center justify-center gap-1.5 whitespace-nowrap"
                 >
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span className="whitespace-nowrap">Done / Continue</span>
                 </button>
 
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-800/80">
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200">
                   <button
                     type="button"
                     onClick={() => {
@@ -634,7 +591,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setSuccessMessage(null);
                       setIsSwitchingAccount(true);
                     }}
-                    className="text-xs text-neutral-400 hover:text-white font-semibold py-1.5 px-2 rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                    className="text-xs text-slate-500 hover:text-white font-semibold py-1.5 px-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                   >
                     <span className="whitespace-nowrap">Switch Account</span>
                   </button>
@@ -642,7 +599,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="text-xs text-rose-400 hover:text-rose-300 font-semibold py-1.5 px-2 rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                    className="text-xs text-rose-700 hover:text-rose-700 font-semibold py-1.5 px-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                   >
                     <LogOut className="w-3 h-3 shrink-0" />
                     <span className="whitespace-nowrap">Sign Out</span>
@@ -659,7 +616,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSwitchingAccount(false)}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 cursor-pointer mb-1"
+                  className="text-xs text-emerald-700 hover:text-emerald-700 font-medium flex items-center gap-1 cursor-pointer mb-1"
                 >
                   <ArrowRight className="w-3.5 h-3.5 rotate-180" />
                   <span>Back to active account ({currentProfile.email})</span>
@@ -669,10 +626,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {/* Login Screen Header */}
               <div className="text-center space-y-0.5 pb-0.5">
                 <h4 className="text-sm font-extrabold text-white">Sign In to TaxVault</h4>
-                <p className="text-[11px] text-neutral-400">
+                <p className="text-xs text-slate-500">
                   {SHOW_OAUTH_PROVIDERS
-                    ? 'Select Google or Apple for instant encrypted cloud sync'
-                    : 'Sign in to access your tax vault & encrypted records'}
+                    ? 'Continue with Google or Apple, or use your email'
+                    : 'Sign in to access your tax vault'}
                 </p>
               </div>
 
@@ -686,18 +643,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       id="btn-login-google"
                       onClick={handleGoogleAuth}
                       disabled={isVerifying}
-                      className="w-full bg-white hover:bg-neutral-100 active:scale-[0.98] text-neutral-900 font-bold text-xs py-3 px-3.5 rounded-xl flex items-center justify-between transition-all shadow-md cursor-pointer disabled:opacity-60 border border-neutral-200 group"
+                      className="w-full bg-white hover:bg-slate-900 active:scale-[0.98] text-slate-900 font-bold text-xs py-3 px-3.5 rounded-xl flex items-center justify-between transition-all shadow-md cursor-pointer disabled:opacity-60 border border-slate-700 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 border border-neutral-200 shadow-xs">
+                        <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center shrink-0 border border-slate-700 shadow-xs">
                           <GoogleIcon className="w-4 h-4 shrink-0" />
                         </div>
                         <div className="text-left">
-                          <div className="text-xs font-bold text-neutral-900 leading-tight">Continue with Google</div>
-                          <div className="text-[10px] text-neutral-500 font-normal">Use your Gmail or Google Account</div>
+                          <div className="text-xs font-bold text-slate-900 leading-tight">Continue with Google</div>
+                          <div className="text-xs text-slate-500 font-normal">Use your Gmail or Google Account</div>
                         </div>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all" />
                     </button>
 
                     {/* 2. SEPARATE APPLE BUTTON */}
@@ -706,18 +663,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       id="btn-login-apple"
                       onClick={handleAppleAuth}
                       disabled={isVerifying}
-                      className="w-full bg-black hover:bg-neutral-950 active:scale-[0.98] text-white border border-neutral-700 hover:border-neutral-500 font-bold text-xs py-3 px-3.5 rounded-xl flex items-center justify-between transition-all shadow-md cursor-pointer disabled:opacity-60 group"
+                      className="w-full bg-black/50 backdrop-blur-xs hover:bg-slate-50 active:scale-[0.98] text-white border border-slate-300 hover:border-slate-400 font-bold text-xs py-3 px-3.5 rounded-xl flex items-center justify-between transition-all shadow-md cursor-pointer disabled:opacity-60 group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-neutral-900 flex items-center justify-center shrink-0 border border-neutral-800">
+                        <div className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center shrink-0 border border-slate-200">
                           <AppleIcon className="w-4 h-4 shrink-0 text-white fill-white" />
                         </div>
                         <div className="text-left">
                           <div className="text-xs font-bold text-white leading-tight">Continue with Apple</div>
-                          <div className="text-[10px] text-neutral-400 font-normal">Fast Face ID & Private Relay ID</div>
+                          <div className="text-xs text-slate-500 font-normal">Fast Face ID & Private Relay ID</div>
                         </div>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-neutral-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </button>
                   </div>
 
@@ -728,7 +685,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       id="btn-login-google-pill"
                       onClick={handleGoogleAuth}
                       disabled={isVerifying}
-                      className="py-2 px-3 rounded-xl bg-white hover:bg-neutral-100 active:scale-[0.98] text-neutral-900 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all border border-neutral-200"
+                      className="py-2 px-3 rounded-xl bg-white hover:bg-slate-900 active:scale-[0.98] text-slate-900 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all border border-slate-700"
                     >
                       <GoogleIcon className="w-3.5 h-3.5 shrink-0" />
                       <span>Google Sign In</span>
@@ -739,7 +696,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       id="btn-login-apple-pill"
                       onClick={handleAppleAuth}
                       disabled={isVerifying}
-                      className="py-2 px-3 rounded-xl bg-black hover:bg-neutral-950 active:scale-[0.98] text-white border border-neutral-700 hover:border-neutral-500 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
+                      className="py-2 px-3 rounded-xl bg-black/50 backdrop-blur-xs hover:bg-slate-50 active:scale-[0.98] text-white border border-slate-300 hover:border-slate-400 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer transition-all"
                     >
                       <AppleIcon className="w-3.5 h-3.5 shrink-0 text-white fill-white" />
                       <span>Apple ID Sign In</span>
@@ -748,55 +705,57 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   {/* Divider */}
                   <div className="relative my-2 flex items-center justify-center">
-                    <div className="border-t border-neutral-800 w-full" />
-                    <span className="bg-neutral-900 px-2.5 text-[10px] text-neutral-500 uppercase tracking-wider shrink-0 font-medium">
+                    <div className="border-t border-slate-200 w-full" />
+                    <span className="bg-white shadow-xs px-2.5 text-xs text-slate-500 uppercase tracking-wider shrink-0 font-medium">
                       or continue with email
                     </span>
-                    <div className="border-t border-neutral-800 w-full" />
+                    <div className="border-t border-slate-200 w-full" />
                   </div>
                 </>
               )}
 
-              {/* Credentials Banner */}
-              <div className="p-2.5 bg-neutral-950 rounded-xl border border-neutral-800 text-[11px] space-y-1">
-                <div className="flex items-center justify-between text-neutral-400">
-                  <span className="font-semibold text-neutral-300 flex items-center gap-1">
-                    <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
+              {/* Demo Credentials Banner (developer builds only) */}
+              {import.meta.env.DEV && (
+              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span className="font-semibold text-slate-700 flex items-center gap-1">
+                    <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
                     Demo Credentials:
                   </span>
                   <button
                     type="button"
                     onClick={handleFillDemoCredentials}
-                    className="text-emerald-400 hover:text-emerald-300 font-mono text-[10px] underline cursor-pointer"
+                    className="text-emerald-700 hover:text-emerald-700 font-mono text-xs underline cursor-pointer"
                   >
                     Auto-fill
                   </button>
                 </div>
-                <div className="font-mono text-neutral-300 text-[10px] space-y-0.5">
-                  <div>Email: <span className="text-emerald-300 font-semibold">admin@taxvault.app</span></div>
-                  <div>Pass: <span className="text-emerald-300 font-semibold">TaxVaultDemo2026!</span></div>
+                <div className="font-mono text-slate-700 text-xs space-y-0.5">
+                  <div>Email: <span className="text-emerald-700 font-semibold">admin@taxvault.app</span></div>
+                  <div>Pass: <span className="text-emerald-700 font-semibold">TaxVaultDemo2026!</span></div>
                 </div>
               </div>
+              )}
 
               <form onSubmit={handleEmailAuth} className="space-y-3">
                 <div>
-                  <label className="text-[11px] text-neutral-400 block mb-1">Email Address</label>
+                  <label className="text-xs text-slate-500 block mb-1">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-xs text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] text-neutral-400 block">Password</label>
+                    <label className="text-xs text-slate-500 block">Password</label>
                     {authType === 'login' && (
                       <button
                         type="button"
@@ -806,26 +765,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           setErrorMessage(null);
                           setSuccessMessage(null);
                         }}
-                        className="text-[10px] text-emerald-400 hover:text-emerald-300 font-medium hover:underline cursor-pointer"
+                        className="text-xs text-emerald-700 hover:text-emerald-700 font-medium hover:underline cursor-pointer"
                       >
                         Forgot Password?
                       </button>
                     )}
                   </div>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-9 py-2 text-xs text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-neutral-500 hover:text-neutral-300 cursor-pointer"
+                      className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-600 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -834,21 +793,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 {authType === 'signup' && (
                   <div>
-                    <label className="text-[11px] text-neutral-400 block mb-1">Confirm Password</label>
+                    <label className="text-xs text-slate-500 block mb-1">Confirm Password</label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         required
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}
                         placeholder="••••••••••••"
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-9 py-2 text-xs text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-2.5 text-neutral-500 hover:text-neutral-300 cursor-pointer"
+                        className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-600 cursor-pointer"
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -861,10 +820,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <div
                       className={`flex items-start gap-2 p-2.5 rounded-xl border transition-all ${
                         !hasAgreedTerms && errorMessage && errorMessage.includes('Terms & Conditions')
-                          ? 'bg-rose-950/40 border-rose-700/80'
+                          ? 'bg-rose-50 border-rose-700/80'
                           : hasAgreedTerms
-                          ? 'bg-emerald-950/40 border-emerald-700/80'
-                          : 'bg-neutral-950/70 border-neutral-800'
+                          ? 'bg-emerald-50 border-emerald-700/80'
+                          : 'bg-slate-50/70 border-slate-200'
                       }`}
                     >
                       <input
@@ -878,23 +837,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                             setErrorMessage(null);
                           }
                         }}
-                        className="mt-0.5 rounded border-neutral-700 bg-neutral-900 text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500 shrink-0"
+                        className="mt-0.5 rounded border-slate-300 bg-white shadow-xs text-emerald-500 focus:ring-emerald-500 cursor-pointer accent-emerald-500 shrink-0"
                       />
-                      <label htmlFor="auth-modal-terms-checkbox" className="text-[11px] text-neutral-300 leading-snug cursor-pointer select-none">
+                      <label htmlFor="auth-modal-terms-checkbox" className="text-xs text-slate-700 leading-snug cursor-pointer select-none">
                         <span>I agree to the </span>
                         <button
                           type="button"
                           onClick={() => setShowTermsModal(true)}
-                          className="text-emerald-400 font-bold hover:underline inline-flex items-center gap-0.5"
+                          className="text-emerald-700 font-bold hover:underline inline-flex items-center gap-0.5"
                         >
-                          <Scale className="w-3 h-3 text-emerald-400" />
+                          <Scale className="w-3 h-3 text-emerald-700" />
                           <span>Terms &amp; Conditions</span>
                         </button>
                         <span> and </span>
                         <button
                           type="button"
                           onClick={() => setShowTermsModal(true)}
-                          className="text-emerald-400 font-bold hover:underline"
+                          className="text-emerald-700 font-bold hover:underline"
                         >
                           Privacy Policy
                         </button>
@@ -905,15 +864,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
 
                 {errorMessage && (
-                  <div className="p-2 rounded-lg bg-red-950/40 border border-red-800/60 text-red-300 text-[11px] flex items-start gap-1.5">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+                  <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
                     <span>{errorMessage}</span>
                   </div>
                 )}
 
                 {successMessage && (
-                  <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-[11px] flex items-start gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+                  <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-start gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                     <span>{successMessage}</span>
                   </div>
                 )}
@@ -921,7 +880,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="submit"
                   disabled={isVerifying}
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
+                  className="w-full py-2.5 px-4 bg-brand hover:bg-brand-strong text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
                 >
                   {isVerifying ? (
                     <div className="flex items-center gap-2">
@@ -934,7 +893,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </button>
               </form>
 
-              <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
                 <button
                   type="button"
                   onClick={() => {
@@ -942,7 +901,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setErrorMessage(null);
                     setSuccessMessage(null);
                   }}
-                  className="text-neutral-400 hover:text-neutral-200 cursor-pointer"
+                  className="text-slate-500 hover:text-slate-700 cursor-pointer"
                 >
                   {authType === 'login' ? 'Need an account? Sign up' : 'Already have account? Sign in'}
                 </button>
@@ -950,7 +909,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode('signup_country')}
-                  className="text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                  className="text-emerald-700 hover:text-emerald-700 cursor-pointer"
                 >
                   Tax Region
                 </button>
@@ -963,16 +922,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {mode === 'forgot_password' && (
           <div className="space-y-4 animate-in fade-in">
             <div className="text-center">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-400">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-2 text-emerald-700">
                 <Mail className="w-5 h-5" />
               </div>
               <div className="flex items-center justify-center gap-2">
                 <h4 className="text-sm font-extrabold text-white">Reset Password</h4>
-                <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-950/80 border border-emerald-800 text-emerald-400">
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-50 border border-emerald-200 text-emerald-700">
                   EmailJS Portal
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 {isResetStep === 'email'
                   ? 'Enter your registered email address to receive a secure recovery link.'
                   : isResetStep === 'email_sent'
@@ -984,7 +943,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowEmailJsConfig(!showEmailJsConfig)}
-                  className="text-[10px] text-neutral-400 hover:text-emerald-400 inline-flex items-center gap-1 cursor-pointer underline decoration-dotted"
+                  className="text-xs text-slate-500 hover:text-emerald-700 inline-flex items-center gap-1 cursor-pointer underline decoration-dotted"
                 >
                   <SlidersHorizontal className="w-3 h-3" />
                   <span>{showEmailJsConfig ? 'Hide EmailJS Keys' : 'EmailJS Portal Settings'}</span>
@@ -993,17 +952,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
 
             {showEmailJsConfig && (
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-2xl space-y-2.5 text-xs animate-in slide-in-from-top-2">
-                <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5">
-                  <span className="font-bold text-neutral-200 flex items-center gap-1.5 text-[11px]">
-                    <ExternalLink className="w-3 h-3 text-emerald-400" />
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5 text-xs animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+                    <ExternalLink className="w-3 h-3 text-emerald-700" />
                     <span>EmailJS Portal Credentials</span>
                   </span>
                   <a
                     href="https://dashboard.emailjs.com/admin"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] text-emerald-400 hover:text-emerald-300 underline"
+                    className="text-xs text-emerald-700 hover:text-emerald-700 underline"
                   >
                     emailjs.com
                   </a>
@@ -1011,33 +970,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <div className="space-y-1.5">
                   <div>
-                    <label className="text-[10px] text-neutral-400 block mb-0.5">Service ID</label>
+                    <label className="text-xs text-slate-500 block mb-0.5">Service ID</label>
                     <input
                       type="text"
                       value={emailJsConfig.serviceId}
                       onChange={(e) => setEmailJsConfig({ ...emailJsConfig, serviceId: e.target.value })}
                       placeholder="e.g. service_xxxxxxx"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white shadow-xs border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-neutral-400 block mb-0.5">Template ID</label>
+                    <label className="text-xs text-slate-500 block mb-0.5">Template ID</label>
                     <input
                       type="text"
                       value={emailJsConfig.templateId}
                       onChange={(e) => setEmailJsConfig({ ...emailJsConfig, templateId: e.target.value })}
                       placeholder="e.g. template_2gzkt71"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white shadow-xs border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-neutral-400 block mb-0.5">Public Key (User ID)</label>
+                    <label className="text-xs text-slate-500 block mb-0.5">Public Key (User ID)</label>
                     <input
                       type="text"
                       value={emailJsConfig.publicKey}
                       onChange={(e) => setEmailJsConfig({ ...emailJsConfig, publicKey: e.target.value })}
                       placeholder="e.g. xxxxxxx"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white shadow-xs border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -1045,7 +1004,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveEmailJsConfigModal}
-                  className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs transition-colors"
+                  className="w-full py-1.5 bg-brand hover:bg-brand-strong text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs transition-colors"
                 >
                   {configSaved ? 'Saved to Local Storage!' : 'Save EmailJS Keys'}
                 </button>
@@ -1055,33 +1014,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {isResetStep === 'email' && (
               <form onSubmit={handleForgotPassword} className="space-y-3">
                 <div>
-                  <label className="text-[11px] text-neutral-400 block mb-1">Registered Email ID</label>
+                  <label className="text-xs text-slate-500 block mb-1">Registered Email ID</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="email"
                       required
                       value={forgotEmail}
                       onChange={e => setForgotEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-xs text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                     />
                   </div>
-                  <p className="text-[10px] text-neutral-500 mt-1">
+                  <p className="text-xs text-slate-500 mt-1">
                     Recovery OTP will be delivered exclusively to this registered email via EmailJS.
                   </p>
                 </div>
 
                 {errorMessage && (
-                  <div className="p-2 rounded-lg bg-red-950/40 border border-red-800/60 text-red-300 text-[11px] flex items-start gap-1.5">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+                  <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
                     <span>{errorMessage}</span>
                   </div>
                 )}
 
                 {successMessage && (
-                  <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-[11px] flex items-start gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+                  <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-start gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                     <span>{successMessage}</span>
                   </div>
                 )}
@@ -1089,7 +1048,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="submit"
                   disabled={isVerifying}
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
+                  className="w-full py-2.5 px-4 bg-brand hover:bg-brand-strong text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
                 >
                   {isVerifying ? (
                     <div className="flex items-center gap-2">
@@ -1108,28 +1067,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             {isResetStep === 'email_sent' && (
               <div className="space-y-4 text-center animate-in fade-in py-2">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center mx-auto border border-emerald-500/30">
                   <Mail className="w-6 h-6 animate-bounce" />
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-sm font-bold text-white">Check Your Inbox</h3>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-xs text-slate-500">
                     A password reset link was dispatched to:
                   </p>
-                  <p className="text-xs font-mono font-bold text-emerald-400 break-all">
+                  <p className="text-xs font-mono font-bold text-emerald-700 break-all">
                     {forgotEmail || email}
                   </p>
                 </div>
-                <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-left text-[11px] text-neutral-300 space-y-1.5">
+                <div className="p-3 bg-white shadow-xs border border-slate-200 rounded-xl text-left text-xs text-slate-700 space-y-1.5">
                   <p className="flex items-start gap-1.5">
-                    <span className="text-emerald-400 font-bold">1.</span>
+                    <span className="text-emerald-700 font-bold">1.</span>
                     <span>Open the email and click the secure password reset link.</span>
                   </p>
                   <p className="flex items-start gap-1.5">
-                    <span className="text-emerald-400 font-bold">2.</span>
+                    <span className="text-emerald-700 font-bold">2.</span>
                     <span>The link will verify your identity and open the password reset form.</span>
                   </p>
-                  <p className="flex items-start gap-1.5 text-neutral-400 text-[10px]">
+                  <p className="flex items-start gap-1.5 text-slate-500 text-xs">
                     <span>If you don't see it, check your spam/junk folder or click Resend Link below.</span>
                   </p>
                 </div>
@@ -1138,12 +1097,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="button"
                     onClick={handleForgotPassword}
                     disabled={isVerifying}
-                    className="text-emerald-400 hover:text-emerald-300 font-medium hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-emerald-700 hover:text-emerald-700 font-medium hover:underline cursor-pointer flex items-center gap-1"
                   >
                     <RefreshCw className={`w-3 h-3 ${isVerifying ? 'animate-spin' : ''}`} />
                     <span>Resend Link</span>
                   </button>
-                  <span className="text-neutral-600">•</span>
+                  <span className="text-slate-300">•</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -1152,7 +1111,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setErrorMessage(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-neutral-400 hover:text-white cursor-pointer"
+                    className="text-slate-500 hover:text-white cursor-pointer"
                   >
                     Back to Sign In
                   </button>
@@ -1163,9 +1122,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {isResetStep === 'new_password' && (
               <form onSubmit={handleUpdatePasswordModal} className="space-y-3 animate-in fade-in">
                 <div>
-                  <label className="text-[11px] text-neutral-400 block mb-1">New Password (min. 6 chars)</label>
+                  <label className="text-xs text-slate-500 block mb-1">New Password (min. 6 chars)</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type={showNewPassword ? 'text' : 'password'}
                       required
@@ -1173,12 +1132,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-9 py-2 text-xs text-neutral-100 font-mono focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-9 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-2.5 text-neutral-500 hover:text-neutral-300 cursor-pointer"
+                      className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-600 cursor-pointer"
                     >
                       {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -1186,15 +1145,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
 
                 {errorMessage && (
-                  <div className="p-2 rounded-lg bg-red-950/40 border border-red-800/60 text-red-300 text-[11px] flex items-start gap-1.5">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+                  <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
                     <span>{errorMessage}</span>
                   </div>
                 )}
 
                 {successMessage && (
-                  <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-[11px] flex items-start gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+                  <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-start gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
                     <span>{successMessage}</span>
                   </div>
                 )}
@@ -1202,14 +1161,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="submit"
                   disabled={isVerifying || newPassword.length < 6}
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
+                  className="w-full py-2.5 px-4 bg-brand hover:bg-brand-strong text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
                 >
                   {isVerifying ? 'Updating Password...' : 'Update Password & Continue'}
                 </button>
               </form>
             )}
 
-            <div className="pt-2 text-center border-t border-neutral-800/80">
+            <div className="pt-2 text-center border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => {
@@ -1218,9 +1177,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setErrorMessage(null);
                   setSuccessMessage(null);
                 }}
-                className="text-xs text-neutral-400 hover:text-white cursor-pointer font-medium"
+                className="text-xs text-slate-500 hover:text-white cursor-pointer font-medium"
               >
-                Remembered your password? <span className="text-emerald-400 font-bold">Sign in</span>
+                Remembered your password? <span className="text-emerald-700 font-bold">Sign in</span>
               </button>
             </div>
           </div>
@@ -1233,7 +1192,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 onClick={handleBiometricAuthenticate}
                 disabled={isVerifying}
-                className="w-20 h-20 rounded-full bg-neutral-950 border-2 border-emerald-500/40 hover:border-emerald-400 flex items-center justify-center mx-auto text-emerald-400 cursor-pointer shadow-lg active:scale-95 transition-all group"
+                className="w-20 h-20 rounded-full bg-slate-50 border-2 border-emerald-500/40 hover:border-emerald-400 flex items-center justify-center mx-auto text-emerald-700 cursor-pointer shadow-lg active:scale-95 transition-all group"
               >
                 {isIos ? (
                   <ScanFace className={`w-10 h-10 group-hover:scale-105 transition-transform ${isVerifying ? 'animate-pulse' : ''}`} />
@@ -1259,7 +1218,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   ? 'Tap to authenticate with Face ID'
                   : 'Tap sensor for Fingerprint Auth'}
               </div>
-              <p className="text-[11px] text-neutral-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 FIDO2 / WebAuthn Biometric Security Token
               </p>
             </div>
@@ -1270,9 +1229,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {mode === 'mfa_totp' && (
           <div className="space-y-4">
             <div className="text-center">
-              <Lock className="w-7 h-7 text-amber-400 mx-auto mb-1.5" />
+              <Lock className="w-7 h-7 text-amber-700 mx-auto mb-1.5" />
               <div className="text-xs font-semibold text-white">Enter 6-Digit Authenticator Code</div>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 From Google Authenticator or Apple Passwords
               </p>
             </div>
@@ -1281,7 +1240,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {['8', '4', '2', '9', '1', '7'].map((digit, idx) => (
                 <div
                   key={idx}
-                  className="w-9 h-11 bg-neutral-950 border border-neutral-700 rounded-lg flex items-center justify-center font-mono text-base font-bold text-emerald-400"
+                  className="w-9 h-11 bg-slate-50 border border-slate-300 rounded-lg flex items-center justify-center font-mono text-base font-bold text-emerald-700"
                 >
                   {digit}
                 </div>
@@ -1291,7 +1250,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <button
               onClick={handleVerifyTotp}
               disabled={isVerifying}
-              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all cursor-pointer shadow-md"
+              className="w-full py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-semibold text-xs transition-all cursor-pointer shadow-md"
             >
               {isVerifying ? 'Verifying Code...' : 'Verify MFA Code'}
             </button>
@@ -1302,9 +1261,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {mode === 'signup_country' && (
           <div className="space-y-3">
             <div className="text-center mb-2">
-              <Globe className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+              <Globe className="w-6 h-6 text-emerald-700 mx-auto mb-1" />
               <div className="text-xs font-semibold text-white">Country Tax Regulation</div>
-              <p className="text-[11px] text-neutral-400">
+              <p className="text-xs text-slate-500">
                 Adapts statutory forms, GST/VAT rules, and financial year dates
               </p>
             </div>
@@ -1316,8 +1275,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClick={() => setSelectedCountry(c.countryCode)}
                   className={`p-2 rounded-xl border text-left flex items-center gap-2 cursor-pointer ${
                     selectedCountry === c.countryCode
-                      ? 'bg-neutral-800 border-emerald-500 text-white'
-                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                      ? 'bg-slate-100 border-emerald-500 text-white'
+                      : 'bg-slate-50 border-slate-200 text-slate-500'
                   }`}
                 >
                   <span className="text-base">{c.flag}</span>
@@ -1328,7 +1287,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <button
               onClick={handleCompleteCountrySignup}
-              className="w-full mt-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+              className="w-full mt-2 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
             >
               <span>Save & Continue</span>
               <ArrowRight className="w-3.5 h-3.5" />

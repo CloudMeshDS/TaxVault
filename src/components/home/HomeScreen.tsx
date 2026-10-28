@@ -32,6 +32,8 @@ import {
   calculateQuarterlyBreakdown,
 } from '../../services/taxRules';
 import { SubscriptionService } from '../../services/subscriptionService';
+import { pressable } from '../../utils/a11y';
+import { formatDisplayDate } from '../../utils/format';
 
 export type PeriodFilterMode = 'month' | 'quarter' | 'fy' | 'cy' | 'range' | 'all';
 
@@ -162,13 +164,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Check recurring expenses (e.g., Adobe, Airtel broadband)
   const recurringItems = useMemo(() => detectRecurringExpenses(expenses), [expenses]);
   const scanUsage = SubscriptionService.getScanUsage(profile);
-  const formatShortDate = (value?: string) => {
-    const iso = parseDateToISO(value);
-    const d = /^d{4}-d{2}-d{2}$/.test(iso) ? new Date(`${iso}T00:00:00`) : null;
-    return d && !isNaN(d.getTime())
-      ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-      : value || '';
-  };
+  const formatShortDate = (value?: string) => formatDisplayDate(value, profile.country);
 
   const fmt = (amount: number, showDecimals: boolean = false) =>
     formatCurrency(
@@ -281,62 +277,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   }, [filteredExpenses, expenses]);
 
   return (
-    <div className="p-4 space-y-4 pb-24 max-w-xl mx-auto select-none">
-      {/* 1. Subscription Plan & Usage Banner */}
-      {onOpenSubscription && (
+    <div className="px-4 pt-4 space-y-6 pb-28 max-w-xl mx-auto select-none">
+      {/* 1. Scan allowance (free plan only; paid plans manage this in Settings) */}
+      {onOpenSubscription && !scanUsage.unlimited && (
         <div
-          onClick={onOpenSubscription}
-          className="group cursor-pointer bg-amber-50/70 hover:bg-amber-50 border border-amber-200/80 hover:border-amber-300 rounded-2xl p-2.5 flex items-center justify-between gap-2 transition-all"
+          {...pressable(onOpenSubscription)}
+          className="group cursor-pointer bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 transition-colors hover:border-slate-300"
         >
-          <div className="flex items-center gap-2 text-xs">
-            <div className="w-8 h-8 rounded-xl bg-white border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
-              <Sparkles className="w-3.5 h-3.5" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="font-medium text-slate-700">
+                {scanUsage.remaining === 0
+                  ? 'No AI scans left this month'
+                  : `${scanUsage.remaining} of ${scanUsage.limit} AI scans left this month`}
+              </span>
             </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                  !scanUsage.unlimited && scanUsage.remaining === 0
-                    ? 'text-rose-700 bg-rose-50 border-rose-200'
-                    : 'text-amber-800 bg-white border-amber-200'
-                }`}>
-                  {scanUsage.unlimited
-                    ? 'Unlimited Scans'
-                    : `${scanUsage.used}/${scanUsage.limit} scans this month`}
-                </span>
-                <span className="font-semibold text-slate-700 text-[11px]">
-                  {profile.subscription?.tier === 'pro'
-                    ? 'Tax Compliance Pro'
-                    : profile.subscription?.tier === 'enterprise'
-                    ? 'CA Firm Enterprise'
-                    : 'Starter Plan (Free)'}
-                </span>
-              </div>
-              <div className="text-[10px] text-slate-600">
-                {scanUsage.unlimited
-                  ? 'Official CA audit packs & multi-currency enabled'
-                  : scanUsage.remaining === 0
-                  ? 'Monthly limit reached. Manual entry still works, or upgrade for unlimited.'
-                  : `${scanUsage.remaining} AI scans left. Upgrade for unlimited & CA audit packs.`}
-              </div>
+            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
+              <div
+                className={`h-full rounded-full ${scanUsage.remaining === 0 ? 'bg-rose-500' : 'bg-brand'}`}
+                style={{ width: `${Math.min(100, (scanUsage.used / Math.max(1, scanUsage.limit)) * 100)}%` }}
+              />
             </div>
           </div>
-
-          <div className="flex items-center gap-1 text-[11px] font-bold text-amber-700 group-hover:translate-x-0.5 transition-transform shrink-0">
-            <span>{profile.subscription?.tier === 'free' ? 'Upgrade' : 'Manage'}</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" aria-hidden="true" />
         </div>
       )}
 
       {/* 2. Recurring Expense Notification Banner (if any detected) */}
       {recurringItems.length > 0 && (
-        <div className="bg-amber-950/40 border border-amber-600/30 rounded-2xl p-3 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+        <div className="bg-amber-50 border border-amber-600/30 rounded-2xl p-3 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
             <RefreshCw className="w-4 h-4" />
           </div>
           <div className="flex-1 text-xs">
-            <div className="font-bold text-amber-200">Recurring Expense Detected</div>
-            <p className="text-amber-300/80 mt-0.5 leading-relaxed">
+            <div className="font-bold text-amber-700">Recurring Expense Detected</div>
+            <p className="text-amber-700/80 mt-0.5 leading-relaxed">
               We noticed <strong className="text-slate-900">{recurringItems[0].merchant}</strong> ({fmt(recurringItems[0].averageAmount)}) repeats every month.
             </p>
           </div>
@@ -344,37 +319,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       )}
 
       {/* 3. DYNAMIC PERIOD FILTER SELECTOR (Month, Year, FY, CY, Date Range) */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold tracking-wide uppercase text-neutral-400">
-              Expense Summary
-            </span>
-            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Filter className="w-2.5 h-2.5" />
-              <span>{periodBadgeLabel}</span>
-            </span>
-          </div>
-          <span className="text-[11px] text-emerald-400 font-medium font-mono">
-            {filteredExpenses.length} {filteredExpenses.length === 1 ? 'receipt' : 'receipts'}
-          </span>
-        </div>
-
-        {/* Quick One-Tap Filter Mode Pills & Options Toggle */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-2.5 space-y-2 shadow-sm">
-          {/* Top header bar with Options toggle - always visible in portrait & landscape */}
-          <div className="flex items-center justify-between gap-2 pb-1 border-b border-neutral-800/60">
-            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
-              Filter By Period
-            </span>
+      <div className="space-y-3">
+        {/* Total for the selected period; the period chip opens the period picker */}
+        <section className="bg-white border border-slate-200 rounded-3xl p-5" aria-label="Expense summary">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-slate-500">Total expenses</span>
             <button
               type="button"
               onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-              className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/70 border border-emerald-800/70 px-2.5 py-0.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-2xs shrink-0"
-              title="Show or customize period options"
+              aria-expanded={isFilterExpanded}
+              className="h-9 pl-3 pr-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+              title="Change period"
             >
-              <span>{isFilterExpanded ? 'Hide Options' : 'Options'}</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${isFilterExpanded ? 'rotate-180' : ''}`} />
+              <span className="whitespace-nowrap">{periodBadgeLabel}</span>
+              <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isFilterExpanded ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          <div className="mt-1 text-[2.5rem] leading-tight font-bold text-slate-900 tracking-tight font-mono break-all">
+            {fmt(currentTaxResult.totalExpenses)}
+          </div>
+          <div className="text-sm text-slate-500">
+            {filteredExpenses.length} {filteredExpenses.length === 1 ? 'receipt' : 'receipts'}
+          </div>
+
+          <dl className="mt-5 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+              <dt className="text-xs text-slate-500">Business</dt>
+              <dd className="text-sm font-semibold text-slate-900 font-mono truncate">{fmt(currentTaxResult.businessExpenses)}</dd>
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+              <dt className="text-xs text-slate-500">Personal</dt>
+              <dd className="text-sm font-semibold text-slate-900 font-mono truncate">{fmt(currentTaxResult.personalExpenses)}</dd>
+            </div>
+            <div className="rounded-2xl bg-emerald-50 px-3 py-2.5">
+              <dt className="text-xs text-emerald-800">{taxLabel}</dt>
+              <dd className="text-sm font-semibold text-emerald-800 font-mono truncate">{fmt(currentTaxResult.totalGstIdentified)}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Period picker */}
+        {isFilterExpanded && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-slate-900">Period</span>
+            <button
+              type="button"
+              onClick={() => setIsFilterExpanded(false)}
+              className="text-sm font-semibold text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50 cursor-pointer transition-colors"
+            >
+              Done
             </button>
           </div>
 
@@ -387,10 +382,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 setPeriodMode('all');
                 setIsFilterExpanded(false);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 periodMode === 'all'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                  : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                  ? 'bg-slate-900 text-slate-50'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <span className="whitespace-nowrap">All Time</span>
@@ -401,10 +396,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 setPeriodMode('month');
                 setIsFilterExpanded(true);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 periodMode === 'month'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                  : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                  ? 'bg-slate-900 text-slate-50'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -416,10 +411,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 setPeriodMode('quarter');
                 setIsFilterExpanded(true);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 periodMode === 'quarter'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                  : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                  ? 'bg-slate-900 text-slate-50'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <Layers className="w-3.5 h-3.5 shrink-0" />
@@ -431,10 +426,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 setPeriodMode('fy');
                 setIsFilterExpanded(true);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 periodMode === 'fy'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                  : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                  ? 'bg-slate-900 text-slate-50'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <span className="whitespace-nowrap">Financial Year</span>
@@ -445,10 +440,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 setPeriodMode('cy');
                 setIsFilterExpanded(true);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 periodMode === 'cy'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                  : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                  ? 'bg-slate-900 text-slate-50'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <span className="whitespace-nowrap">Calendar Year</span>
@@ -459,10 +454,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 setPeriodMode('range');
                 setIsFilterExpanded(true);
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              className={`h-9 px-3.5 rounded-full text-sm font-medium shrink-0 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 periodMode === 'range'
-                  ? 'bg-emerald-500 text-neutral-950 shadow-sm font-bold'
-                  : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                  ? 'bg-slate-900 text-slate-50'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
               <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -471,17 +466,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           {/* Interactive Parameters Drawer */}
-          {isFilterExpanded && (
-            <div className="pt-2 border-t border-neutral-800/80 animate-in fade-in duration-150 space-y-2">
+          {isFilterExpanded && periodMode !== 'all' && (
+            <div className="pt-2 border-t border-slate-200 animate-in fade-in duration-150 space-y-2">
               {/* Option 1: Month & Year Picker */}
               {periodMode === 'month' && (
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <label className="text-[10px] text-neutral-400 block mb-1">Select Month</label>
+                    <label className="text-xs text-slate-500 block mb-1">Select Month</label>
                     <select
                       value={selectedMonth}
                       onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-2 text-white font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-medium focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
                       {MONTHS_LIST.map((m) => (
                         <option key={m.value} value={m.value}>
@@ -491,11 +486,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-neutral-400 block mb-1">Select Year</label>
+                    <label className="text-xs text-slate-500 block mb-1">Select Year</label>
                     <select
                       value={selectedYear}
                       onChange={(e) => setSelectedYear(Number(e.target.value))}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
                       {AVAILABLE_YEARS.map((y) => (
                         <option key={y} value={y}>
@@ -512,11 +507,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div className="space-y-2.5 animate-in fade-in duration-150">
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <label className="text-[10px] text-neutral-400 block mb-1">Financial Year</label>
+                      <label className="text-xs text-slate-500 block mb-1">Financial Year</label>
                       <select
                         value={selectedQuarterFY}
                         onChange={(e) => setSelectedQuarterFY(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                       >
                         {AVAILABLE_FYS.map((fy) => (
                           <option key={fy} value={fy}>
@@ -527,7 +522,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-neutral-400 block mb-1">Select Quarter</label>
+                      <label className="text-xs text-slate-500 block mb-1">Select Quarter</label>
                       <div className="grid grid-cols-4 gap-1">
                         {(['Q1', 'Q2', 'Q3', 'Q4'] as FiscalQuarter[]).map((q) => (
                           <button
@@ -536,8 +531,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             onClick={() => setSelectedQuarter(q)}
                             className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                               selectedQuarter === q
-                                ? 'bg-emerald-500 text-neutral-950 shadow-xs font-black'
-                                : 'bg-neutral-950 text-neutral-400 hover:text-white border border-neutral-800'
+                                ? 'bg-brand text-slate-900 shadow-xs font-black'
+                                : 'bg-slate-50 text-slate-500 hover:text-white border border-slate-200'
                             }`}
                           >
                             {q}
@@ -558,20 +553,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           onClick={() => setSelectedQuarter(qData.quarter)}
                           className={`p-2 rounded-xl text-left transition-all cursor-pointer ${
                             isCurrent
-                              ? 'bg-emerald-950/70 border border-emerald-500/80 shadow-xs ring-1 ring-emerald-500/40'
-                              : 'bg-neutral-950 border border-neutral-800/80 hover:border-neutral-700'
+                              ? 'bg-emerald-50 border border-emerald-500/80 shadow-xs ring-1 ring-emerald-500/40'
+                              : 'bg-slate-50 border border-slate-200 hover:border-slate-200'
                           }`}
                         >
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className={`font-bold ${isCurrent ? 'text-emerald-400' : 'text-neutral-300'}`}>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className={`font-bold ${isCurrent ? 'text-emerald-700' : 'text-slate-700'}`}>
                               {qData.quarter}
                             </span>
-                            <span className="text-neutral-500 text-[9px]">{qData.info.monthsLabel}</span>
+                            <span className="text-slate-500 text-xs">{qData.info.monthsLabel}</span>
                           </div>
                           <div className="text-xs font-mono font-bold text-white mt-1 truncate">
                             {fmt(qData.totalExpenses)}
                           </div>
-                          <div className="text-[9px] text-neutral-400 truncate mt-0.5">
+                          <div className="text-xs text-slate-500 truncate mt-0.5">
                             {qData.expenseCount} recs · {qData.percentageOfAnnual.toFixed(0)}%
                           </div>
                         </button>
@@ -584,16 +579,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               {/* Option 2: Financial Year (FY) Picker */}
               {periodMode === 'fy' && (
                 <div className="space-y-1 text-xs">
-                  <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Select Financial Year ({profile.country} Rules)</span>
-                    <span className="text-emerald-400 font-mono">
+                    <span className="text-emerald-700 font-mono">
                       {profile.country === 'AU' ? '1 Jul – 30 Jun' : '1 Apr – 31 Mar'}
                     </span>
                   </div>
                   <select
                     value={selectedFY}
                     onChange={(e) => setSelectedFY(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     {AVAILABLE_FYS.map((fy) => (
                       <option key={fy} value={fy}>
@@ -607,14 +602,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               {/* Option 3: Calendar Year (CY) Picker */}
               {periodMode === 'cy' && (
                 <div className="space-y-1 text-xs">
-                  <div className="flex items-center justify-between text-[10px] text-neutral-400">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Select Calendar Year</span>
-                    <span className="text-emerald-400 font-mono">1 Jan – 31 Dec</span>
+                    <span className="text-emerald-700 font-mono">1 Jan – 31 Dec</span>
                   </div>
                   <select
                     value={selectedCY}
                     onChange={(e) => setSelectedCY(Number(e.target.value))}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     {AVAILABLE_YEARS.map((y) => (
                       <option key={y} value={y}>
@@ -630,28 +625,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div className="space-y-2 text-xs">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[10px] text-neutral-400 block mb-1">From Date</label>
+                      <label className="text-xs text-slate-500 block mb-1">From Date</label>
                       <input
                         type="date"
                         value={customStartDate}
                         onChange={(e) => setCustomStartDate(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-white font-mono focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-neutral-400 block mb-1">To Date</label>
+                      <label className="text-xs text-slate-500 block mb-1">To Date</label>
                       <input
                         type="date"
                         value={customEndDate}
                         onChange={(e) => setCustomEndDate(e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-2.5 py-1.5 text-white font-mono focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-white font-mono focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
 
                   {/* Range preset shortcuts */}
-                  <div className="flex items-center gap-1.5 pt-1 text-[10px] flex-wrap">
-                    <span className="text-neutral-500">Presets:</span>
+                  <div className="flex items-center gap-1.5 pt-1 text-xs flex-wrap">
+                    <span className="text-slate-500">Presets:</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -660,7 +655,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         setCustomStartDate(weekAgo.toISOString().split('T')[0]);
                         setCustomEndDate(d.toISOString().split('T')[0]);
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-white cursor-pointer"
                     >
                       Last 7 Days
                     </button>
@@ -672,7 +667,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         setCustomStartDate(monthAgo.toISOString().split('T')[0]);
                         setCustomEndDate(d.toISOString().split('T')[0]);
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-white cursor-pointer"
                     >
                       Last 30 Days
                     </button>
@@ -684,7 +679,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         setCustomStartDate(startMonth);
                         setCustomEndDate(d.toISOString().split('T')[0]);
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-neutral-950 border border-neutral-800 text-neutral-400 hover:text-white cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-white cursor-pointer"
                     >
                       This Month
                     </button>
@@ -694,261 +689,125 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           )}
         </div>
-
-        {/* Big Total Expenses Hero Card with Period Dropdown Trigger */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-900 to-emerald-50/60 border border-neutral-800 rounded-3xl p-5 shadow-sm">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="flex items-center justify-between text-neutral-400 text-xs font-medium">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span>Total Expenses</span>
-              {/* Filter Trigger Button right where user highlighted */}
-              <button
-                onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                className="px-2.5 py-1 rounded-xl bg-neutral-800/90 hover:bg-neutral-800 border border-neutral-700/80 hover:border-emerald-500/50 text-emerald-400 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs whitespace-nowrap shrink-0"
-                title="Click to change period (Month, Year, FY, CY, Date Range)"
-              >
-                <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="whitespace-nowrap">{periodBadgeLabel}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 shrink-0 transition-transform ${isFilterExpanded ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-            <Receipt className="w-4 h-4 text-emerald-400 shrink-0" />
-          </div>
-
-          <div className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-mono tabular-nums break-all">
-            {fmt(currentTaxResult.totalExpenses)}
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-neutral-800/80 grid grid-cols-3 gap-2 text-left">
-            {/* Business */}
-            <div className="space-y-0.5">
-              <div className="text-[11px] text-neutral-400 font-medium flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
-                <span>Business</span>
-              </div>
-              <div className="text-sm font-bold text-blue-400 font-mono">
-                {fmt(currentTaxResult.businessExpenses)}
-              </div>
-            </div>
-
-            {/* Personal */}
-            <div className="space-y-0.5">
-              <div className="text-[11px] text-neutral-400 font-medium flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-purple-400 inline-block" />
-                <span>Personal</span>
-              </div>
-              <div className="text-sm font-bold text-purple-400 font-mono">
-                {fmt(currentTaxResult.personalExpenses)}
-              </div>
-            </div>
-
-            {/* Tax Identified */}
-            <div className="space-y-0.5">
-              <div className="text-[11px] text-neutral-400 font-medium flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-                <span>{taxLabel}</span>
-              </div>
-              <div className="text-sm font-bold text-emerald-400 font-mono">
-                {fmt(currentTaxResult.totalGstIdentified)}
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* 4. Primary & Secondary Actions (Large, intuitive buttons) */}
-      <div className="space-y-2.5 pt-1">
-        {/* PRIMARY ACTION BUTTONS: [ + Scan Receipt ] and [ + Enter Manually ] */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <button
-            onClick={onOpenScanner}
-            className="w-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-neutral-950 font-black py-4 px-5 rounded-2xl shadow-md shadow-emerald-500/20 flex items-center justify-center gap-3 transition-all cursor-pointer group whitespace-nowrap"
-          >
-            <div className="w-8 h-8 rounded-xl bg-neutral-950/15 flex items-center justify-center shrink-0">
-              <Camera className="w-4.5 h-4.5 text-neutral-950 stroke-[2.5] group-hover:scale-110 transition-transform shrink-0" />
-            </div>
-            <span className="text-sm tracking-tight whitespace-nowrap font-black">Scan Receipt</span>
-          </button>
+      {/* 4. Quick actions */}
+      <section aria-label="Quick actions" className="space-y-3">
+        <button
+          type="button"
+          onClick={onOpenScanner}
+          className="w-full h-14 bg-brand hover:bg-brand-strong active:scale-[0.99] text-white font-semibold rounded-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer text-base"
+        >
+          <Camera className="w-5 h-5 shrink-0" />
+          <span>Scan a receipt</span>
+        </button>
 
-          <button
-            onClick={onOpenManualEntry}
-            className="w-full bg-neutral-900 hover:bg-neutral-850 active:scale-[0.98] border border-emerald-500/40 hover:border-emerald-500 text-white font-extrabold py-4 px-5 rounded-2xl shadow-sm flex items-center justify-center gap-3 transition-all cursor-pointer group whitespace-nowrap"
-          >
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <PenTool className="w-4 h-4 group-hover:scale-110 transition-transform shrink-0" />
-            </div>
-            <span className="text-sm tracking-tight whitespace-nowrap font-black">Enter Manually</span>
-          </button>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: 'Add manually', icon: PenTool, onClick: onOpenManualEntry },
+            { label: 'Upload file', icon: Upload, onClick: onTriggerUpload },
+            { label: 'All expenses', icon: Receipt, onClick: onNavigateToExpenses },
+          ].map(({ label, icon: Icon, onClick }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={onClick}
+              className="bg-white border border-slate-200 hover:border-slate-300 active:scale-[0.98] rounded-2xl py-3 px-2 flex flex-col items-center gap-1.5 cursor-pointer transition-all min-w-0"
+            >
+              <Icon className="w-5 h-5 text-emerald-700 shrink-0" />
+              <span className="text-xs font-medium text-slate-700 truncate max-w-full">{label}</span>
+            </button>
+          ))}
         </div>
+      </section>
 
-        {/* SECONDARY BUTTONS: [ Upload Receipt ] & [ View Expenses ] */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            onClick={onTriggerUpload}
-            className="bg-neutral-900 hover:bg-neutral-800/90 active:scale-[0.98] border border-neutral-800 text-neutral-200 hover:text-white font-semibold py-3 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer whitespace-nowrap min-w-0"
-          >
-            <Upload className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="whitespace-nowrap truncate">Upload Receipt</span>
-          </button>
-
-          <button
-            onClick={onNavigateToExpenses}
-            className="bg-neutral-900 hover:bg-neutral-800/90 active:scale-[0.98] border border-neutral-800 text-neutral-200 hover:text-white font-semibold py-3 px-3 sm:px-4 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer whitespace-nowrap min-w-0"
-          >
-            <Receipt className="w-4 h-4 text-teal-400 shrink-0" />
-            <span className="whitespace-nowrap truncate">View Expenses</span>
-          </button>
-        </div>
-
-        {/* SMART TAX SUITE (Mileage, Bank Recon, Invoicing, Tax Calendar) */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-3 space-y-2 shadow-sm">
-          <div className="flex items-center justify-between text-[11px] text-neutral-400 font-bold uppercase tracking-wide">
-            <span>Smart Tax Suite</span>
-            <span className="text-[10px] text-emerald-400 font-normal">All Tools</span>
+      {/* Tools (Mileage, Bank reconciliation, Invoicing, Tax calendar) */}
+      {(onOpenMileage || onOpenBankReconciliation || onOpenInvoiceGenerator || onOpenTaxCalendar) && (
+        <section aria-labelledby="home-tools-heading" className="space-y-3">
+          <h2 id="home-tools-heading" className="text-base font-semibold text-slate-900">Tools</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: 'Mileage log', hint: 'Track business trips', icon: Car, onClick: onOpenMileage },
+              { label: 'Bank matching', hint: 'Match a bank CSV', icon: Building2, onClick: onOpenBankReconciliation },
+              { label: 'Invoices', hint: 'Bill your clients', icon: FileSpreadsheet, onClick: onOpenInvoiceGenerator },
+              { label: 'Tax calendar', hint: 'Upcoming deadlines', icon: Calendar, onClick: onOpenTaxCalendar },
+            ].filter((tool) => tool.onClick).map(({ label, hint, icon: Icon, onClick }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={onClick}
+                className="bg-white border border-slate-200 hover:border-slate-300 active:scale-[0.98] rounded-2xl p-4 flex flex-col items-start gap-3 text-left cursor-pointer transition-all min-w-0"
+              >
+                <span className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+                  <Icon className="w-5 h-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-slate-900">{label}</span>
+                  <span className="block text-xs text-slate-500">{hint}</span>
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {onOpenMileage && (
-              <button
-                type="button"
-                onClick={onOpenMileage}
-                className="bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 hover:border-amber-500/50 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition-all group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform">
-                  <Car className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-bold text-white group-hover:text-amber-300">Mileage Log</span>
-                <span className="text-[10px] text-neutral-400">Logbook rate</span>
-              </button>
-            )}
+        </section>
+      )}
 
-            {onOpenBankReconciliation && (
-              <button
-                type="button"
-                onClick={onOpenBankReconciliation}
-                className="bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 hover:border-cyan-500/50 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition-all group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-bold text-white group-hover:text-cyan-300">Bank Recon</span>
-                <span className="text-[10px] text-neutral-400">Match CSV</span>
-              </button>
-            )}
-
-            {onOpenInvoiceGenerator && (
-              <button
-                type="button"
-                onClick={onOpenInvoiceGenerator}
-                className="bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 hover:border-indigo-500/50 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition-all group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
-                  <FileSpreadsheet className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-bold text-white group-hover:text-indigo-300">Invoicing</span>
-                <span className="text-[10px] text-neutral-400">Client billing</span>
-              </button>
-            )}
-
-            {onOpenTaxCalendar && (
-              <button
-                type="button"
-                onClick={onOpenTaxCalendar}
-                className="bg-neutral-950 hover:bg-neutral-850 border border-neutral-800 hover:border-teal-500/50 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition-all group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 group-hover:scale-105 transition-transform">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-bold text-white group-hover:text-teal-300">Tax Calendar</span>
-                <span className="text-[10px] text-neutral-400">Deadlines</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Recent Expenses Section (Filters with selected period) */}
-      <div className="space-y-2.5 pt-2">
+      {/* 5. Recent expenses in the selected period */}
+      <section aria-labelledby="home-recent-heading" className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold tracking-wide uppercase text-neutral-400">
-            Recent Expenses ({periodBadgeLabel})
-          </h2>
+          <h2 id="home-recent-heading" className="text-base font-semibold text-slate-900">Recent</h2>
           <button
+            type="button"
             onClick={onNavigateToExpenses}
-            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer transition-colors"
+            className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-0.5 cursor-pointer transition-colors py-1"
           >
-            <span>See All</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            See all
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
         {recentExpenses.length === 0 ? (
-          <div className="p-8 text-center bg-neutral-900/50 border border-neutral-800/80 rounded-2xl">
-            <Receipt className="w-10 h-10 text-neutral-600 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-neutral-300">No expenses in {periodBadgeLabel}</p>
-            <p className="text-xs text-neutral-500 mt-1">Pick another period, or scan a receipt to add your first expense.</p>
+          <div className="px-6 py-10 text-center bg-white border border-slate-200 rounded-2xl">
+            <Receipt className="w-9 h-9 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-800">No expenses yet</p>
+            <p className="text-sm text-slate-500 mt-1">Scan a receipt or add one manually to get started.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <ul className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">
             {recentExpenses.map((exp) => {
               const catInfo = CATEGORY_MAP[exp.category] || CATEGORY_MAP['Other'];
+              const hasTax = exp.cgst > 0 || exp.igst > 0 || (exp.taxAmount && exp.taxAmount > 0) || (exp.gstAmount && exp.gstAmount > 0) || exp.vendorGSTIN || exp.vendorTaxId;
               return (
-                <div
+                <li
                   key={exp.id}
-                  onClick={() => onSelectExpense(exp)}
-                  className="bg-neutral-900/80 hover:bg-neutral-800/80 border border-neutral-800/80 rounded-2xl p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
+                  {...pressable(() => onSelectExpense(exp))}
+                  className="px-4 py-3 flex items-center justify-between gap-3 cursor-pointer transition-colors hover:bg-slate-50 active:bg-slate-100"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 rounded-xl bg-neutral-800 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-lg shrink-0" aria-hidden="true">
                       {catInfo.icon}
                     </div>
-
                     <div className="min-w-0">
-                      <div className="font-bold text-sm text-white truncate group-hover:text-emerald-400 transition-colors">
-                        {exp.merchant}
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
-                        <span className="whitespace-nowrap">{formatShortDate(exp.date)}</span>
-                        <span>·</span>
-                        <span className="truncate">{exp.category}</span>
+                      <div className="font-semibold text-sm text-slate-900 truncate">{exp.merchant}</div>
+                      <div className="text-xs text-slate-500 truncate">
+                        {formatShortDate(exp.date)} · {exp.category}
                       </div>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="font-bold text-sm text-white font-mono">
-                      {fmt(exp.amount)}
-                    </div>
-
-                    <div className="flex items-center justify-end gap-1.5 mt-1">
-                      {/* Business / Personal badge */}
-                      <span
-                        className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
-                          exp.expenseType === 'Business'
-                            ? 'bg-blue-950/80 text-blue-300 border border-blue-800/50'
-                            : exp.expenseType === 'Mixed'
-                            ? 'bg-amber-950/80 text-amber-300 border border-amber-800/50'
-                            : 'bg-purple-950/80 text-purple-300 border border-purple-800/50'
-                        }`}
-                      >
-                        {exp.expenseType === 'Mixed' ? `${exp.businessPercentage}% Biz` : exp.expenseType}
-                      </span>
-
-                      {/* Tax indicator */}
-                      {(exp.cgst > 0 || exp.igst > 0 || (exp.taxAmount && exp.taxAmount > 0) || (exp.gstAmount && exp.gstAmount > 0) || exp.vendorGSTIN || exp.vendorTaxId) && (
-                        <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-950/70 text-emerald-400 border border-emerald-800/50">
-                          {exp.taxType || (profile.country === 'US' ? 'TAX' : 'GST')}
-                        </span>
-                      )}
+                    <div className="font-semibold text-sm text-slate-900 font-mono">{fmt(exp.amount)}</div>
+                    <div className="text-xs text-slate-500">
+                      {exp.expenseType === 'Mixed' ? `${exp.businessPercentage}% business` : exp.expenseType}
+                      {hasTax ? ` · ${exp.taxType || (profile.country === 'US' ? 'Tax' : 'GST')}` : ''}
                     </div>
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 };

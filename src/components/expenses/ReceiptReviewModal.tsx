@@ -46,6 +46,7 @@ import {
   formatCurrency,
   validateCalculation,
 } from '../../services/taxRules';
+import { pressable } from '../../utils/a11y';
 
 interface ReceiptReviewModalProps {
   isOpen: boolean;
@@ -335,9 +336,9 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
   const isManual = Boolean(extractedData.isManualEntry);
   const labelCls = 'block text-sm font-bold text-slate-700 mb-1.5';
   const inputCls =
-    'w-full min-w-0 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all';
+    'w-full min-w-0 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 focus:outline-none transition-all';
   const inputErrCls =
-    'w-full min-w-0 bg-rose-50/20 border border-rose-400 ring-2 ring-rose-100 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all';
+    'w-full min-w-0 bg-rose-50/20 border border-rose-400 ring-2 ring-rose-100 rounded-xl px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 focus:outline-none transition-all';
   const merchantMissing = touchedSubmit && !merchant.trim();
   const dateMissing = touchedSubmit && !date.trim();
   const totalMissing = touchedSubmit && (!totalAmount || totalAmount <= 0);
@@ -347,7 +348,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
       {/* Top Header */}
       <div className="shrink-0 bg-white border-b border-slate-200 px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] flex items-center justify-between gap-3 text-slate-900 z-20 shadow-xs">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
             {isManual ? <PenTool className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
           </div>
           <div className="min-w-0">
@@ -363,6 +364,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
         </div>
 
         <button
+          aria-label="Close"
           onClick={onClose}
           className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
         >
@@ -380,11 +382,11 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 <div className="flex items-center gap-3">
                   {isPdfDoc ? (
                     <div
-                      onClick={() => setShowReceiptImage(true)}
-                      className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col items-center justify-center text-emerald-600 cursor-pointer shrink-0 shadow-xs hover:bg-emerald-100 transition-colors"
+                      {...pressable(() => setShowReceiptImage(true))}
+                      className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col items-center justify-center text-emerald-700 cursor-pointer shrink-0 shadow-xs hover:bg-emerald-100 transition-colors"
                     >
-                      <FileText className="w-6 h-6 text-emerald-600 shrink-0" />
-                      <span className="text-[10px] font-black uppercase tracking-tight mt-0.5 whitespace-nowrap">PDF</span>
+                      <FileText className="w-6 h-6 text-emerald-700 shrink-0" />
+                      <span className="text-xs font-black uppercase tracking-tight mt-0.5 whitespace-nowrap">PDF</span>
                     </div>
                   ) : (
                     <img
@@ -397,7 +399,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                       <span className="truncate">{isPdfDoc ? 'PDF Document Uploaded' : 'Receipt Photo Captured'}</span>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5 truncate">
                       {merchant ? 'Check the details below' : 'Run AI scan to auto-fill'}
@@ -418,7 +420,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                     type="button"
                     disabled={isAiScanning}
                     onClick={() => handleRunAiScan()}
-                    className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all disabled:opacity-50 whitespace-nowrap shrink-0 min-w-0"
+                    className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-brand hover:bg-brand-strong active:scale-[0.98] text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all disabled:opacity-50 whitespace-nowrap shrink-0 min-w-0"
                   >
                     {isAiScanning ? (
                       <>
@@ -443,7 +445,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
 
                 {aiScanStatus && (
                   <div className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 flex items-center gap-2 animate-in fade-in">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>{aiScanStatus}</span>
                   </div>
                 )}
@@ -461,7 +463,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
             {/* Why the receipt was not read automatically (sign-in needed, scan limit, unreadable) */}
             {extractedData.extractionNotice && (
               <div role="status" className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-800 text-sm flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <p className="text-xs leading-relaxed">{extractedData.extractionNotice}</p>
               </div>
             )}
@@ -469,7 +471,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
             {/* Calculation Mismatch Warning (scanned receipts only) */}
             {!isManual && !validationResult.isValid && totalAmount > 0 && subtotal > 0 && (
               <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-amber-800 text-sm flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <div>
                   <div className="font-bold">Please check the amount</div>
                   <p className="text-xs mt-0.5 leading-relaxed">
@@ -487,7 +489,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                     Merchant / Vendor Name <span className="text-rose-500">*</span>
                   </span>
                   {!isManual && confidence.merchant < 80 && (
-                    <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                       Please verify
                     </span>
                   )}
@@ -547,7 +549,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                   Total Amount ({profile.defaultCurrency || 'NZD'}) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-extrabold text-lg">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-extrabold text-lg">
                     {profile.currencySymbol || '$'}
                   </span>
                   <input
@@ -658,7 +660,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                       <div className="text-xs text-slate-500 truncate">{catInfo.description}</div>
                     </div>
                   </div>
-                  <div className="text-sm font-semibold text-emerald-600 flex items-center gap-1 shrink-0">
+                  <div className="text-sm font-semibold text-emerald-700 flex items-center gap-1 shrink-0">
                     <span>Change</span>
                     <ChevronDown className="w-4 h-4" />
                   </div>
@@ -713,7 +715,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                     />
                     <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5">
                       <span>Claimable business amount:</span>
-                      <span className="font-bold text-emerald-600 font-mono text-sm">{fmt(claimableAmount)}</span>
+                      <span className="font-bold text-emerald-700 font-mono text-sm">{fmt(claimableAmount)}</span>
                     </div>
                   </div>
                 )}
@@ -798,7 +800,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="flex-[2] bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all cursor-pointer text-base whitespace-nowrap"
+            className="flex-[2] bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all cursor-pointer text-base whitespace-nowrap"
           >
             <CheckCircle2 className="w-5 h-5 text-white stroke-[2.5] shrink-0" />
             <span className="whitespace-nowrap">Save Expense</span>
@@ -816,6 +818,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 <p className="text-xs text-slate-500">Choose from expense classifications</p>
               </div>
               <button
+                aria-label="Close"
                 onClick={() => {
                   setIsCategoryPickerOpen(false);
                   setCategorySearchQuery('');
@@ -840,9 +843,10 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 />
                 {categorySearchQuery && (
                   <button
+                    aria-label="Clear search"
                     type="button"
                     onClick={() => setCategorySearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-700 cursor-pointer"
                     title="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -863,11 +867,11 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
               }).length === 0 ? (
                 <div className="p-8 text-center text-slate-500 text-xs space-y-2">
                   <p className="font-bold text-slate-700">No categories matching "{categorySearchQuery}"</p>
-                  <p className="text-slate-400">Try searching for terms like office, travel, fuel, meals, or subscriptions.</p>
+                  <p className="text-slate-500">Try searching for terms like office, travel, fuel, meals, or subscriptions.</p>
                   <button
                     type="button"
                     onClick={() => setCategorySearchQuery('')}
-                    className="mt-1 text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
+                    className="mt-1 text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
                   >
                     Clear search query
                   </button>
@@ -907,10 +911,10 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
                           {c.defaultType}
                         </span>
-                        {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
+                        {isSelected && <Check className="w-4 h-4 text-emerald-700" />}
                       </div>
                     </button>
                   );
@@ -923,12 +927,13 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
 
       {/* Full Receipt Image Preview Submodal */}
       {showReceiptImage && extractedData.originalImage && (
-        <div className="fixed inset-0 z-70 bg-black/95 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between text-white">
             <span className="font-bold text-sm">Original Receipt Image</span>
             <button
+              aria-label="Close"
               onClick={() => setShowReceiptImage(false)}
-              className="p-1.5 rounded-xl bg-neutral-800 text-neutral-300 hover:text-white"
+              className="p-1.5 rounded-xl bg-slate-100 text-slate-700 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -941,7 +946,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
               <iframe
                 src={extractedData.originalImage}
                 title="Document PDF Preview"
-                className="w-full h-[75vh] rounded-xl border border-neutral-700 bg-white"
+                className="w-full h-[75vh] rounded-xl border border-slate-300 bg-white"
               />
             ) : (
               <img
@@ -954,7 +959,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
 
           <button
             onClick={() => setShowReceiptImage(false)}
-            className="w-full max-w-sm mx-auto bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 rounded-xl text-sm cursor-pointer"
+            className="w-full max-w-sm mx-auto bg-slate-100 hover:bg-slate-200 text-white font-bold py-3 rounded-xl text-sm cursor-pointer"
           >
             Close Preview
           </button>

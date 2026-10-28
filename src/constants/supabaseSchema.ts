@@ -530,7 +530,7 @@ INSERT INTO public.subscription_plans (
   1199.00, 14.99, 24.99, 22.99, 19.99,
   11999.00, 149.00, 249.00, 229.00, 199.00,
   -1, 2000000, 1000, -1,
-  '["Unlimited receipt scans & neural OCR", "Chartered Accountant Audit PDF", "Multi-sheet Excel (.xlsx) pack", "CA Reviewer Link sharing", "Multi-currency spot rates", "AES-256 Cloud Backup"]'::jsonb,
+  '["Unlimited receipt scans & neural OCR", "Chartered Accountant Audit PDF", "Multi-sheet Excel (.xlsx) pack", "CA Reviewer Link sharing", "Multi-currency spot rates", "Cloud Backup & Sync"]'::jsonb,
   'MOST POPULAR', 2
 ),
 (

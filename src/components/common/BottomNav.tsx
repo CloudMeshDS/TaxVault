@@ -23,43 +23,36 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       badge: reviewCount > 0 ? reviewCount : undefined,
     },
     { id: 'reports' as NavigationTab, label: 'Reports', icon: BarChart3 },
-    { id: 'cashare' as NavigationTab, label: 'CA Share', icon: Users },
+    { id: 'cashare' as NavigationTab, label: 'Accountant', icon: Users },
     { id: 'settings' as NavigationTab, label: 'Settings', icon: Settings },
-  ];
-
-  return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200 select-none shadow-lg pb-[max(0.375rem,env(safe-area-inset-bottom))]">
-      <div className="max-w-4xl mx-auto px-1 sm:px-2 py-1.5 flex items-center justify-around">
+  ];  return (
+    <nav
+      aria-label="Main"
+      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200 select-none pb-[env(safe-area-inset-bottom)]"
+    >
+      <div className="max-w-4xl mx-auto px-1 flex items-stretch justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => onSelectTab(tab.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-1 sm:px-3.5 flex-1 max-w-[80px] rounded-2xl transition-all duration-200 cursor-pointer relative active:scale-90 ${
-                isActive
-                  ? 'text-emerald-700 font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex-1 min-w-0 h-16 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors ${
+                isActive ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              {/* Active soft pill indicator with fluid scale */}
-              {isActive && (
-                <span className="absolute inset-0 bg-emerald-50 border border-emerald-200/60 rounded-2xl -z-10 animate-in fade-in zoom-in-95 duration-200" />
-              )}
-              <div className="relative">
-                <Icon
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isActive ? 'stroke-[2.5px] scale-110' : 'stroke-2 hover:scale-105'
-                  }`}
-                />
+              <span className={`relative flex items-center justify-center w-14 h-8 rounded-full transition-colors ${isActive ? 'bg-emerald-50' : ''}`}>
+                <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.25 : 1.75} />
                 {tab.badge && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-amber-500 text-white font-black text-[9px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                  <span className="absolute -top-0.5 right-2 bg-rose-600 text-on-fill font-semibold text-[0.6875rem] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center ring-2 ring-white">
                     {tab.badge}
                   </span>
                 )}
-              </div>
-              <span className={`text-[11px] mt-1 tracking-tight transition-colors duration-150 whitespace-nowrap ${isActive ? 'font-bold text-emerald-700' : 'font-medium'}`}>
+              </span>
+              <span className={`text-[0.75rem] leading-none whitespace-nowrap max-w-full ${isActive ? 'font-semibold' : 'font-medium'}`}>
                 {tab.label}
               </span>
             </button>
@@ -68,4 +61,5 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       </div>
     </nav>
   );
+;
 };

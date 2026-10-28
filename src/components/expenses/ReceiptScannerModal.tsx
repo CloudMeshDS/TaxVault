@@ -423,11 +423,11 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col justify-between overflow-x-hidden select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex flex-col justify-between overflow-x-hidden select-none modal-backdrop-animation">
       {/* Top Header Bar */}
-      <div className="px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] flex items-center justify-between gap-2 text-white border-b border-neutral-800/80 bg-neutral-950/80 z-20">
+      <div className="px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] flex items-center justify-between gap-2 text-white border-b border-slate-200 bg-slate-50/80 z-20">
         <div className="flex items-center gap-2 min-w-0">
-          <ScanLine className="w-5 h-5 text-emerald-400 shrink-0" />
+          <ScanLine className="w-5 h-5 text-emerald-700 shrink-0" />
           <span className="font-extrabold text-sm tracking-tight truncate">Scan Receipt</span>
         </div>
 
@@ -437,7 +437,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
               {/* AI Vision Key Setup */}
               <button
                 onClick={() => setIsApiKeyModalOpen(true)}
-                className="text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border bg-emerald-950/80 border-emerald-500/40 text-emerald-400 font-bold"
+                className="text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border bg-emerald-50 border-emerald-500/40 text-emerald-700 font-bold"
                 title={
                   getGeminiApiKey()
                     ? 'AI reading is on (using your personal Gemini key as backup)'
@@ -452,8 +452,8 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 onClick={() => setIsScanningBatch(!isScanningBatch)}
                 className={`text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border ${
                   isScanningBatch
-                    ? 'bg-emerald-950 border-emerald-500/50 text-emerald-300 font-bold'
-                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
+                    ? 'bg-emerald-50 border-emerald-500/50 text-emerald-700 font-bold'
+                    : 'bg-white shadow-xs border-slate-200 text-slate-500 hover:text-white'
                 }`}
                 title="Scan multiple receipts in succession"
               >
@@ -468,7 +468,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
               handleClose();
               onOpenManualEntry?.();
             }}
-            className="text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white hover:border-emerald-500/50"
+            className="text-xs px-2 py-1.5 rounded-lg whitespace-nowrap transition-colors cursor-pointer border bg-white shadow-xs border-slate-200 text-slate-700 hover:text-white hover:border-emerald-500/50"
             title="Enter expense manually without scanning"
           >
             {mode === 'processing' ? 'Enter Manually' : 'Manual'}
@@ -476,8 +476,9 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
 
           {mode !== 'processing' && (
             <button
+              aria-label="Close"
               onClick={handleClose}
-              className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-white shadow-xs hover:bg-slate-100 text-slate-500 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -512,18 +513,18 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
       />
 
       {/* Center Viewport */}
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-neutral-950">
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-slate-50">
         {mode === 'batch_queue' && (
           <div className="p-4 max-w-md mx-auto w-full space-y-3.5 animate-in fade-in">
-            <div className="p-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl flex items-center justify-between shadow-md">
+            <div className="p-3.5 bg-white border border-slate-200 rounded-2xl flex items-center justify-between shadow-md">
               <div>
                 <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
                   <span>Batch Upload Queue</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-semibold">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
                     {batchQueue.length} Ready
                   </span>
                 </h4>
-                <p className="text-[11px] text-neutral-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   Multi-receipt OCR scan completed successfully
                 </p>
               </div>
@@ -534,19 +535,19 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
               {batchQueue.map((item, idx) => (
                 <div
                   key={idx}
-                  className="p-3 bg-neutral-900/90 border border-neutral-800 rounded-xl flex items-center justify-between gap-3 shadow-xs"
+                  className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-xs"
                 >
                   <div className="min-w-0">
                     <div className="font-bold text-xs text-white truncate">{item.merchant}</div>
-                    <div className="text-[10px] text-neutral-400 mt-0.5">
-                      {item.date} · <span className="text-neutral-300">{item.category}</span>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {item.date} · <span className="text-slate-700">{item.category}</span>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-mono text-xs font-extrabold text-emerald-400">
+                    <div className="font-mono text-xs font-extrabold text-emerald-700">
                       ${item.totalAmount.toFixed(2)}
                     </div>
-                    <div className="text-[9px] text-neutral-500 font-mono">
+                    <div className="text-xs text-slate-500 font-mono">
                       Conf: {item.confidenceScores.total}%
                     </div>
                   </div>
@@ -563,7 +564,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                   setMode('camera');
                   startCamera();
                 }}
-                className="px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
               >
                 Cancel
               </button>
@@ -578,9 +579,9 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                   }
                   onClose();
                 }}
-                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 active:scale-[0.98] text-neutral-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 transition-all"
+                className="flex-1 bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 transition-all"
               >
-                <CheckCircle2 className="w-4 h-4 text-neutral-950" />
+                <CheckCircle2 className="w-4 h-4 text-white" />
                 <span>Save All ({batchQueue.length}) to Vault</span>
               </button>
             </div>
@@ -591,35 +592,35 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
           <div className="relative w-full h-full flex flex-col items-center justify-center">
             {cameraError ? (
               <div className="p-6 text-center max-w-sm space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700 mx-auto">
                   <Camera className="w-7 h-7" />
                 </div>
                 <div className="space-y-1">
                   <div className="text-sm font-bold text-white">Camera Scanner</div>
-                  <div className="text-xs text-neutral-300 leading-relaxed">
+                  <div className="text-xs text-slate-700 leading-relaxed">
                     {cameraError}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 pt-1">
                   <button
                     onClick={takePhotoNative}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-neutral-950 font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
+                    className="w-full bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer whitespace-nowrap"
                   >
-                    <Camera className="w-4 h-4 text-neutral-950 shrink-0" />
+                    <Camera className="w-4 h-4 text-white shrink-0" />
                     <span className="whitespace-nowrap">Take Camera Photo</span>
                   </button>
                   <button
                     onClick={pickPhotoFromGallery}
-                    className="w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                    className="w-full bg-white shadow-xs hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
                   >
-                    <Upload className="w-4 h-4 text-neutral-400 shrink-0" />
+                    <Upload className="w-4 h-4 text-slate-500 shrink-0" />
                     <span className="whitespace-nowrap">Choose from Gallery</span>
                   </button>
                   <button
                     onClick={() => pdfInputRef.current?.click()}
-                    className="w-full bg-neutral-950 hover:bg-neutral-900 border border-neutral-800/80 text-neutral-400 font-semibold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                    className="w-full bg-slate-50 hover:bg-white border border-slate-200 text-slate-500 font-semibold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
                   >
-                    <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <FileText className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span className="whitespace-nowrap">Upload PDF Receipt</span>
                   </button>
                   <button
@@ -628,16 +629,16 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                       onClose();
                       onOpenManualEntry?.();
                     }}
-                    className="w-full bg-neutral-900 hover:bg-neutral-850 border border-emerald-500/40 text-emerald-300 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                    className="w-full bg-white shadow-xs hover:bg-slate-50 border border-emerald-500/40 text-emerald-700 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
                   >
-                    <PenTool className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <PenTool className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span className="whitespace-nowrap">Enter Expense Manually</span>
                   </button>
                 </div>
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="text-[10px] text-neutral-500 hover:text-neutral-300 underline cursor-pointer"
+                  className="text-xs text-slate-500 hover:text-slate-600 underline cursor-pointer"
                 >
                   Retry Live Viewfinder
                 </button>
@@ -677,7 +678,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                     </div>
 
                     <div className="absolute bottom-6 inset-x-0 text-center pointer-events-none">
-                      <span className="bg-black/60 backdrop-blur-md text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-500/30">
+                      <span className="bg-black/50 backdrop-blur-xs backdrop-blur-md text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-500/30">
                         Align receipt within border · Auto-focus active
                       </span>
                     </div>
@@ -685,9 +686,9 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 )}
 
                 {!isVideoStreaming && !cameraError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950 text-neutral-300 text-xs gap-2.5">
-                    <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
-                    <span className="font-medium text-neutral-300">Connecting camera...</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-slate-700 text-xs gap-2.5">
+                    <Loader2 className="w-6 h-6 animate-spin text-emerald-700" />
+                    <span className="font-medium text-slate-700">Connecting camera...</span>
                   </div>
                 )}
               </>
@@ -698,7 +699,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
         {mode === 'preview' && capturedImage && (
           <div className="relative w-full h-full flex items-center justify-center p-4">
             <div
-              className={`max-w-full max-h-[80vh] rounded-2xl overflow-hidden transition-all shadow-2xl border border-neutral-800 ${
+              className={`max-w-full max-h-[80vh] rounded-2xl overflow-hidden transition-all shadow-2xl border border-slate-200 ${
                 imageFilter === 'enhanced'
                   ? 'contrast-125 brightness-110 saturate-110'
                   : imageFilter === 'high_contrast'
@@ -722,19 +723,19 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
           <div className="p-8 text-center space-y-4 max-w-sm">
             <div className="relative w-20 h-20 mx-auto">
               <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping" />
-              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 shadow-xl">
+              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-700 shadow-xl">
                 <ScanLine className="w-10 h-10 animate-bounce" />
               </div>
             </div>
 
             <div className="space-y-1">
               <h3 className="text-base font-extrabold text-white">AI OCR Reading Receipt</h3>
-              <p className="text-xs text-neutral-400 leading-relaxed font-medium">
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">
                 {processingStatus}
               </p>
             </div>
 
-            <div className="text-[11px] text-emerald-400/90 font-mono bg-emerald-950/60 border border-emerald-800/60 py-1.5 px-3 rounded-full">
+            <div className="text-xs text-emerald-700/90 font-mono bg-emerald-50 border border-emerald-200 py-1.5 px-3 rounded-full">
               Checking GSTIN & Financial Totals...
             </div>
           </div>
@@ -742,7 +743,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
       </div>
 
       {/* Bottom Controls Bar */}
-      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-neutral-950 border-t border-neutral-800/80 z-20">
+      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-slate-50 border-t border-slate-200 z-20">
         {mode === 'camera' && (
           <div className="flex items-center justify-around max-w-sm mx-auto">
             {/* Upload PDF */}
@@ -755,33 +756,33 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 }
                 pdfInputRef.current?.click();
               }}
-              className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition-colors cursor-pointer"
             >
-              <div className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-emerald-400" />
+              <div className="w-11 h-11 rounded-2xl bg-white shadow-xs border border-slate-200 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-emerald-700" />
               </div>
-              <span className="text-[10px] font-medium">Upload PDF</span>
+              <span className="text-xs font-medium">Upload PDF</span>
             </button>
 
             {/* Shutter Button (Capture) */}
             <button
               onClick={handleCapturePhoto}
-              className="w-18 h-18 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 p-1 flex items-center justify-center shadow-xl shadow-emerald-500/30 cursor-pointer transition-transform"
+              className="w-18 h-18 rounded-full bg-brand hover:bg-brand-strong active:scale-95 p-1 flex items-center justify-center shadow-xl shadow-emerald-500/30 cursor-pointer transition-transform"
             >
-              <div className="w-full h-full rounded-full border-2 border-neutral-950 flex items-center justify-center bg-white">
-                <Camera className="w-7 h-7 text-neutral-950 stroke-[2.5]" />
+              <div className="w-full h-full rounded-full border-2 border-slate-200 flex items-center justify-center bg-white">
+                <Camera className="w-7 h-7 text-slate-900 stroke-[2.5]" />
               </div>
             </button>
 
             {/* Upload Photo from gallery */}
             <button
               onClick={pickPhotoFromGallery}
-              className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition-colors cursor-pointer"
             >
-              <div className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-teal-400" />
+              <div className="w-11 h-11 rounded-2xl bg-white shadow-xs border border-slate-200 flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-teal-700" />
               </div>
-              <span className="text-[10px] font-medium">Gallery</span>
+              <span className="text-xs font-medium">Gallery</span>
             </button>
 
             {/* Manual Entry */}
@@ -791,13 +792,13 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 onClose();
                 onOpenManualEntry?.();
               }}
-              className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="flex flex-col items-center gap-1 text-slate-500 hover:text-white transition-colors cursor-pointer"
               title="Add expense without scanning"
             >
-              <div className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center hover:border-emerald-500/50">
-                <PenTool className="w-5 h-5 text-amber-400" />
+              <div className="w-11 h-11 rounded-2xl bg-white shadow-xs border border-slate-200 flex items-center justify-center hover:border-emerald-500/50">
+                <PenTool className="w-5 h-5 text-amber-700" />
               </div>
-              <span className="text-[10px] font-medium">Manual</span>
+              <span className="text-xs font-medium">Manual</span>
             </button>
           </div>
         )}
@@ -805,7 +806,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
         {mode === 'preview' && (
           <div className="space-y-3 max-w-md mx-auto">
             {/* Image Adjustment Bar: Retake, Rotate, Improve Filter */}
-            <div className="flex items-center justify-around border-b border-neutral-800/80 pb-2.5 text-xs text-neutral-300">
+            <div className="flex items-center justify-around border-b border-slate-200 pb-2.5 text-xs text-slate-700">
               <button
                 onClick={() => {
                   setCapturedImage(null);
@@ -814,7 +815,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 }}
                 className="flex items-center gap-1.5 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
               >
-                <RefreshCw className="w-4 h-4 text-neutral-400 shrink-0" />
+                <RefreshCw className="w-4 h-4 text-slate-500 shrink-0" />
                 <span className="whitespace-nowrap">Retake</span>
               </button>
 
@@ -822,7 +823,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 onClick={handleRotate}
                 className="flex items-center gap-1.5 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
               >
-                <RotateCw className="w-4 h-4 text-emerald-400 shrink-0" />
+                <RotateCw className="w-4 h-4 text-emerald-700 shrink-0" />
                 <span className="whitespace-nowrap">Rotate 90°</span>
               </button>
 
@@ -830,7 +831,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
                 onClick={handleImproveImage}
                 className="flex items-center gap-1.5 hover:text-white cursor-pointer whitespace-nowrap shrink-0"
               >
-                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <Sparkles className="w-4 h-4 text-amber-700 shrink-0" />
                 <span className="whitespace-nowrap">
                   Improve ({imageFilter === 'none' ? 'Normal' : imageFilter})
                 </span>
@@ -840,11 +841,11 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
             {/* Proceed to OCR Check Button */}
             <button
               onClick={handleConfirmAndProcess}
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.98] text-neutral-950 font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap"
+              className="w-full bg-brand hover:bg-brand-strong active:scale-[0.98] text-white font-black py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer transition-all whitespace-nowrap"
             >
-              <CheckCircle2 className="w-5 h-5 text-neutral-950 stroke-[2.5] shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-white stroke-[2.5] shrink-0" />
               <span className="text-sm font-black whitespace-nowrap">Read Receipt with AI</span>
-              <ArrowRight className="w-4 h-4 text-neutral-950 shrink-0" />
+              <ArrowRight className="w-4 h-4 text-white shrink-0" />
             </button>
           </div>
         )}
