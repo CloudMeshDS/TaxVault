@@ -293,6 +293,14 @@ export default function App() {
         // Signed-out visitors only see the auth screen; never pull an unscoped expense list for them
         if (!authed || !storedProfile?.id) return;
 
+        // Real accounts need a live session or every server call answers 401. Back to the sign-in
+        // screen instead (demo accounts have no session and only exist in developer builds).
+        if (!import.meta.env.DEV && (await supabaseService.isSessionMissing())) {
+          storageService.setAuthenticated(false);
+          if (isMounted) setIsAuthenticated(false);
+          return;
+        }
+
         const [apiExpenses, apiProfile] = await Promise.all([
           apiClient.getExpenses(storedProfile.id, storedProfile.email),
           storedProfile.email ? apiClient.getProfile(storedProfile.email, storedProfile.id) : Promise.resolve(null),

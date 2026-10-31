@@ -365,6 +365,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
       const savedProfile = await supabaseService.upsertProfile(newProfile).catch(() => ({ success: false }));
       if (!savedProfile.success) savePendingSignupProfile(newProfile);
 
+      // No session means the email still has to be confirmed; the account can't use the server until then
+      if (!res.session) {
+        setLoginEmail(cleanEmail);
+        setLoginPassword('');
+        setTab('login');
+        setSuccessMessage(`Almost done. We sent a confirmation link to ${cleanEmail}. Open it, then sign in here.`);
+        return;
+      }
+
       setSuccessMessage('Account created successfully! Welcome to TaxVault.');
 
       setTimeout(() => {

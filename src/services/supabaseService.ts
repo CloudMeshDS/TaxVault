@@ -1006,6 +1006,21 @@ class SupabaseService {
   }
 
   /**
+   * True only when Supabase confirms there is no session. A failed check (offline, say) stays
+   * false, so a network problem never signs anyone out.
+   */
+  public async isSessionMissing(): Promise<boolean> {
+    const client = this.getClient();
+    if (!client) return false;
+    try {
+      const { data, error } = await client.auth.getSession();
+      return !error && !data?.session;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Supabase Auth: Get Current Authenticated User
    */
   public async getCurrentUser(): Promise<User | null> {
