@@ -69,7 +69,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
       ? 'Vendor EIN / Tax ID:'
       : 'Vendor GSTIN:';
 
-  const hasIndianGst = Boolean(
+  const hasIndianGst = country === 'IN' && Boolean(
     (expense.cgst && expense.cgst > 0) ||
       (expense.sgst && expense.sgst > 0) ||
       (expense.igst && expense.igst > 0) ||
@@ -391,7 +391,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
         <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-bold text-slate-500">
-              Chartered Accountant Status
+              {country === 'IN' ? 'Chartered Accountant Status' : 'Accountant Review'}
             </span>
             <span className="text-xs font-bold text-amber-700">{caStatus}</span>
           </div>
