@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { CAReviewStatus, ExpenseCategory, ExpenseRecord, UserProfile } from '../../types';
 import { ALL_CATEGORIES, CATEGORY_MAP, formatCurrency, formatINR } from '../../services/taxRules';
+import { saveFileFromUrl } from '../../utils/saveFile';
 
 interface ExpenseDetailModalProps {
   isOpen: boolean;
@@ -95,12 +96,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
 
   const handleDownloadReceipt = () => {
     if (!expense.receiptUrl) return;
-    const a = document.createElement('a');
-    a.href = expense.receiptUrl;
-    a.download = expense.receiptFileName || `${expense.merchant.replace(/\s+/g, '_')}_receipt.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    saveFileFromUrl(expense.receiptUrl, expense.receiptFileName || `${expense.merchant.replace(/\s+/g, '_')}_receipt.jpg`).catch((err) => console.warn('Receipt download failed:', err));
   };
 
   return (

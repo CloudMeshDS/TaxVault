@@ -25,6 +25,7 @@ import { TAX_CONFIGS } from '../../services/taxRules';
 import { storageService } from '../../services/storageService';
 import { supabaseService, SUPABASE_SQL_SCHEMA, SupabaseSyncStatus } from '../../services/supabaseService';
 import { GoogleIcon, AppleIcon } from '../auth/AuthModal';
+import { saveFile } from '../../utils/saveFile';
 
 // Feature flag: Hide Google & Apple buttons (keep implementation intact)
 const SHOW_OAUTH_PROVIDERS = false;
@@ -118,11 +119,8 @@ export const TaxSettingsModal: React.FC<TaxSettingsModalProps> = ({
 
   const handleDownloadBackup = () => {
     const payload = storageService.generateBackupPayload();
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute('href', dataStr);
-    dlAnchorElem.setAttribute('download', `TaxVault_CloudBackup_${profile.country}_${new Date().toISOString().split('T')[0]}.json`);
-    dlAnchorElem.click();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    saveFile(blob, `TaxVault_CloudBackup_${profile.country}_${new Date().toISOString().split('T')[0]}.json`).catch((err) => console.warn('Backup export failed:', err));
   };
 
   const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,6 +1,7 @@
 import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../types';
 import { formatCurrency, TAX_CONFIGS } from './taxRules';
 import { authedFetch } from './apiBase';
+import { saveFile } from '../utils/saveFile';
 
 /**
  * Browser-side export helpers.
@@ -20,55 +21,9 @@ export type ProExportResult =
 export const PRO_EXPORT_UPSELL = 'PDF reports, Excel registers and CA audit packs require Tax Compliance Pro.';
 
 export class ExportClient {
-  /**
-   * Safe helper to trigger file download of a Blob across all modern browsers and WebViews
-   */
-  public static triggerDownload(blob: Blob, fileName: string): void {
-    try {
-      // 1. Standard Object URL creation
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-
-      // Delay revoking URL by 60 seconds to allow Chromium/Safari background download threads to finish reading the stream
-      setTimeout(() => {
-        try {
-          if (document.body.contains(a)) {
-            document.body.removeChild(a);
-          }
-          URL.revokeObjectURL(url);
-        } catch {}
-      }, 60000);
-    } catch (err) {
-      console.error('Standard blob download failed, trying data-URL fallback:', err);
-      // 2. Data URL fallback using FileReader for restricted WebViews
-      try {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const a = document.createElement('a');
-          a.href = reader.result as string;
-          a.download = fileName;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            try {
-              if (document.body.contains(a)) {
-                document.body.removeChild(a);
-              }
-            } catch {}
-          }, 10000);
-        };
-        reader.readAsDataURL(blob);
-      } catch (fallbackErr) {
-        console.error('All download attempts failed:', fallbackErr);
-        throw fallbackErr;
-      }
-    }
+  /** Downloads in a browser; in the app, opens the share sheet so the file can be saved or sent. */
+  public static triggerDownload(blob: Blob, fileName: string): Promise<void> {
+    return saveFile(blob, fileName);
   }
 
   /**
@@ -121,17 +76,17 @@ export class ExportClient {
       return { ok: false, reason: 'failed', message: body?.error || 'Failed to generate the report. Please try again.' };
     }
 
-    this.triggerDownload(await res.blob(), params.fileName);
+    await this.triggerDownload(await res.blob(), params.fileName);
     return { ok: true, fileName: params.fileName };
   }
 
   /**
    * One-stop helper to download CSV safely (free on every plan)
    */
-  public static downloadCSV(expenses: ExpenseRecord[], fileName?: string): void {
+  public static downloadCSV(expenses: ExpenseRecord[], fileName?: string): Promise<void> {
     const blob = this.generateCSV(expenses);
     const safeName = fileName || `TaxVault_Expenses_${new Date().toISOString().split('T')[0]}.csv`;
-    this.triggerDownload(blob, safeName);
+    return this.triggerDownload(blob, safeName);
   }
 
   public static generateCSV(expenses: any) {

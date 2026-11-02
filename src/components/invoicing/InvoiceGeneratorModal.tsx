@@ -19,6 +19,7 @@ import { ClientInvoice, ClientInvoiceItem, IncomeRecord, UserProfile } from '../
 import { formatCurrency, TAX_CONFIGS } from '../../services/taxRules';
 import { storageService } from '../../services/storageService';
 import { supabaseService } from '../../services/supabaseService';
+import { isNativeApp } from '../../utils/saveFile';
 
 interface InvoiceGeneratorModalProps {
   isOpen: boolean;
@@ -405,14 +406,16 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
               </div>
 
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Preview</span>
-                </button>
+                {!isNativeApp() && (
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Preview</span>
+                  </button>
+                )}
 
                 <button
                   type="submit"
@@ -485,14 +488,16 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                           </button>
                         )}
 
-                        <button
-                          aria-label="Print / Save PDF"
-                          onClick={handlePrint}
-                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-lg cursor-pointer transition-colors"
-                          title="Print / Save PDF"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
+                        {!isNativeApp() && (
+                          <button
+                            aria-label="Print / Save PDF"
+                            onClick={handlePrint}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-lg cursor-pointer transition-colors"
+                            title="Print / Save PDF"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

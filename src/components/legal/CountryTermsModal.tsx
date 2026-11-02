@@ -22,6 +22,7 @@ import {
 import { SupportedCountry } from '../../types';
 import { COUNTRY_TERMS, CountryLegalSection, CountryTermsData } from '../../constants/countryTerms';
 import { termsService } from '../../services/termsService';
+import { isNativeApp } from '../../utils/saveFile';
 
 interface CountryTermsModalProps {
   isOpen: boolean;
@@ -278,15 +279,17 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
               {hasCopied ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{hasCopied ? 'Copied' : 'Copy'}</span>
             </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
-              title="Print terms"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print</span>
-            </button>
+            {!isNativeApp() && (
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+                title="Print terms"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print</span>
+              </button>
+            )}
           </div>
         </div>
 

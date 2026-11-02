@@ -22,6 +22,7 @@ import {
 import { ActivityLog, CustomerUsage, TokenRequestLog, UserProfile } from '../../types';
 import { activityLogService } from '../../services/activityLogService';
 import { usageTrackingService } from '../../services/usageTrackingService';
+import { saveFile } from '../../utils/saveFile';
 
 interface ActivityAndUsageModalProps {
   isOpen: boolean;
@@ -81,13 +82,8 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
   });
 
   const handleExportJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(activityLogs, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `taxvault_activity_logs_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const blob = new Blob([JSON.stringify(activityLogs, null, 2)], { type: 'application/json' });
+    saveFile(blob, `taxvault_activity_logs_${new Date().toISOString().split('T')[0]}.json`).catch((err) => console.warn('Activity export failed:', err));
   };
 
   const formatTimeAgo = (isoString: string) => {

@@ -31,6 +31,7 @@ import { getGeminiApiKey } from '../../services/receiptOcr';
 import { GeminiApiKeyModal } from '../common/GeminiApiKeyModal';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { pressable } from '../../utils/a11y';
+import { saveFile } from '../../utils/saveFile';
 
 // Feature flag: Hide Google & Apple buttons (keep implementation intact)
 const SHOW_OAUTH_PROVIDERS = false;
@@ -269,14 +270,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TaxVault_Backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    saveFile(blob, `TaxVault_Backup_${new Date().toISOString().split('T')[0]}.json`).catch((err) => console.warn('Backup export failed:', err));
     setFeedback('Backup file exported!');
     setTimeout(() => setFeedback(null), 3000);
   };

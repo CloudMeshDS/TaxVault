@@ -100,7 +100,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
         setSuccessMessage(`PDF Audit Report "${fileName}" downloaded successfully!`);
       } else if (format === 'csv') {
         const fileName = `TaxVault_Expenses_${safeBadge}.csv`;
-        ExportClient.downloadCSV(filteredList, fileName);
+        await ExportClient.downloadCSV(filteredList, fileName);
         setSuccessMessage(`CSV spreadsheet "${fileName}" downloaded successfully!`);
       }
 

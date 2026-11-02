@@ -18,6 +18,7 @@ import { MileageTrip, UserProfile, ExpenseRecord } from '../../types';
 import { TAX_CONFIGS, formatCurrency } from '../../services/taxRules';
 import { storageService } from '../../services/storageService';
 import { supabaseService } from '../../services/supabaseService';
+import { saveFile } from '../../utils/saveFile';
 
 interface MileageTrackerModalProps {
   isOpen: boolean;
@@ -172,14 +173,7 @@ export const MileageTrackerModal: React.FC<MileageTrackerModalProps> = ({
       )
       .join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TaxVault_Mileage_Logbook_${profile.country}_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    saveFile(blob, `TaxVault_Mileage_Logbook_${profile.country}_${new Date().toISOString().split('T')[0]}.csv`).catch((err) => console.warn('Mileage export failed:', err));
     setFeedback('Mileage Logbook CSV exported!');
     setTimeout(() => setFeedback(null), 3000);
   };
