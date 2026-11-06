@@ -15,39 +15,14 @@ class ActivityLogService {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) {
-        const seedLogs: ActivityLog[] = [
-          {
-            id: 'act_init_01',
-            entityType: 'settings',
-            action: 'update',
-            description: 'Supabase PostgreSQL database schemas & tables initialized',
-            status: 'success',
-            devicePlatform: 'android',
-            metadata: { module: 'database', tables: ['profiles', 'expenses', 'subscription_plans', 'activity_logs'] },
-            createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-          },
-          {
-            id: 'act_init_02',
-            entityType: 'auth',
-            action: 'login',
-            description: 'User authenticated with secure session token',
-            status: 'success',
-            devicePlatform: 'android',
-            metadata: { authProvider: 'google', mfaVerified: true },
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-          },
-          {
-            id: 'act_init_03',
-            entityType: 'ai_scan',
-            action: 'scan_receipt',
-            description: 'AI Vision OCR scanned Amazon invoice (288 tokens, 142ms latency)',
-            status: 'success',
-            devicePlatform: 'android',
-            metadata: { model: 'gemini-2.5-flash', tokens: 288, accuracy: 99 },
-            createdAt: new Date(Date.now() - 1800000).toISOString(),
-          },
-        ];
-        this.saveLocalLogs(seedLogs);
+        // Start with an empty log: only real actions by this user are recorded
+        this.saveLocalLogs([]);
+        return;
+      }
+      // Earlier versions seeded made-up sample entries (ids act_init_*); remove them
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.some((log: ActivityLog) => String(log?.id).startsWith('act_init_'))) {
+        this.saveLocalLogs(parsed.filter((log: ActivityLog) => !String(log?.id).startsWith('act_init_')));
       }
     } catch {
       // ignore

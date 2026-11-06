@@ -17,7 +17,6 @@ import {
   Camera,
   Activity,
   Cpu,
-  Database,
   Zap,
   LogOut,
   Scale,
@@ -32,6 +31,7 @@ import { GeminiApiKeyModal } from '../common/GeminiApiKeyModal';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { pressable } from '../../utils/a11y';
 import { saveFile } from '../../utils/saveFile';
+import { toUserMessage } from '../../services/userMessages';
 
 // Feature flag: Hide Google & Apple buttons (keep implementation intact)
 const SHOW_OAUTH_PROVIDERS = false;
@@ -144,7 +144,6 @@ interface SettingsViewProps {
   activeSection?: SettingSectionId | null;
   onSelectSection?: (section: SettingSectionId | null) => void;
   onOpenActivityLogs?: (tab?: 'activity' | 'usage') => void;
-  onOpenSupabaseSql?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -160,7 +159,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   activeSection: propActiveSection,
   onSelectSection,
   onOpenActivityLogs,
-  onOpenSupabaseSql,
 }) => {
   // Navigation State: null means Stage 1 (Settings List), string means Stage 2 (Detail View)
   const [internalSection, setInternalSection] = useState<SettingSectionId | null>(null);
@@ -199,7 +197,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setDeleteAccountError(null);
     const result = await onDeleteAccount();
     setIsDeletingAccount(false);
-    if (!result.success) setDeleteAccountError(result.error || 'Could not delete your account. Please try again.');
+    if (!result.success) setDeleteAccountError(toUserMessage(result.error, 'Could not delete your account. Please try again.'));
   };
 
   const handleCountryChange = (c: SupportedCountry) => {
@@ -737,7 +735,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onClick={() => setShowTermsModal(true)}
                   className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-strong text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
                 >
-                  View Terms (Database)
+                  View Terms
                 </button>
               </div>
             </div>
@@ -1211,31 +1209,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
                 <div className="text-xs text-slate-500 truncate mt-0.5">
                   View activity log & AI usage
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all" />
-            </div>
-          </button>
-        )}
-
-        {/* 8. Supabase SQL & Cloud Database (developer builds only) */}
-        {import.meta.env.DEV && onOpenSupabaseSql && (
-          <button
-            onClick={onOpenSupabaseSql}
-            className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-700 shrink-0 group-hover:scale-105 transition-transform">
-                <Database className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-900">
-                  PostgreSQL Cloud Database Schema
-                </div>
-                <div className="text-xs text-slate-500 truncate mt-0.5">
-                  Multi-country DDL, RLS policies & tables
                 </div>
               </div>
             </div>

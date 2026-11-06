@@ -23,6 +23,7 @@ import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { calculateTaxPosition, formatCurrency } from '../../services/taxRules';
 import { ExportClient } from '../../services/exportClient';
 import { DEFAULT_INDIAN_PROFILE, DEFAULT_PROFILES } from '../../services/storageService';
+import { toUserMessage } from '../../services/userMessages';
 
 interface ReportDownloadModalProps {
   isOpen: boolean;
@@ -154,7 +155,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
           {errorMessage && (
             <div className="bg-rose-50 border border-rose-200 text-rose-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
-              <span className="font-medium">{errorMessage}</span>
+              <span className="font-medium">{toUserMessage(errorMessage)}</span>
             </div>
           )}
 

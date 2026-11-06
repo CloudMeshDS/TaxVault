@@ -72,7 +72,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Your financial information and uploaded receipts are protected under New Zealand privacy principles.',
         highlights: [
           'Compliance with the 13 Information Privacy Principles (IPPs) of the Privacy Act 2020.',
-          'Data is encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
+          'Data is encrypted in transit (HTTPS/TLS) and at rest by our cloud storage provider.',
           'You may export, download, or delete your receipts and profile data at any time.',
         ],
         content: [
@@ -176,12 +176,12 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Your information is governed by the 13 Australian Privacy Principles.',
         highlights: [
           'Strict compliance with the Australian Privacy Act 1988 (Cth).',
-          'ABN and financial data are encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
+          'ABN and financial data are encrypted in transit (HTTPS/TLS) and at rest by our cloud storage provider.',
           'You have the right to request access to and correction of your personal information.',
         ],
         content: [
           'We collect and manage your personal data in accordance with the Australian Privacy Principles (APPs) set out in the Privacy Act 1988 (Cth).',
-          'Your data is stored in secure database facilities with access restricted to authenticated user sessions.',
+          'Your data is stored in secure data centres with access restricted to authenticated user sessions.',
           'You may request access to your stored data or request complete account deletion at any time through our in-app settings.',
         ],
       },
@@ -270,7 +270,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Personal and financial data is handled under PIPEDA principles.',
         highlights: [
           'Compliance with Canada’s Personal Information Protection and Electronic Documents Act (PIPEDA).',
-          'CRA Business Numbers and financial logs are encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
+          'CRA Business Numbers and financial logs are encrypted in transit (HTTPS/TLS) and at rest by our cloud storage provider.',
         ],
         content: [
           'Your personal information is collected, used, and disclosed in compliance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy legislation (such as Quebec Law 25, BC PIPA, and Alberta PIPA).',
@@ -365,7 +365,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Commitment to data privacy under California (CCPA/CPRA) and state regulations.',
         highlights: [
           'We do not sell your personal financial records or contact info.',
-          'Data is encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
+          'Data is encrypted in transit (HTTPS/TLS) and at rest by our cloud storage provider.',
           'Users can request a copy of their data or delete their accounts at any time.',
         ],
         content: [
@@ -464,7 +464,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Protection of personal and business data under Indian data protection laws.',
         highlights: [
           'Compliance with Digital Personal Data Protection Act 2023 (DPDP) and IT Act 2000.',
-          'PAN, GSTIN and banking transactions are encrypted in transit (HTTPS/TLS) and at rest by our cloud database provider.',
+          'PAN, GSTIN and banking transactions are encrypted in transit (HTTPS/TLS) and at rest by our cloud storage provider.',
           'Right to data summary, correction, and account erasure.',
         ],
         content: [

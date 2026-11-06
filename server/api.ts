@@ -1795,7 +1795,7 @@ export function createApi(): express.Express {
   };
   const requireUser = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (!supabaseAdmin) {
-      return res.status(503).json({ success: false, error: 'Server is missing SUPABASE_SERVICE_ROLE_KEY.' });
+      return res.status(503).json({ success: false, error: 'This service is temporarily unavailable. Please try again later.' });
     }
     try {
       const user = await verifyAccessToken(req);
@@ -3149,7 +3149,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
       if (!terms) {
         return res.status(404).json({
           success: false,
-          error: `Terms for country code ${country} not found in database.`,
+          error: `Terms for country code ${country} not found.`,
         });
       }
 
@@ -3213,7 +3213,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         success: true,
         country,
         data: inMemoryCountryTerms[country],
-        message: `Terms & Conditions for ${country} updated in database.`,
+        message: `Terms & Conditions for ${country} updated.`,
       });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message || 'Failed updating terms in database.' });
@@ -3343,7 +3343,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         success: true,
         agreement: agreementRecord,
         source: 'database',
-        message: 'Customer agreement recorded in database successfully.',
+        message: 'Agreement recorded successfully.',
       });
     } catch (err: any) {
       return res.status(500).json({ error: err?.message || 'Failed recording customer agreement in database.' });

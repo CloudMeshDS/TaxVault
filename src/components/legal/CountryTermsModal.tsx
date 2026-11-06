@@ -163,7 +163,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white text-slate-700 text-xs font-semibold border border-emerald-200">
                   <span className={`w-1.5 h-1.5 rounded-full ${isLoadingDb ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-                  <span>{isLoadingDb ? 'Syncing DB...' : termsData.isFromDatabase ? 'Live Compliance Database' : 'Database Verified'}</span>
+                  <span>{isLoadingDb ? 'Updating…' : termsData.isFromDatabase ? 'Latest version' : 'Verified'}</span>
                 </div>
               </div>
               <h1 id="country-terms-title" className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 tracking-tight">

@@ -30,6 +30,7 @@ import { createCleanUserProfile, takePendingSignupProfile } from '../../services
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
+import { toUserMessage } from '../../services/userMessages';
 
 export const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24">
@@ -866,7 +867,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {errorMessage && (
                   <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
-                    <span>{errorMessage}</span>
+                    <span>{toUserMessage(errorMessage)}</span>
                   </div>
                 )}
 
@@ -1034,7 +1035,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {errorMessage && (
                   <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
-                    <span>{errorMessage}</span>
+                    <span>{toUserMessage(errorMessage)}</span>
                   </div>
                 )}
 
@@ -1147,7 +1148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {errorMessage && (
                   <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
-                    <span>{errorMessage}</span>
+                    <span>{toUserMessage(errorMessage)}</span>
                   </div>
                 )}
 

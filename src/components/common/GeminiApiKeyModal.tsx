@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Key, CheckCircle2, ExternalLink, X, Shield, AlertCircle } from 'lucide-react';
 import { getGeminiApiKey, setGeminiApiKey } from '../../services/receiptOcr';
+import { toUserMessage } from '../../services/userMessages';
 
 interface GeminiApiKeyModalProps {
   isOpen: boolean;
@@ -116,7 +117,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
           {error && (
             <div className="flex items-center gap-1.5 text-rose-700 text-xs">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>{error}</span>
+              <span>{toUserMessage(error)}</span>
             </div>
           )}
         </div>

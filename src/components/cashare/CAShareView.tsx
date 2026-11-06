@@ -18,6 +18,7 @@ import {
 import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../../types';
 import { TAX_CONFIGS } from '../../services/taxRules';
 import { ExportClient, ProExportResult } from '../../services/exportClient';
+import { toUserMessage } from '../../services/userMessages';
 
 interface CAShareViewProps {
   profile: UserProfile;
@@ -85,7 +86,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
       setFeedbackMessage(successMessage);
     } else {
       if (result.reason === 'pro_required') onOpenSubscription?.(result.message);
-      setFeedbackMessage(result.message);
+      setFeedbackMessage(toUserMessage(result.message));
     }
     setTimeout(() => setFeedbackMessage(null), 4500);
   };

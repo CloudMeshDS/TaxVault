@@ -23,6 +23,7 @@ import { ScanLine, Loader2 } from 'lucide-react';
 import { activityLogService } from './services/activityLogService';
 import { usageTrackingService } from './services/usageTrackingService';
 import { authedFetch } from './services/apiBase';
+import { toUserMessage } from './services/userMessages';
 
 // Screens and modals load on demand so sign-in and Home don't wait on PDF/Excel/report code
 const ExpenseList = lazy(() => import('./components/expenses/ExpenseList').then((m) => ({ default: m.ExpenseList })));
@@ -41,7 +42,6 @@ const BankReconciliationModal = lazy(() => import('./components/banking/BankReco
 const InvoiceGeneratorModal = lazy(() => import('./components/invoicing/InvoiceGeneratorModal').then((m) => ({ default: m.InvoiceGeneratorModal })));
 const TaxCalendarModal = lazy(() => import('./components/compliance/TaxCalendarModal').then((m) => ({ default: m.TaxCalendarModal })));
 const ActivityAndUsageModal = lazy(() => import('./components/settings/ActivityAndUsageModal').then((m) => ({ default: m.ActivityAndUsageModal })));
-const SupabaseSqlModal = lazy(() => import('./components/settings/SupabaseSqlModal').then((m) => ({ default: m.SupabaseSqlModal })));
 const SettingsView = lazy(() => import('./components/settings/SettingsView').then((m) => ({ default: m.SettingsView })));
 
 const TabFallback = () => (
@@ -141,7 +141,6 @@ export default function App() {
   // 9. Activity Audit Trail & Supabase Schema Modals
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [activityModalTab, setActivityModalTab] = useState<'activity' | 'usage'>('activity');
-  const [isSupabaseSqlModalOpen, setIsSupabaseSqlModalOpen] = useState(false);
 
   // 10. Settings Section Navigation (for Android back navigation inside Settings)
   const [settingsSection, setSettingsSection] = useState<SettingSectionId | null>(null);
@@ -207,10 +206,6 @@ export default function App() {
       setIsActivityModalOpen(false);
       return true;
     }
-    if (isSupabaseSqlModalOpen) {
-      setIsSupabaseSqlModalOpen(false);
-      return true;
-    }
 
     // 8. Smart Tax Suite modals
     if (isMileageOpen) {
@@ -254,7 +249,6 @@ export default function App() {
     isAuthOpen,
     isSubscriptionOpen,
     isActivityModalOpen,
-    isSupabaseSqlModalOpen,
     isMileageOpen,
     isBankReconOpen,
     isInvoiceOpen,
@@ -984,7 +978,7 @@ export default function App() {
       });
       if (!result.ok) {
         if (result.reason === 'pro_required') openSubscriptionModal(result.message);
-        else window.alert(result.message);
+        else window.alert(toUserMessage(result.message));
         return;
       }
 
@@ -1113,7 +1107,6 @@ export default function App() {
                   setActivityModalTab(tab);
                   setIsActivityModalOpen(true);
                 }}
-                onOpenSupabaseSql={() => setIsSupabaseSqlModalOpen(true)}
               />
             )}
           </div>
@@ -1313,14 +1306,6 @@ export default function App() {
       />
       )}
 
-      {/* MODAL 14: Supabase PostgreSQL Schema & Multi-Country DDL */}
-      {isSupabaseSqlModalOpen && (
-      <SupabaseSqlModal
-        isOpen={isSupabaseSqlModalOpen}
-        onClose={() => setIsSupabaseSqlModalOpen(false)}
-        supabaseUrl={(import.meta as any).env?.VITE_SUPABASE_URL || 'https://supabase.com/dashboard'}
-      />
-      )}
       </Suspense>
     </div>
   );

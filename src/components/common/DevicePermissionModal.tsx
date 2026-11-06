@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, FolderArchive, ShieldCheck, CheckCircle2, X } from 'lucide-react';
 import { devicePermissions } from '../../services/devicePermissions';
+import { toUserMessage } from '../../services/userMessages';
 
 interface DevicePermissionModalProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ export const DevicePermissionModal: React.FC<DevicePermissionModalProps> = ({
         {errorMessage && (
           <div className="space-y-2">
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs text-left animate-in fade-in">
-              {errorMessage}
+              {toUserMessage(errorMessage)}
             </div>
             <button
               onClick={handleSkip}

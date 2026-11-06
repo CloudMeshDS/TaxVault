@@ -30,6 +30,7 @@ import { DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE, createCleanUserProfile, saveP
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
+import { toUserMessage } from '../../services/userMessages';
 
 interface AuthScreenProps {
   onAuthenticated: (profile?: Partial<UserProfile>) => void;
@@ -622,7 +623,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
           {errorMessage && (
             <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 font-semibold flex items-center gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-              <span>{errorMessage}</span>
+              <span>{toUserMessage(errorMessage)}</span>
             </div>
           )}
 
@@ -1212,7 +1213,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-emerald-950 font-medium">
                   <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</span>
-                  <span>The link will verify your identity with Supabase and open the new password screen.</span>
+                  <span>The link confirms it's you and opens the screen to set a new password.</span>
                 </div>
               </div>
 
@@ -1227,32 +1228,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
                     {emailDeliveryNotice}
                   </p>
                   <p className="text-xs text-amber-700 leading-relaxed">
-                    Supabase's backup mailer dispatched the reset email. Please look in your <strong>Spam / Junk folder</strong>.
+                    We also sent the reset email from our backup sender. Please look in your <strong>Spam / Junk folder</strong>.
                   </p>
-                </div>
-              )}
-
-              {/* Developer Test Link for Immediate Local Verification */}
-              {activeRecoveryLink && (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-left space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                    <span className="flex items-center gap-1.5 text-emerald-700">
-                      <ExternalLink className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Direct Recovery Link</span>
-                    </span>
-                    <span className="text-xs font-mono text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded">
-                      Supabase Verified
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    If email delivery is delayed, click the verified Supabase recovery link below to test:
-                  </p>
-                  <a
-                    href={activeRecoveryLink}
-                    className="block p-2 text-center bg-brand hover:bg-brand-strong text-white font-bold rounded-lg text-xs transition-colors shadow-xs"
-                  >
-                    Open Supabase Recovery Link →
-                  </a>
                 </div>
               )}
 
