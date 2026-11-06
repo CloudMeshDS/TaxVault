@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Header } from './components/common/Header';
 import { BottomNav, NavigationTab } from './components/common/BottomNav';
 import { HomeScreen } from './components/home/HomeScreen';
@@ -7,6 +7,8 @@ import { AuthScreen } from './components/auth/AuthScreen';
 import { AndroidExitToast } from './components/common/AndroidExitToast';
 import { PinLockModal } from './components/auth/PinLockModal';
 import { useDoubleBackToExit } from './hooks/useDoubleBackToExit';
+import { usePullToRefresh } from './hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from './components/common/PullToRefreshIndicator';
 
 import { ExpenseRecord, IncomeRecord, SubscriptionTier, UserProfile, SupportedCountry } from './types';
 import { calculateTaxPosition, detectDuplicateExpense, TAX_CONFIGS } from './services/taxRules';
@@ -279,48 +281,66 @@ export default function App() {
     ).length;
   }, [expenses]);
 
-  // Initial load from backend API (GET /api/expenses, GET /api/profile)
+  // Load expenses and profile from the backend (GET /api/expenses, GET /api/profile).
+  // Used on start-up and by pull-to-refresh; resolves to whether the cloud copy was reached.
+  const isMountedRef = useRef(true);
   useEffect(() => {
-    let isMounted = true;
-    async function loadDataFromApi() {
-      try {
-        setIsSyncing(true);
-        const storedProfile = storageService.getUserProfile();
-        const authed = storageService.isAuthenticated();
-        // Signed-out visitors only see the auth screen; never pull an unscoped expense list for them
-        if (!authed || !storedProfile?.id) return;
-
-        // Real accounts need a live session or every server call answers 401. Back to the sign-in
-        // screen instead (demo accounts have no session and only exist in developer builds).
-        if (!import.meta.env.DEV && (await supabaseService.isSessionMissing())) {
-          storageService.setAuthenticated(false);
-          if (isMounted) setIsAuthenticated(false);
-          return;
-        }
-
-        const [apiExpenses, apiProfile] = await Promise.all([
-          apiClient.getExpenses(storedProfile.id, storedProfile.email),
-          storedProfile.email ? apiClient.getProfile(storedProfile.email, storedProfile.id) : Promise.resolve(null),
-        ]);
-        if (isMounted) {
-          if (apiExpenses && Array.isArray(apiExpenses.expenses)) {
-            setExpenses(apiExpenses.expenses);
-          }
-          if (apiProfile && apiProfile.email?.toLowerCase() === storedProfile.email?.toLowerCase()) {
-            setProfile(SubscriptionService.withCurrentUsagePeriod(apiProfile));
-          }
-        }
-      } catch (err) {
-        console.warn('Initial API load fallback:', err);
-      } finally {
-        if (isMounted) setIsSyncing(false);
-      }
-    }
-    loadDataFromApi();
+    isMountedRef.current = true;
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
     };
   }, []);
+
+  const refreshData = useCallback(async (): Promise<boolean> => {
+    try {
+      setIsSyncing(true);
+      const storedProfile = storageService.getUserProfile();
+      const authed = storageService.isAuthenticated();
+      // Signed-out visitors only see the auth screen; never pull an unscoped expense list for them
+      if (!authed || !storedProfile?.id) return false;
+
+      // Real accounts need a live session or every server call answers 401. Back to the sign-in
+      // screen instead (demo accounts have no session and only exist in developer builds).
+      if (!import.meta.env.DEV && (await supabaseService.isSessionMissing())) {
+        storageService.setAuthenticated(false);
+        if (isMountedRef.current) setIsAuthenticated(false);
+        return false;
+      }
+
+      const [apiExpenses, apiProfile] = await Promise.all([
+        apiClient.getExpenses(storedProfile.id, storedProfile.email),
+        storedProfile.email ? apiClient.getProfile(storedProfile.email, storedProfile.id) : Promise.resolve(null),
+      ]);
+      if (isMountedRef.current) {
+        if (apiExpenses && Array.isArray(apiExpenses.expenses)) {
+          setExpenses(apiExpenses.expenses);
+        }
+        if (apiProfile && apiProfile.email?.toLowerCase() === storedProfile.email?.toLowerCase()) {
+          setProfile(SubscriptionService.withCurrentUsagePeriod(apiProfile));
+        }
+        setIncomes(storageService.getIncomes());
+      }
+      return Boolean(apiExpenses) && apiExpenses.source !== 'offline-cache';
+    } catch (err) {
+      console.warn('API load fallback:', err);
+      return false;
+    } finally {
+      if (isMountedRef.current) setIsSyncing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  // Pull down from the top of any tab to reload from the cloud
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  const handlePullRefresh = useCallback(async () => {
+    const ok = await refreshData();
+    setRefreshMessage(ok ? 'Updated' : navigator.onLine ? "Couldn't refresh. Try again." : 'No internet connection');
+    window.setTimeout(() => setRefreshMessage(null), 1800);
+  }, [refreshData]);
+  const pull = usePullToRefresh({ onRefresh: handlePullRefresh, enabled: isAuthenticated && !isAppLocked });
 
   // Network Event Listeners
   useEffect(() => {
@@ -1036,6 +1056,13 @@ export default function App() {
           profile={profile}
           onOpenSubscription={() => openSubscriptionModal()}
           onOpenAuth={() => setIsAuthOpen(true)}
+        />
+
+        <PullToRefreshIndicator
+          pullDistance={pull.pullDistance}
+          progress={pull.progress}
+          isRefreshing={pull.isRefreshing}
+          message={refreshMessage}
         />
 
         {/* Content Body Based on Active Tab with fluid transition and bottom nav clearance */}

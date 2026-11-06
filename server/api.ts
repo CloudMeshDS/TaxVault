@@ -2631,6 +2631,7 @@ export function createApi(): express.Express {
           includeExpenses: options.includeExpenses,
           includeGst: options.includeGst,
           includeVendors: options.includeVendors,
+          includeReceiptImages: Boolean(options.includeReceiptImages),
           dateRangeLabel: options.dateRangeLabel,
         });
         body = Buffer.from(doc.output('arraybuffer'));

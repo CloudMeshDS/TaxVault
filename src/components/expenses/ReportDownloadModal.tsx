@@ -9,7 +9,6 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
-  ShieldCheck,
   Calendar,
 } from 'lucide-react';
 import { ExpenseRecord, UserProfile } from '../../types';
@@ -44,6 +43,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
     initialFilter || createDefaultPeriodFilterState(profile?.country, profile?.financialYear)
   );
   const [downloadingFormat, setDownloadingFormat] = useState<'excel' | 'pdf' | 'csv' | null>(null);
+  const [includeReceiptImages, setIncludeReceiptImages] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -63,6 +63,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
   }, [filteredList, country]);
 
   const badgeLabel = getPeriodFilterBadgeLabel(filter, country);
+  const receiptsWithImages = filteredList.filter((e) => typeof e.receiptUrl === 'string' && e.receiptUrl).length;
 
   if (!isOpen) return null;
 
@@ -96,10 +97,12 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
           expenses: filteredList,
           taxResult,
           fileName,
-          options: { dateRangeLabel: badgeLabel },
+          options: { dateRangeLabel: badgeLabel, includeReceiptImages },
         });
         if (!result.ok) throw new Error(result.message);
-        setSuccessMessage(`PDF Audit Report "${fileName}" downloaded successfully!`);
+        setSuccessMessage(
+          `PDF Audit Report "${fileName}" downloaded${includeReceiptImages ? ' with receipt images' : ''}!`
+        );
       } else if (format === 'csv') {
         const fileName = `TaxVault_Expenses_${safeBadge}.csv`;
         await ExportClient.downloadCSV(filteredList, fileName);
@@ -118,19 +121,17 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-xs flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-xs flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
+      <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-4 space-y-3 shadow-2xl overflow-hidden max-h-full flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-700">
               <Download className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base font-black text-white tracking-tight">Download Report</h2>
-              <p className="text-xs text-slate-500">
-                Export itemized tax audit packs & spreadsheets
-              </p>
+              <p className="text-xs text-slate-500">Choose a period, then a format</p>
             </div>
           </div>
           <button
@@ -143,163 +144,99 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+        {/* Fits one phone screen; scrolls only as a fallback on very short screens */}
+        <div className="space-y-2.5 overflow-y-auto flex-1 min-h-0">
           {/* Notifications */}
           {successMessage && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-3 py-2 rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
               <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
               <span className="font-medium">{successMessage}</span>
             </div>
           )}
 
           {errorMessage && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs px-3 py-2 rounded-xl flex items-center gap-2 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
               <span className="font-medium">{toUserMessage(errorMessage)}</span>
             </div>
           )}
 
-          {/* Date Filter Section (Exact same as HomeScreen) */}
+          {/* 1. Period */}
           <PeriodFilterControls
             filter={filter}
             onChange={setFilter}
             country={country}
-            title="1. Select Date Filter"
+            title="1. Period"
             recordCount={filteredList.length}
             showBadge={true}
           />
 
-          {/* Summary Card for Selected Period */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">
-                Matching Receipts
-              </div>
-              <div className="text-sm font-extrabold text-white mt-0.5">
-                {filteredList.length} {filteredList.length === 1 ? 'record' : 'records'}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">
-                Total Claimable
-              </div>
-              <div className="text-sm font-extrabold text-emerald-700 font-mono mt-0.5">
-                {fmt(taxResult.claimableBusinessTotal)}
-              </div>
-            </div>
+          {/* Summary for the selected period */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex items-center justify-between text-xs">
+            <span className="text-slate-600">
+              <strong className="text-white">{filteredList.length}</strong> {filteredList.length === 1 ? 'receipt' : 'receipts'}
+            </span>
+            <span className="text-slate-600">
+              Claimable <strong className="text-emerald-700 font-mono">{fmt(taxResult.claimableBusinessTotal)}</strong>
+            </span>
           </div>
 
-          {/* Export Options */}
-          <div className="space-y-2">
-            <label className="text-xs text-slate-500 uppercase font-bold tracking-wider">
-              2. Choose Export Format
+          {/* 2. Format */}
+          <div className="space-y-1.5">
+            <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">2. Download as</div>
+            <label className="flex items-center gap-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={includeReceiptImages}
+                onChange={(e) => setIncludeReceiptImages(e.target.checked)}
+                disabled={downloadingFormat !== null}
+                className="w-4 h-4 accent-emerald-600 shrink-0"
+              />
+              <span className="flex-1">
+                Add receipt images to the PDF
+                <span className="text-slate-500">
+                  {' '}
+                  ({receiptsWithImages} of {filteredList.length} have a photo)
+                </span>
+              </span>
             </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {/* Excel Card */}
-              <button
-                type="button"
-                onClick={() => handleDownload('excel')}
-                disabled={downloadingFormat !== null}
-                className="group relative p-3.5 rounded-2xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-700">
-                    {downloadingFormat === 'excel' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-emerald-700" />
-                    ) : (
-                      <FileSpreadsheet className="w-4 h-4" />
-                    )}
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  {
+                    format: 'excel', label: 'Excel', ext: '.XLSX', hint: 'Audit workbook', Icon: FileSpreadsheet,
+                    card: 'hover:border-emerald-500/40 hover:bg-emerald-50',
+                    icon: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700',
+                  },
+                  {
+                    format: 'pdf', label: 'PDF', ext: '.PDF', hint: 'Tax report', Icon: FileText,
+                    card: 'hover:border-rose-500/40 hover:bg-rose-50',
+                    icon: 'bg-rose-500/10 border-rose-500/30 text-rose-700',
+                  },
+                  {
+                    format: 'csv', label: 'CSV', ext: '.CSV', hint: 'Raw data', Icon: FileCode,
+                    card: 'hover:border-amber-500/40 hover:bg-amber-50',
+                    icon: 'bg-amber-500/10 border-amber-500/30 text-amber-700',
+                  },
+                ] as const
+              ).map(({ format, label, ext, hint, Icon, card, icon }) => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => handleDownload(format)}
+                  disabled={downloadingFormat !== null}
+                  aria-label={`Download ${label} (${ext})`}
+                  className={`p-2.5 rounded-xl bg-white border border-slate-200 ${card} text-center transition-all cursor-pointer flex flex-col items-center gap-1 shadow-xs disabled:opacity-50`}
+                >
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${icon}`}>
+                    {downloadingFormat === format ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                    .XLSX
-                  </span>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white group-hover:text-emerald-700 transition-colors">
-                    Excel Workbook
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">
-                    Multi-sheet CA audit schedule & tax breakdown
-                  </div>
-                </div>
-              </button>
-
-              {/* PDF Card */}
-              <button
-                type="button"
-                onClick={() => handleDownload('pdf')}
-                disabled={downloadingFormat !== null}
-                className="group relative p-3.5 rounded-2xl bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-700">
-                    {downloadingFormat === 'pdf' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-rose-700" />
-                    ) : (
-                      <FileText className="w-4 h-4" />
-                    )}
-                  </div>
-                  <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
-                    .PDF
-                  </span>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white group-hover:text-rose-700 transition-colors">
-                    Audit PDF
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">
-                    Formal tax report with itemized receipt table
-                  </div>
-                </div>
-              </button>
-
-              {/* CSV Card */}
-              <button
-                type="button"
-                onClick={() => handleDownload('csv')}
-                disabled={downloadingFormat !== null}
-                className="group relative p-3.5 rounded-2xl bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-500/40 text-left transition-all cursor-pointer flex flex-col justify-between gap-3 shadow-xs disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-700">
-                    {downloadingFormat === 'csv' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-700" />
-                    ) : (
-                      <FileCode className="w-4 h-4" />
-                    )}
-                  </div>
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
-                    .CSV
-                  </span>
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white group-hover:text-amber-700 transition-colors">
-                    CSV Data
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5 leading-snug">
-                    Clean raw tabular data for accounting imports
-                  </div>
-                </div>
-              </button>
+                  <div className="text-xs font-bold text-white leading-tight">{label}</div>
+                  <div className="text-[11px] text-slate-500 leading-tight">{hint}</div>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-          <div className="text-xs text-slate-500 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-            <span>CA & Tax Authority Compliant</span>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-white text-xs font-bold transition-colors cursor-pointer"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
