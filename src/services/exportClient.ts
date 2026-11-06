@@ -2,7 +2,7 @@ import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../types';
 import { formatCurrency, TAX_CONFIGS } from './taxRules';
 import { authedFetch } from './apiBase';
 import { saveFile } from '../utils/saveFile';
-import { optimizeReceiptImage } from './receiptOcr';
+import { compressReceiptImage } from './receiptOcr';
 
 /**
  * Browser-side export helpers.
@@ -19,8 +19,9 @@ export type ProExportResult =
   | { ok: true; fileName: string }
   | { ok: false; reason: 'pro_required' | 'sign_in' | 'failed'; message: string };
 
-/** Most receipt images sent with one PDF request (keeps the upload within the server's limit). */
+/** Most receipt images sent with one export request (photos are at most 100 KB each). */
 export const MAX_PDF_RECEIPT_IMAGES = 60;
+export const MAX_ZIP_RECEIPT_IMAGES = 400;
 
 /**
  * A receipt image as a compact JPEG data URL for embedding in a PDF, or null if it cannot be
@@ -44,7 +45,7 @@ async function toCompactReceiptImage(url: unknown): Promise<string | null> {
       });
     }
     if (!dataUrl.startsWith('data:image')) return null;
-    const compact = await optimizeReceiptImage(dataUrl, 1400, 0.8);
+    const compact = await compressReceiptImage(dataUrl);
     return /^data:image\/(jpe?g|png);base64,/i.test(compact) ? compact : null;
   } catch {
     return null;
@@ -52,15 +53,18 @@ async function toCompactReceiptImage(url: unknown): Promise<string | null> {
 }
 
 /** Expenses with receipt images converted for the PDF; images beyond the cap are left out. */
-export async function withPdfReceiptImages(expenses: ExpenseRecord[]): Promise<ExpenseRecord[]> {
+export async function withPdfReceiptImages(
+  expenses: ExpenseRecord[],
+  maxImages: number = MAX_PDF_RECEIPT_IMAGES
+): Promise<ExpenseRecord[]> {
   const out = expenses.map((e) => ({ ...e }));
   let included = 0;
   const queue = out.filter((e) => typeof e.receiptUrl === 'string' && e.receiptUrl);
   for (let i = 0; i < queue.length; i += 4) {
     const batch = queue.slice(i, i + 4);
-    const images = await Promise.all(batch.map((e) => (included < MAX_PDF_RECEIPT_IMAGES ? toCompactReceiptImage(e.receiptUrl) : null)));
+    const images = await Promise.all(batch.map((e) => (included < maxImages ? toCompactReceiptImage(e.receiptUrl) : null)));
     batch.forEach((e, j) => {
-      if (images[j] && included < MAX_PDF_RECEIPT_IMAGES) {
+      if (images[j] && included < maxImages) {
         e.receiptUrl = images[j]!;
         included += 1;
       } else {
@@ -95,11 +99,14 @@ export class ExportClient {
   ): Promise<ProExportResult> {
     // Receipt images go only into the zip pack, or into a PDF when the user asks for them;
     // otherwise they are left out to keep uploads small.
-    const wantsPdfImages = kind === 'pdf' && Boolean(params.options?.includeReceiptImages);
-    const source = wantsPdfImages ? await withPdfReceiptImages(params.expenses) : params.expenses;
+    // Stored photos arrive as private links, so they are fetched and inlined here when needed.
+    const wantsImages = kind === 'zip' || (kind === 'pdf' && Boolean(params.options?.includeReceiptImages));
+    const source = wantsImages
+      ? await withPdfReceiptImages(params.expenses, kind === 'zip' ? MAX_ZIP_RECEIPT_IMAGES : MAX_PDF_RECEIPT_IMAGES)
+      : params.expenses;
     const expenses = source.map((e) => {
       const { originalImage, receiptThumbnail, ...rest } = e as any;
-      const keepImage = kind === 'zip' || wantsPdfImages;
+      const keepImage = wantsImages;
       if (!keepImage || !(typeof rest.receiptUrl === 'string' && rest.receiptUrl.startsWith('data:image'))) {
         delete rest.receiptUrl;
       }

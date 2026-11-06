@@ -203,7 +203,7 @@ export interface IncomeRecord {
   createdAt: string;
 }
 
-export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'business' | 'enterprise';
 
 export interface UserSubscription {
   tier: SubscriptionTier;
@@ -214,6 +214,10 @@ export interface UserSubscription {
   renewsOn?: string;
   /** Calendar month (YYYY-MM) that receiptsScannedThisMonth counts towards */
   usagePeriod?: string;
+  /** Paid plans: AI scans allowed in any rolling 24 hours (from the server) */
+  dailyScanLimit?: number;
+  /** Paid plans: AI scans used in the last 24 hours, as of the last profile load */
+  scansLast24h?: number;
 }
 
 export interface SubscriptionPlanMaster {

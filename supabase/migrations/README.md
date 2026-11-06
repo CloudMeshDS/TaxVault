@@ -120,3 +120,11 @@ And from a terminal, with the anon key from the app (expect `[]`):
 ```bash
 curl "$SUPABASE_URL/rest/v1/expenses?select=id&limit=5" -H "apikey: $ANON_KEY"
 ```
+
+## Daily-scan plans (2026-11-06)
+
+Run `2026-11-06_daily_scan_plans.sql` **before** deploying the server that sells the Business plan
+(`customer_subscriptions.plan_id` must find a `business` row). Plans live in `src/constants/plans.ts`:
+Free 10 scans/month; Pro 10/day ₹465; Business 20/day ₹699; CA Firm 100/day ₹1,499; annual = 10× monthly.
+"Per day" means any rolling 24 hours, counted from `token_request_logs`. Existing Pro/Enterprise
+customers keep their plan id and get the new daily limit.

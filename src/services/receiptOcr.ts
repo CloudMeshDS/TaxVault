@@ -763,6 +763,70 @@ export async function optimizeReceiptImage(dataUrl: string, maxDim = 1280, quali
   });
 }
 
+/** Largest receipt photo the app keeps or uploads. */
+export const MAX_RECEIPT_IMAGE_BYTES = 100 * 1024;
+
+/** Approximate decoded size of a base64 data URL, in bytes. */
+export function dataUrlBytes(dataUrl: string): number {
+  const comma = dataUrl.indexOf(',');
+  const b64 = comma >= 0 ? dataUrl.length - comma - 1 : dataUrl.length;
+  return Math.floor((b64 * 3) / 4);
+}
+
+function loadImage(dataUrl: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    // Safety timeout so a stuck decode can't hang the scan
+    const timer = setTimeout(() => resolve(null), 8000);
+    const img = new Image();
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(img);
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(null);
+    };
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * Shrinks a receipt photo to a JPEG of at most `maxBytes` (default 100 KB): first by lowering
+ * quality, then by reducing size, keeping receipt text as sharp as the budget allows. Photos
+ * already within budget are returned unchanged; non-images and PDFs pass through.
+ */
+export async function compressReceiptImage(dataUrl: string, maxBytes = MAX_RECEIPT_IMAGE_BYTES): Promise<string> {
+  if (!dataUrl || !dataUrl.startsWith('data:image')) return dataUrl;
+  if (dataUrlBytes(dataUrl) <= maxBytes && /^data:image\/(jpe?g|png);/i.test(dataUrl)) return dataUrl;
+  if (typeof document === 'undefined') return dataUrl;
+
+  const img = await loadImage(dataUrl);
+  if (!img) return dataUrl;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return dataUrl;
+
+  const naturalW = img.naturalWidth || img.width;
+  const naturalH = img.naturalHeight || img.height;
+  let maxDim = Math.min(1600, Math.max(naturalW, naturalH));
+  let best = dataUrl;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const scale = Math.min(1, maxDim / Math.max(naturalW, naturalH));
+    canvas.width = Math.max(1, Math.round(naturalW * scale));
+    canvas.height = Math.max(1, Math.round(naturalH * scale));
+    ctx.fillStyle = '#ffffff'; // transparent PNG areas would otherwise turn black in JPEG
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.8, 0.7, 0.6, 0.5]) {
+      const out = canvas.toDataURL('image/jpeg', quality);
+      if (dataUrlBytes(out) <= maxBytes) return out;
+      best = out;
+    }
+    maxDim = Math.round(maxDim * 0.8); // still too big: make the image smaller and try again
+  }
+  return best;
+}
+
 /**
  * Direct Gemini Multimodal Vision Client Call:
  * Sends image or PDF document directly to Google Generative Language API without needing local server.
@@ -996,7 +1060,10 @@ async function callServerOcr(
         lastServerOcrRefusal = 'Automatic reading needs a signed-in TaxVault account. Enter the details below, or sign in to scan.';
       } else if (res.status === 402) {
         const body = await res.json().catch(() => ({}));
-        lastServerOcrRefusal = `${body?.error || 'You have used all free AI scans for this month.'} Enter the details below, or upgrade for unlimited scans.`;
+        lastServerOcrRefusal =
+          body?.code === 'DAILY_SCAN_LIMIT'
+            ? `${body.error} Enter the details below for now.`
+            : `${body?.error || 'You have used all free AI scans for this month.'} Enter the details below, or choose a paid plan for daily scans.`;
       }
       return null;
     }
@@ -1162,7 +1229,7 @@ export async function parseReceiptData(
     // both what the AI reads and what is kept as the receipt image (result.originalImage), so
     // saving and syncing an expense never uploads the full-resolution original.
     if (inputPayload.startsWith('data:image')) {
-      inputPayload = await optimizeReceiptImage(inputPayload, 1600, 0.82);
+      inputPayload = await compressReceiptImage(inputPayload);
     }
 
     const isUsable = (r: ExtractedReceiptData | null): r is ExtractedReceiptData =>

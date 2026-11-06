@@ -2,6 +2,7 @@ import { ExpenseRecord, SupportedCountry, UserProfile } from '../types';
 import { storageService, DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE, stripSampleValues } from './storageService';
 import { supabaseService } from './supabaseService';
 import { authedFetch } from './apiBase';
+import { compressReceiptImage } from './receiptOcr';
 
 /**
  * TaxVault API Client
@@ -38,6 +39,14 @@ function keepCleanProfile(loaded: UserProfile): UserProfile {
   storageService.saveUserProfile(profile);
   if (changed) apiClient.updateProfile(profile).catch(() => {});
   return profile;
+}
+
+/** Keeps inline receipt photos within the 100 KB budget before they are uploaded or cached. */
+async function withCompactReceipt(expense: ExpenseRecord): Promise<ExpenseRecord> {
+  if (typeof expense.receiptUrl === 'string' && expense.receiptUrl.startsWith('data:image')) {
+    expense.receiptUrl = await compressReceiptImage(expense.receiptUrl);
+  }
+  return expense;
 }
 
 export const apiClient = {
@@ -136,6 +145,7 @@ export const apiClient = {
     if (!expense || !expense.merchant?.trim() || Number(expense.amount) <= 0) {
       throw new Error('Cannot save blank or zero-amount expense');
     }
+    await withCompactReceipt(expense);
 
     // Ensure customerTaxId / userId is attached to profile
     if (profileId) {
@@ -194,6 +204,7 @@ export const apiClient = {
    * Update Expense via API / Supabase Direct (PUT /api/expenses/:id)
    */
   async updateExpense(expense: ExpenseRecord, profileId?: string): Promise<ExpenseRecord> {
+    await withCompactReceipt(expense);
     if (profileId) {
       if (!expense.customerTaxId || !expense.customerTaxId.startsWith('usr_')) {
         expense.customerTaxId = profileId;

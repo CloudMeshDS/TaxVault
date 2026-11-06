@@ -1,3 +1,4 @@
+import type { PaidTier } from '../constants/plans';
 import { authedFetch } from './apiBase';
 /**
  * Razorpay Payment Gateway Service for TaxVault Pro Version Purchase
@@ -135,7 +136,7 @@ export class RazorpayService {
    * The server sets the price for the plan and tags the order with the signed-in user.
    */
   public static async createOrderOnServer(
-    tier: 'pro' | 'enterprise',
+    tier: PaidTier,
     billingCycle: 'monthly' | 'annual'
   ): Promise<{ success: boolean; orderId?: string; amount?: number; error?: string }> {
     try {
@@ -160,7 +161,7 @@ export class RazorpayService {
    */
   public static async verifyPaymentOnServer(
     response: RazorpaySuccessResponse,
-    tier: 'pro' | 'enterprise',
+    tier: PaidTier,
     billingCycle: 'monthly' | 'annual'
   ): Promise<{ verified: boolean; subscription?: any; error?: string }> {
     try {
