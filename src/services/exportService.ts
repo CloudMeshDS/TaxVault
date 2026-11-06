@@ -11,6 +11,11 @@ import { currentFiscalYear } from './fiscalYear';
  * POST /api/exports/:kind, which checks the user's plan first. The app must not import this file
  * (that would put the Pro generators back into the bundle); it uses exportClient.ts instead.
  */
+/** Replaces characters the PDF's standard fonts can't show (e.g. ₹) with plain text. */
+function pdfSafeText(text: string, currencyCode: string): string {
+  return text.replace(/₹\s?/g, `${currencyCode} `).replace(/[^\x20-\x7e\xa0-\xff]/g, '');
+}
+
 export class ExportService {
   /**
    * Generates a Tax Audit Report in PDF format adapting to NZ, AU, CA, US, and IN
@@ -23,6 +28,8 @@ export class ExportService {
       includeExpenses?: boolean;
       includeGst?: boolean;
       includeVendors?: boolean;
+      /** Append one page per receipt with its photo (receiptUrl must be a data:image URL). */
+      includeReceiptImages?: boolean;
       dateRangeLabel?: string;
     } = {}
   ): jsPDF {
@@ -36,7 +43,9 @@ export class ExportService {
     const config = TAX_CONFIGS[country] || TAX_CONFIGS['NZ'];
     const curr = profile?.defaultCurrency || config.currencyCode;
     const sym = profile?.currencySymbol || config.currencySymbol;
-    const fmt = (val: number) => formatCurrency(Number(val) || 0, curr, sym, true);
+    // The PDF's built-in Helvetica only covers Latin-1. A "₹" makes jsPDF store the whole line in
+    // an encoding PDF viewers show as garbled text, so amounts use the currency code instead.
+    const fmt = (val: number) => pdfSafeText(formatCurrency(Number(val) || 0, curr, sym, true), curr);
 
     const primaryColor: [number, number, number] = [15, 23, 42]; // Slate 900
     const emeraldAccent: [number, number, number] = [16, 185, 129]; // Emerald 500
@@ -180,6 +189,62 @@ export class ExportService {
           8: { cellWidth: 16, halign: 'right' },
           9: { cellWidth: 17, halign: 'right', fontStyle: 'bold' },
         },
+      });
+    }
+
+    // Receipt images: one page per voucher, details above the scaled photo
+    if (options.includeReceiptImages) {
+      const withImages = expenses.filter(
+        (e) => typeof e.receiptUrl === 'string' && /^data:image\/(jpe?g|png);base64,/i.test(e.receiptUrl)
+      );
+      withImages.forEach((e, index) => {
+        doc.addPage();
+        doc.setTextColor(15, 23, 42);
+        if (index === 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text(`4. RECEIPT IMAGES (${withImages.length} of ${expenses.length} vouchers)`, 14, 16);
+        }
+        const top = index === 0 ? 24 : 16;
+        const cgst = Number(e.cgst) || 0;
+        const sgst = Number(e.sgst) || 0;
+        const igst = Number(e.igst) || 0;
+        const cess = Number(e.cess) || 0;
+        const taxAmt = (cgst + sgst + igst + cess) || Number(e.taxAmount) || Number(e.gstAmount) || Number(e.salesTaxAmount) || 0;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(`${index + 1}. ${(e.merchant || 'Unknown Vendor').substring(0, 70)}`, 14, top);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(71, 85, 105);
+        const details = [
+          `Date: ${e.date || '-'}`,
+          `Invoice: ${e.invoiceNumber || '-'}`,
+          `Total: ${fmt(Number(e.amount) || 0)}`,
+          `Tax: ${fmt(taxAmt)}`,
+          `Category: ${e.category || 'Other'}`,
+          `Type: ${e.expenseType || 'Business'}${e.expenseType === 'Mixed' ? ` (${e.businessPercentage ?? 100}%)` : ''}`,
+        ].join('   ·   ');
+        doc.text(doc.splitTextToSize(details, 182), 14, top + 6);
+
+        const imgTop = top + 16;
+        const maxW = 182;
+        const maxH = 280 - imgTop - 6; // keep clear of the footer
+        try {
+          const dataUrl = e.receiptUrl as string;
+          const props = doc.getImageProperties(dataUrl);
+          const ratio = Math.min(maxW / props.width, maxH / props.height);
+          const w = props.width * ratio;
+          const h = props.height * ratio;
+          const format = /^data:image\/png/i.test(dataUrl) ? 'PNG' : 'JPEG';
+          doc.setDrawColor(226, 232, 240);
+          doc.rect(14 + (maxW - w) / 2 - 0.5, imgTop - 0.5, w + 1, h + 1);
+          doc.addImage(dataUrl, format, 14 + (maxW - w) / 2, imgTop, w, h, undefined, 'FAST');
+        } catch {
+          doc.setTextColor(190, 18, 60);
+          doc.text('This receipt image could not be added to the PDF.', 14, imgTop + 6);
+        }
       });
     }
 

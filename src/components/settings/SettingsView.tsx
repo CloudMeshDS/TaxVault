@@ -307,6 +307,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // ==========================================
   // STAGE 2: SECOND STAGE / DETAIL SETTINGS VIEW
   // ==========================================
+  // Floating confirmation above the bottom navigation, so it shows wherever the page is scrolled
+  // (Save buttons sit at the bottom of each section, below any in-page banner).
+  const isWarning = Boolean(feedback && /^choose|could not|failed|error/i.test(feedback));
+  const feedbackToast = feedback ? (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`fixed left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm rounded-xl px-3 py-2.5 text-xs font-bold flex items-center gap-2 shadow-lg border animate-in fade-in ${
+        isWarning ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-emerald-50 border-emerald-500/60 text-emerald-800'
+      }`}
+      style={{ bottom: 'calc(env(safe-area-inset-bottom) + 6.5rem)' }}
+    >
+      <CheckCircle2 className={`w-4 h-4 shrink-0 ${isWarning ? 'text-amber-600' : 'text-emerald-700'}`} />
+      <span>{feedback}</span>
+    </div>
+  ) : null;
+
   if (activeSection !== null) {
     return (
       <div className="p-4 space-y-4 pb-28 max-w-xl mx-auto select-none animate-in fade-in slide-in-from-right-4 duration-200">
@@ -332,13 +349,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Global Feedback Banner */}
-        {feedback && (
-          <div className="bg-emerald-50 border border-emerald-500/60 rounded-xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>{feedback}</span>
-          </div>
-        )}
+        {feedbackToast}
 
         {/* --- SECTION 1: PERSONAL & CONTACT PROFILE --- */}
         {activeSection === 'profile' && (
@@ -624,24 +635,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         )}
 
-        {/* --- SECTION 3: COUNTRY, TAX JURISDICTION & TAX IDS --- */}
+        {/* --- SECTION 3: COUNTRY, TAX JURISDICTION & TAX IDS (fits one phone screen) --- */}
         {activeSection === 'jurisdiction' && (
-          <div className="space-y-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3.5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase font-bold text-slate-500 flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Jurisdiction & Tax Authorities</span>
-                </span>
-                <span className="text-xs text-indigo-400 font-semibold px-2 py-0.5 rounded-full bg-indigo-950/80 border border-indigo-800/60">
-                  {COUNTRY_CONFIGS[country].flag} {COUNTRY_CONFIGS[country].code} Rules Active
-                </span>
-              </div>
-
-              {/* Multi-Jurisdiction Country Picker */}
-              <div className="space-y-1.5">
-                <label className="text-xs text-slate-500 font-medium">Select Country & Tax Authority</label>
-                <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+          <div className="space-y-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-3 shadow-sm text-xs">
+              {/* Country picker */}
+              <div className="space-y-1">
+                <label className="text-xs text-slate-500 font-medium">Country</label>
+                <div className="grid grid-cols-5 gap-1.5">
                   {(Object.keys(COUNTRY_CONFIGS) as SupportedCountry[]).map((cCode) => {
                     const cfg = COUNTRY_CONFIGS[cCode];
                     const isSelected = country === cCode;
@@ -650,45 +651,49 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         key={cCode}
                         type="button"
                         onClick={() => handleCountryChange(cCode)}
-                        className={`p-1.5 sm:p-2 rounded-xl text-center transition-all cursor-pointer border min-w-0 ${
+                        aria-pressed={isSelected}
+                        aria-label={`${cfg.name} (${cfg.currency})`}
+                        className={`py-1.5 rounded-xl text-center transition-all cursor-pointer border min-w-0 ${
                           isSelected
                             ? 'bg-indigo-500/20 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500/50'
-                            : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-white hover:border-slate-200'
+                            : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-white'
                         }`}
                       >
-                        <div className="text-lg sm:text-xl mb-0.5">{cfg.flag}</div>
-                        <div className="text-xs sm:text-xs font-black tracking-wide leading-none truncate">{cfg.code}</div>
-                        <div className="text-xs sm:text-xs text-slate-500 mt-0.5 truncate">{cfg.currency}</div>
+                        <div className="text-lg leading-none">{cfg.flag}</div>
+                        <div className="text-xs font-black tracking-wide leading-none mt-1">{cfg.code}</div>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Authority & Seed Quick Action */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
-                <div>
-                  <div className="text-xs text-slate-500">Statutory Tax Authority</div>
-                  <div className="text-xs font-bold text-white mt-0.5">{COUNTRY_CONFIGS[country].authority}</div>
+              {/* Authority, currency and sample data */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-bold text-white truncate">{COUNTRY_CONFIGS[country].authority}</div>
+                  <div className="text-slate-500 truncate">
+                    {COUNTRY_CONFIGS[country].name} · {COUNTRY_CONFIGS[country].currency} ({COUNTRY_CONFIGS[country].symbol})
+                  </div>
                 </div>
                 <button
                   type="button"
                   disabled={isSeedingCountry}
                   onClick={() => handleSeedForCountry(country)}
-                  className="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 rounded-lg px-2.5 py-1 text-xs font-bold shrink-0 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 rounded-lg px-2.5 py-1 text-xs font-bold shrink-0 flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Sparkles className="w-3 h-3 text-indigo-400" />
-                  <span>{isSeedingCountry ? 'Loading...' : `Demo Vouchers`}</span>
+                  <span>{isSeedingCountry ? 'Loading...' : 'Sample data'}</span>
                 </button>
               </div>
 
-              <div className="space-y-2.5 text-xs pt-1">
+              {/* Entity type and financial year */}
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-slate-500">Entity Legal Structure</label>
+                  <label className="text-xs text-slate-500">Business type</label>
                   <select
                     value={businessType}
                     onChange={(e) => setBusinessType(e.target.value as BusinessEntityType)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-indigo-500"
                   >
                     {COUNTRY_CONFIGS[country].entityTypes.map((bt) => (
                       <option key={bt} value={bt}>
@@ -697,67 +702,56 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ))}
                   </select>
                 </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-slate-500">{COUNTRY_CONFIGS[country].taxIdLabel}</label>
-                    <input
-                      type="text"
-                      value={taxId}
-                      onChange={(e) => setTaxId(e.target.value.toUpperCase())}
-                      placeholder={COUNTRY_CONFIGS[country].taxIdPlaceholder}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500">{COUNTRY_CONFIGS[country].secondaryTaxIdLabel}</label>
-                    <input
-                      type="text"
-                      value={secondaryTaxId}
-                      onChange={(e) => setSecondaryTaxId(e.target.value.toUpperCase())}
-                      placeholder={COUNTRY_CONFIGS[country].secondaryTaxIdPlaceholder}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-white font-mono uppercase focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div>
-                    <label className="text-xs text-slate-500">Financial Period / Fiscal Year</label>
-                    <select
-                      value={financialYear}
-                      onChange={(e) => setFinancialYear(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-white font-mono"
-                    >
-                      {Array.from(new Set([...COUNTRY_CONFIGS[country].fiscalYears, financialYear])).map((fy) => (
-                        <option key={fy} value={fy}>
-                          {fy} ({fiscalYearRangeLabel(country)})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500">Local Currency</label>
-                    <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-indigo-400 font-mono font-bold flex items-center justify-between">
-                      <span>{COUNTRY_CONFIGS[country].name} ({COUNTRY_CONFIGS[country].symbol})</span>
-                      <span className="text-white">{COUNTRY_CONFIGS[country].currency}</span>
-                    </div>
-                  </div>
+                <div>
+                  <label className="text-xs text-slate-500 truncate block">Financial year ({fiscalYearRangeLabel(country)})</label>
+                  <select
+                    value={financialYear}
+                    onChange={(e) => setFinancialYear(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono"
+                  >
+                    {Array.from(new Set([...COUNTRY_CONFIGS[country].fiscalYears, financialYear])).map((fy) => (
+                      <option key={fy} value={fy}>
+                        {fy}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {/* Country Legal & Statutory Terms Card */}
-              <div className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 shrink-0">
-                    <Scale className="w-4 h-4" />
-                  </div>
+              {/* Tax IDs */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-slate-500 truncate block">{COUNTRY_CONFIGS[country].taxIdLabel}</label>
+                  <input
+                    type="text"
+                    value={taxId}
+                    onChange={(e) => setTaxId(e.target.value.toUpperCase())}
+                    placeholder={COUNTRY_CONFIGS[country].taxIdPlaceholder}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono uppercase focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 truncate block">{COUNTRY_CONFIGS[country].secondaryTaxIdLabel}</label>
+                  <input
+                    type="text"
+                    value={secondaryTaxId}
+                    onChange={(e) => setSecondaryTaxId(e.target.value.toUpperCase())}
+                    placeholder={COUNTRY_CONFIGS[country].secondaryTaxIdPlaceholder}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono uppercase focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Country terms */}
+              <div className="px-2.5 py-2 bg-slate-50/80 border border-slate-200 rounded-xl flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Scale className="w-4 h-4 text-emerald-700 shrink-0" />
                   <div className="min-w-0">
-                    <span className="text-xs font-bold text-slate-800 block truncate">
-                      {COUNTRY_CONFIGS[country].flag} {COUNTRY_CONFIGS[country].name} Terms &amp; Compliance
-                    </span>
-                    <span className="text-xs text-emerald-700 font-semibold block truncate">
-                      {profile.termsAccepted ? `✓ Statutory Consent Saved in DB${profile.termsAcceptedDate ? ` (${new Date(profile.termsAcceptedDate).toLocaleDateString()})` : ''}` : 'Statutory retention & non-advisory legal disclaimers'}
+                    <span className="font-bold text-slate-800 block truncate">{COUNTRY_CONFIGS[country].name} terms</span>
+                    <span className="text-emerald-700 block truncate">
+                      {profile.termsAccepted
+                        ? `✓ Accepted${profile.termsAcceptedDate ? ` on ${new Date(profile.termsAcceptedDate).toLocaleDateString()}` : ''}`
+                        : 'Record keeping & legal notices'}
                     </span>
                   </div>
                 </div>
@@ -771,13 +765,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* Stage 2 Save Button */}
             <button
-              onClick={() => handleSaveProfile('Jurisdiction & Tax Settings')}
-              className="w-full bg-indigo-500 hover:bg-indigo-400 active:scale-[0.98] text-white font-black py-3.5 px-4 rounded-2xl text-xs transition-all cursor-pointer shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
+              onClick={() => handleSaveProfile('Country & tax settings')}
+              className="w-full bg-indigo-500 hover:bg-indigo-400 active:scale-[0.98] text-white font-black py-3 px-4 rounded-2xl text-xs transition-all cursor-pointer shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Save Tax & Jurisdiction Settings</span>
+              <span>Save Country & Tax Settings</span>
             </button>
           </div>
         )}
@@ -1029,12 +1022,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </p>
       </div>
 
-      {feedback && (
-        <div className="bg-emerald-50 border border-emerald-500/60 rounded-xl p-3 text-xs text-emerald-700 font-bold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-          <span>{feedback}</span>
-        </div>
-      )}
+      {feedbackToast}
 
       {/* Single Unified Layout Settings Card */}
       <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm divide-y divide-slate-100">
