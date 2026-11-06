@@ -269,7 +269,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
               onChange={(e) => setIncludeExpenses(e.target.checked)}
               className="w-4 h-4 accent-emerald-500 rounded"
             />
-            <span className="font-semibold">☑️ Expense Summary & Ledger</span>
+            <span className="font-semibold">Expense Summary & Ledger</span>
           </label>
 
           <label className="flex items-center gap-2.5 text-slate-800 cursor-pointer">
@@ -279,7 +279,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
               onChange={(e) => setIncludeGst(e.target.checked)}
               className="w-4 h-4 accent-emerald-500 rounded"
             />
-            <span className="font-semibold">☑️ {isIndia ? 'GST Report (ITC Breakdown & Taxes)' : profile.country === 'US' ? 'Sales Tax Report' : 'GST Report (claimable GST)'}</span>
+            <span className="font-semibold">{isIndia ? 'GST Report (ITC Breakdown & Taxes)' : profile.country === 'US' ? 'Sales Tax Report' : 'GST Report (claimable GST)'}</span>
           </label>
 
           <label className="flex items-center gap-2.5 text-slate-800 cursor-pointer">
@@ -289,7 +289,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
               onChange={(e) => setIncludeReceipts(e.target.checked)}
               className="w-4 h-4 accent-emerald-500 rounded"
             />
-            <span className="font-semibold">☑️ Original Receipts (Digitized image vouchers)</span>
+            <span className="font-semibold">Original Receipts (Digitized image vouchers)</span>
           </label>
 
           <label className="flex items-center gap-2.5 text-slate-800 cursor-pointer">
@@ -299,7 +299,7 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
               onChange={(e) => setIncludeVendors(e.target.checked)}
               className="w-4 h-4 accent-emerald-500 rounded"
             />
-            <span className="font-semibold">☑️ {isIndia ? 'Vendor Details & GSTIN Register' : 'Vendor Details & Tax Numbers'}</span>
+            <span className="font-semibold">{isIndia ? 'Vendor Details & GSTIN Register' : 'Vendor Details & Tax Numbers'}</span>
           </label>
         </div>
       </div>
