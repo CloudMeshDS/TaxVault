@@ -273,7 +273,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <div className="px-4 pt-4 space-y-6 pb-28 max-w-xl mx-auto select-none">
       {/* 1. Scan allowance (free plan only; paid plans manage this in Settings) */}
-      {onOpenSubscription && !scanUsage.unlimited && (
+      {onOpenSubscription && scanUsage.period === 'month' && (
         <div
           {...pressable(onOpenSubscription)}
           className="group cursor-pointer bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 transition-colors hover:border-slate-300"

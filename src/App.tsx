@@ -16,7 +16,7 @@ import { storageService, DEFAULT_INDIAN_PROFILE, createCleanUserProfile } from '
 import { supabaseService } from './services/supabaseService';
 import { apiClient } from './services/apiClient';
 import { ExtractedReceiptData, parseReceiptData } from './services/receiptOcr';
-import { SubscriptionService } from './services/subscriptionService';
+import { SubscriptionService, monthlyReceiptLimitFor } from './services/subscriptionService';
 import { devicePermissions } from './services/devicePermissions';
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -897,7 +897,7 @@ export default function App() {
         tier,
         billingCycle,
         status: 'active',
-        monthlyReceiptLimit: tier === 'free' ? 10 : 999999,
+        monthlyReceiptLimit: monthlyReceiptLimitFor(tier),
       },
     };
     setProfile(updated);

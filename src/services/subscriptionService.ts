@@ -1,90 +1,22 @@
 import { SubscriptionTier, UserProfile } from '../types';
+import { FREE_MONTHLY_SCANS, PLANS, PlanInfo, isPaidTier } from '../constants/plans';
 
-export interface PlanFeature {
-  name: string;
-  includedInFree: boolean;
-  includedInPro: boolean;
-  includedInEnterprise: boolean;
-}
+export type SubscriptionPlan = PlanInfo;
 
-export interface SubscriptionPlan {
-  id: SubscriptionTier;
-  name: string;
-  tagline: string;
-  priceMonthly: number;
-  priceAnnual: number;
-  monthlyReceiptLimit: number;
-  badge?: string;
-  features: string[];
-}
-
-export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = {
-  free: {
-    id: 'free',
-    name: 'Starter',
-    tagline: 'Basic personal receipt tracking for individuals',
-    priceMonthly: 0,
-    priceAnnual: 0,
-    monthlyReceiptLimit: 10,
-    features: [
-      'Up to 10 receipts/month',
-      'Basic OCR categorization',
-      'Standard CSV export',
-      'Single base currency tracking',
-      'Local on-device storage',
-    ],
-  },
-  pro: {
-    id: 'pro',
-    name: 'Tax Compliance Pro',
-    tagline: 'Full tax season automation for contractors & small business',
-    priceMonthly: 14.99,
-    priceAnnual: 149.00, // ~17% off
-    monthlyReceiptLimit: Infinity,
-    badge: 'MOST POPULAR',
-    features: [
-      'Unlimited receipts & neural OCR',
-      'Official Chartered Accountant Audit PDF',
-      'Multi-sheet Excel (.xlsx) tax audit pack',
-      'Real-time multi-currency conversion',
-      'Direct CA Reviewer Link & 6-digit PIN sharing',
-      'Cloud backup & sync',
-      'New Zealand IRD & Global compliance rules',
-    ],
-  },
-  enterprise: {
-    id: 'enterprise',
-    name: 'CA Firm & Multi-Entity',
-    tagline: 'For accountants, advisors & multiple businesses',
-    priceMonthly: 39.99,
-    priceAnnual: 399.00,
-    monthlyReceiptLimit: Infinity,
-    badge: 'FOR FIRMS',
-    features: [
-      'Everything in Pro',
-      'Multiple business entities & IRD numbers',
-      'Direct Xero & MYOB API synchronization',
-      'Dedicated Chartered Accountant reviewer channel',
-      'Priority OCR queue & audit log export',
-    ],
-  },
-};
-
-export const COMPARISON_FEATURES: PlanFeature[] = [
-  { name: 'Monthly Receipt Scans', includedInFree: false, includedInPro: true, includedInEnterprise: true }, // Free limited to 10
-  { name: 'Official CA Audit PDF with Sign-Off', includedInFree: false, includedInPro: true, includedInEnterprise: true },
-  { name: 'Multi-Sheet Excel (.xlsx) Tax Pack', includedInFree: false, includedInPro: true, includedInEnterprise: true },
-  { name: 'Direct CA Reviewer Token & Link Share', includedInFree: false, includedInPro: true, includedInEnterprise: true },
-  { name: 'Live Multi-Currency Conversion Engine', includedInFree: false, includedInPro: true, includedInEnterprise: true },
-  { name: 'Cloud Backup & Sync', includedInFree: false, includedInPro: true, includedInEnterprise: true },
-  { name: 'Direct Xero / MYOB API Sync', includedInFree: false, includedInPro: false, includedInEnterprise: true },
-];
+/** Plans as shown in the app. Prices and limits live in src/constants/plans.ts (shared with the server). */
+export const SUBSCRIPTION_PLANS: Record<SubscriptionTier, SubscriptionPlan> = PLANS;
 
 export interface ScanUsage {
   used: number;
   limit: number;
   remaining: number;
-  unlimited: boolean;
+  /** 'month' for the free plan, 'day' (rolling 24 hours) for paid plans */
+  period: 'month' | 'day';
+}
+
+/** Receipt limit stored on the profile for a tier (paid plans are limited per day, not per month). */
+export function monthlyReceiptLimitFor(tier: SubscriptionTier): number {
+  return isPaidTier(tier) ? 999999 : FREE_MONTHLY_SCANS;
 }
 
 export class SubscriptionService {
@@ -109,18 +41,21 @@ export class SubscriptionService {
 
   public static getScanUsage(profile: UserProfile): ScanUsage {
     const sub = profile?.subscription;
-    if (!sub || sub.tier === 'pro' || sub.tier === 'enterprise') {
-      return { used: sub?.receiptsScannedThisMonth || 0, limit: Infinity, remaining: Infinity, unlimited: true };
+    if (sub && isPaidTier(sub.tier)) {
+      const limit = sub.dailyScanLimit || PLANS[sub.tier].dailyScans || 0;
+      const used = sub.scansLast24h || 0;
+      return { used, limit, remaining: Math.max(0, limit - used), period: 'day' };
     }
-    const limit = sub.monthlyReceiptLimit || SUBSCRIPTION_PLANS.free.monthlyReceiptLimit;
-    const used = sub.usagePeriod === SubscriptionService.currentUsagePeriod() ? sub.receiptsScannedThisMonth || 0 : 0;
-    return { used, limit, remaining: Math.max(0, limit - used), unlimited: false };
+    const limit = sub?.monthlyReceiptLimit || FREE_MONTHLY_SCANS;
+    const used = sub?.usagePeriod === SubscriptionService.currentUsagePeriod() ? sub.receiptsScannedThisMonth || 0 : 0;
+    return { used, limit, remaining: Math.max(0, limit - used), period: 'month' };
   }
 
   public static canScanReceipt(profile: UserProfile): { allowed: boolean; remaining: number; limit: number } {
     const usage = SubscriptionService.getScanUsage(profile);
     return {
-      allowed: usage.unlimited || usage.remaining > 0,
+      // Paid daily limits roll over continuously, so the server decides; the app's copy may be stale.
+      allowed: usage.period === 'day' || usage.remaining > 0,
       remaining: usage.remaining,
       limit: usage.limit,
     };

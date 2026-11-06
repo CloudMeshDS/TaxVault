@@ -79,11 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {isFreePlan && <Sparkles className="w-4 h-4" />}
             <span>
-              {profile.subscription?.tier === 'pro'
-                ? 'Pro'
-                : profile.subscription?.tier === 'enterprise'
-                ? 'Enterprise'
-                : 'Upgrade'}
+              {({ pro: 'Pro', business: 'Business', enterprise: 'CA Firm' } as Record<string, string>)[profile.subscription?.tier || ''] || 'Upgrade'}
             </span>
           </button>
         )}

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import type { PaidTier } from '../../constants/plans';
+import { SUBSCRIPTION_PLANS } from '../../services/subscriptionService';
 import {
   X,
   ShieldCheck,
@@ -22,7 +24,7 @@ interface RazorpayCheckoutModalProps {
   onClose: () => void;
   profile: UserProfile;
   planName: string;
-  planTier: 'pro' | 'enterprise';
+  planTier: PaidTier;
   billingCycle: 'monthly' | 'annual';
   amountINR: number;
   onPaymentSuccess: (response: RazorpaySuccessResponse) => void;
@@ -202,7 +204,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                 style={{ color: '#34d399' }}
                 className="text-xs font-semibold mt-0.5 block"
               >
-                Unlimited Receipt OCR & CA Audits
+                {SUBSCRIPTION_PLANS[planTier].dailyScans} AI scans a day & CA audit packs
               </span>
             </div>
             <div className="text-right">

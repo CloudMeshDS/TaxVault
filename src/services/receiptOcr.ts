@@ -1063,7 +1063,7 @@ async function callServerOcr(
         lastServerOcrRefusal =
           body?.code === 'DAILY_SCAN_LIMIT'
             ? `${body.error} Enter the details below for now.`
-            : `${body?.error || 'You have used all free AI scans for this month.'} Enter the details below, or upgrade for unlimited scans.`;
+            : `${body?.error || 'You have used all free AI scans for this month.'} Enter the details below, or choose a paid plan for daily scans.`;
       }
       return null;
     }

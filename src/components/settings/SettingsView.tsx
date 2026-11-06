@@ -24,7 +24,7 @@ import {
 import { BusinessEntityType, SupportedCountry, UserProfile } from '../../types';
 import { storageService } from '../../services/storageService';
 import { apiClient } from '../../services/apiClient';
-import { SubscriptionService } from '../../services/subscriptionService';
+import { SUBSCRIPTION_PLANS, SubscriptionService } from '../../services/subscriptionService';
 import { fiscalYearBounds, fiscalYearOptions, fiscalYearRangeLabel, normalizeFiscalYear } from '../../services/fiscalYear';
 import { GoogleIcon, AppleIcon } from '../auth/AuthModal';
 import { getGeminiApiKey } from '../../services/receiptOcr';
@@ -169,6 +169,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onSelectSection?.(s);
   };
   const scanUsage = SubscriptionService.getScanUsage(profile);
+  const currentPlan = SUBSCRIPTION_PLANS[profile.subscription?.tier || 'free'] || SUBSCRIPTION_PLANS.free;
+  const isPaidPlan = currentPlan.id !== 'free';
+  const scanUsageLabel = scanUsage.period === 'day'
+    ? `${scanUsage.limit} AI scans per day`
+    : `${scanUsage.used} / ${scanUsage.limit} scans used this month`;
 
   // Form Fields State
   const [country, setCountry] = useState<SupportedCountry>(profile.country || 'NZ');
@@ -476,67 +481,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </span>
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
-                    profile.subscription?.tier === 'pro'
-                      ? 'bg-amber-50 border-amber-500/50 text-amber-700'
-                      : profile.subscription?.tier === 'enterprise'
-                      ? 'bg-purple-50 border-purple-500/50 text-purple-700'
-                      : 'bg-slate-100 border-slate-300 text-slate-700'
+                    isPaidPlan ? 'bg-amber-50 border-amber-500/50 text-amber-700' : 'bg-slate-100 border-slate-300 text-slate-700'
                   }`}
                 >
-                  {profile.subscription?.tier === 'pro'
-                    ? '👑 Pro Tier Active'
-                    : profile.subscription?.tier === 'enterprise'
-                    ? '🏢 Enterprise Tier Active'
-                    : 'Starter Plan (Free)'}
+                  {currentPlan.name}
                 </span>
               </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Monthly Scan Quota</span>
-                  <span className="text-white font-mono font-bold">
-                    {profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise' ? (
-                      <span className="text-emerald-700">Unlimited Neural OCR Scans</span>
-                    ) : (
-                      <span>{scanUsage.used} / {scanUsage.limit} receipts used</span>
-                    )}
-                  </span>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-slate-500 font-medium">AI receipt scans</span>
+                  <span className="text-slate-900 font-bold">{scanUsageLabel}</span>
                 </div>
 
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise'
-                        ? 'w-full bg-brand hover:bg-brand-strong'
-                        : 'bg-amber-500'
-                    }`}
-                    style={{
-                      width:
-                        profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise'
-                          ? '100%'
-                          : `${Math.min(100, (scanUsage.used / (scanUsage.limit || 1)) * 100)}%`,
-                    }}
-                  />
-                </div>
+                {scanUsage.period === 'month' && (
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 bg-amber-500"
+                      style={{ width: `${Math.min(100, (scanUsage.used / (scanUsage.limit || 1)) * 100)}%` }}
+                    />
+                  </div>
+                )}
 
-                <div className="grid grid-cols-2 gap-2 pt-1 text-xs text-slate-700">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-700">✓</span>
-                    <span>Official Tax Audit PDF</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-700">✓</span>
-                    <span>4-Sheet Excel Export</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-700">✓</span>
-                    <span>Multi-Currency Engine</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-emerald-700">✓</span>
-                    <span>Cloud Backup Vault</span>
-                  </div>
-                </div>
+                <ul className="space-y-1.5 pt-1 text-xs text-slate-700">
+                  {currentPlan.features.slice(1).map((feature) => (
+                    <li key={feature} className="flex items-center gap-1.5">
+                      <span className="text-emerald-700" aria-hidden="true">✓</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* Plan & Scan Quota Simulator (development builds only: it bypasses billing) */}
@@ -545,7 +519,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
                   <span>Plan & Scan Quota Status</span>
                   <span className="text-emerald-700 font-mono">
-                    {profile.subscription?.tier === 'free' ? `${profile.subscription?.receiptsScannedThisMonth || 0}/10 Used` : 'Unlimited Pro'}
+                    {scanUsageLabel}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -624,9 +598,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 >
                   <Sparkles className="w-4 h-4 fill-slate-50" />
                   <span>
-                    {profile.subscription?.tier === 'pro' || profile.subscription?.tier === 'enterprise'
-                      ? 'Change Plan / View Billing Options'
-                      : 'Upgrade to Tax Compliance Pro (Unlock All Features)'}
+                    {isPaidPlan
+                      ? 'Change plan'
+                      : 'See paid plans'}
                   </span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -1044,11 +1018,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span className="text-slate-600 font-medium">{businessName || fullName || 'TaxVault Business'}</span>
                 <span>·</span>
                 <span className="text-emerald-700 font-bold">
-                  {profile.subscription?.tier === 'pro'
-                    ? '👑 Compliance Pro'
-                    : profile.subscription?.tier === 'enterprise'
-                    ? '🏢 Enterprise Firm'
-                    : 'Free Starter'}
+                  {currentPlan.name}
                 </span>
               </div>
             </div>
@@ -1099,28 +1069,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Subscription & Plan Limits
               </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                {profile.subscription?.tier === 'pro'
-                  ? 'Compliance Pro · Unlimited Scans'
-                  : profile.subscription?.tier === 'enterprise'
-                  ? 'CA Firm · Multi-Entity'
-                  : `Starter · ${scanUsage.used}/${scanUsage.limit} used`}
+                {currentPlan.name} · {scanUsageLabel}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span
               className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
-                profile.subscription?.tier === 'pro'
-                  ? 'bg-amber-50 border-amber-300 text-amber-800'
-                  : profile.subscription?.tier === 'enterprise'
-                  ? 'bg-purple-50 border-purple-300 text-purple-800'
-                  : 'bg-amber-50 border-amber-200 text-amber-700'
+                isPaidPlan ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-amber-50 border-amber-200 text-amber-700'
               }`}
             >
-              {profile.subscription?.tier === 'pro' ? (
-                '👑 Pro'
-              ) : profile.subscription?.tier === 'enterprise' ? (
-                '🏢 Firm'
+              {isPaidPlan ? (
+                'Paid'
               ) : (
                 <>
                   <Zap className="w-3 h-3 text-amber-700 fill-current" />

@@ -102,7 +102,7 @@ export const COUNTRY_TERMS: Record<SupportedCountry, CountryTermsData> = {
         summary: 'Transparent usage limits, monthly allowances, and flexible cancellation rules.',
         highlights: [
           'Free tier includes 10 receipt scans each calendar month.',
-          'Pro tier grants unlimited receipt scans, multi-currency exports, and CA audit exports.',
+          'Paid plans include 10, 20 or 100 AI receipt scans in any 24 hours, plus CA audit exports.',
           'You may cancel subscriptions anytime; access continues through the paid billing cycle.',
         ],
         content: [

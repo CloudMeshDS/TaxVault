@@ -525,22 +525,31 @@ INSERT INTO public.subscription_plans (
   'FREE FOREVER', 1
 ),
 (
-  'pro', 'tax_compliance_pro', 'Tax Compliance Pro', 'Full tax season automation',
-  'Unlimited neural OCR scans, Chartered Accountant audit packs, and multi-currency tools.', 'monthly',
-  1199.00, 14.99, 24.99, 22.99, 19.99,
-  11999.00, 149.00, 249.00, 229.00, 199.00,
+  'pro', 'tax_compliance_pro', 'Tax Compliance Pro', 'For freelancers and sole traders',
+  '10 AI receipt scans per day, CA audit packs and cloud backup.', 'monthly',
+  465.00, 0, 0, 0, 0,
+  4650.00, 0, 0, 0, 0,
   -1, 2000000, 1000, -1,
-  '["Unlimited receipt scans & neural OCR", "Chartered Accountant Audit PDF", "Multi-sheet Excel (.xlsx) pack", "CA Reviewer Link sharing", "Multi-currency spot rates", "Cloud Backup & Sync"]'::jsonb,
-  'MOST POPULAR', 2
+  '["10 AI receipt scans per day", "CA audit PDF, with receipt photos", "Multi-sheet Excel tax workbook", "Accountant share link & audit ZIP pack", "Cloud backup & sync across devices"]'::jsonb,
+  'Most popular', 2
 ),
 (
-  'enterprise', 'firm_multi_entity', 'CA Firm & Multi-Entity', 'For practices & multi-entity teams',
-  'For tax professionals managing multiple clients and trading entities with API sync.', 'monthly',
-  3199.00, 39.99, 64.99, 59.99, 54.99,
-  31999.00, 399.00, 649.00, 599.00, 549.00,
+  'business', 'business_daily_20', 'Business', 'For busy small businesses',
+  '20 AI receipt scans per day, CA audit packs and cloud backup.', 'monthly',
+  699.00, 0, 0, 0, 0,
+  6990.00, 0, 0, 0, 0,
+  -1, 4000000, 2000, -1,
+  '["20 AI receipt scans per day", "CA audit PDF, with receipt photos", "Multi-sheet Excel tax workbook", "Accountant share link & audit ZIP pack", "Cloud backup & sync across devices"]'::jsonb,
+  NULL, 3
+),
+(
+  'enterprise', 'firm_multi_entity', 'CA Firm & Multi-Entity', 'For accountants and high-volume teams',
+  '100 AI receipt scans per day, CA audit packs and cloud backup.', 'monthly',
+  1499.00, 0, 0, 0, 0,
+  14990.00, 0, 0, 0, 0,
   -1, 10000000, 10000, -1,
-  '["Everything in Pro", "Multiple trading entities & tax IDs", "Direct Xero & MYOB API sync", "Dedicated CA channel", "Priority OCR queue", "Audit log export"]'::jsonb,
-  'FOR FIRMS', 3
+  '["100 AI receipt scans per day", "CA audit PDF, with receipt photos", "Multi-sheet Excel tax workbook", "Accountant share link & audit ZIP pack", "Cloud backup & sync across devices"]'::jsonb,
+  NULL, 4
 )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name, tagline = EXCLUDED.tagline, description = EXCLUDED.description,

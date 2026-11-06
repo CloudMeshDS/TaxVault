@@ -78,7 +78,7 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
 
           <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5">
             <span>Free Tier: 10/month</span>
-            <span className="text-emerald-700 font-medium">Pro Tier: Unlimited</span>
+            <span className="text-emerald-700 font-medium">Paid plans: 10–100 a day</span>
           </div>
         </div>
 
@@ -98,13 +98,13 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
               </div>
               <div>
                 <div className="text-sm font-black leading-tight flex items-center gap-1.5">
-                  <span>Upgrade to Pro Version</span>
+                  <span>See paid plans</span>
                   <span className="text-xs uppercase px-1.5 py-0.2 rounded bg-slate-50 text-emerald-700 font-extrabold">
-                    Unlimited
+                    Daily scans
                   </span>
                 </div>
                 <div className="text-xs font-semibold text-on-fill/80 mt-0.5">
-                  Unlimited AI scans & CA tax audit packs
+                  From ₹465/month · 10 AI scans a day & CA audit packs
                 </div>
               </div>
             </div>

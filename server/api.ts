@@ -13,6 +13,7 @@ import nodemailer from 'nodemailer';
 import { COUNTRY_TERMS } from '../src/constants/countryTerms';
 import { ExportService } from '../src/services/exportService';
 import { currentFiscalYear, currentFiscalYearEnding } from '../src/services/fiscalYear';
+import { PLANS, PaidTier, isPaidTier, FREE_MONTHLY_SCANS as PLAN_FREE_MONTHLY_SCANS } from '../src/constants/plans';
 
 // Verified Supabase user attached to the request by the requireUser / optionalUser middleware
 type AuthUser = { id: string; email: string };
@@ -1931,12 +1932,12 @@ export function createApi(): express.Express {
   // Plan tier and scan counts live in customer_subscriptions / customer_usage, which clients can
   // read but not write (RLS). profiles.subscription and the app's local profile are display
   // copies only and are never trusted.
-  const FREE_MONTHLY_SCANS = 10;
-  // Tax Compliance Pro: AI scans allowed in any rolling 24 hours (Enterprise is unlimited)
-  const PRO_DAILY_SCANS = 10;
-  const PAID_PLAN_PRICES_INR: Record<'pro' | 'enterprise', { monthly: number; annual: number }> = {
-    pro: { monthly: 1199, annual: 11999 },
-    enterprise: { monthly: 3199, annual: 31999 },
+  // Prices and scan limits come from src/constants/plans.ts (shared with the app)
+  const FREE_MONTHLY_SCANS = PLAN_FREE_MONTHLY_SCANS;
+  const PAID_PLAN_PRICES_INR: Record<PaidTier, { monthly: number; annual: number }> = {
+    pro: PLANS.pro.priceINR,
+    business: PLANS.business.priceINR,
+    enterprise: PLANS.enterprise.priceINR,
   };
   // Without RAZORPAY_KEY_SECRET payments cannot be verified. Simulated upgrades are then only
   // accepted when explicitly enabled (local testing), never by default.
@@ -1949,7 +1950,7 @@ export function createApi(): express.Express {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
   };
   type Entitlement = {
-    tier: 'free' | 'pro' | 'enterprise';
+    tier: 'free' | PaidTier;
     billingCycle: 'monthly' | 'annual';
     status: string;
     periodEnd: string | null;
@@ -1966,7 +1967,7 @@ export function createApi(): express.Express {
         .eq('period_start', currentPeriodStart()).maybeSingle(),
     ]);
     const paidActive = sub
-      && (sub.plan_id === 'pro' || sub.plan_id === 'enterprise')
+      && isPaidTier(sub.plan_id)
       && ['active', 'trial'].includes(sub.status)
       && (!sub.current_period_end || new Date(sub.current_period_end).getTime() > Date.now());
     if (paidActive) {
@@ -1976,7 +1977,7 @@ export function createApi(): express.Express {
       ent.periodEnd = sub.current_period_end || null;
     }
     ent.scansUsed = Number(usage?.scans_used || 0);
-    if (ent.tier === 'pro') {
+    if (ent.tier !== 'free') {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { count } = await supabaseAdmin!.from('token_request_logs').select('id', { count: 'exact', head: true })
         .eq('user_id', userId).eq('request_type', 'receipt_ocr').eq('status', 'success').gte('created_at', since);
@@ -1991,6 +1992,8 @@ export function createApi(): express.Express {
     status: ent.status,
     receiptsScannedThisMonth: ent.scansUsed,
     monthlyReceiptLimit: ent.tier === 'free' ? FREE_MONTHLY_SCANS : 999999,
+    dailyScanLimit: PLANS[ent.tier].dailyScans ?? undefined,
+    scansLast24h: ent.scansLast24h,
     usagePeriod: currentPeriodStart().slice(0, 7),
     renewsOn: ent.periodEnd ? ent.periodEnd.slice(0, 10) : undefined,
   });
@@ -2015,7 +2018,7 @@ export function createApi(): express.Express {
   };
   const activatePlan = async (
     userId: string,
-    tier: 'free' | 'pro' | 'enterprise',
+    tier: 'free' | PaidTier,
     billingCycle: 'monthly' | 'annual',
     payment: { gateway: string; amount: number; orderId?: string; paymentId?: string; signature?: string },
   ) => {
@@ -2803,9 +2806,10 @@ export function createApi(): express.Express {
           subscription: toProfileSubscription(ent),
         });
       }
-      if (ent.tier === 'pro' && ent.scansLast24h >= PRO_DAILY_SCANS) {
+      const dailyLimit = PLANS[ent.tier].dailyScans;
+      if (ent.tier !== 'free' && dailyLimit && ent.scansLast24h >= dailyLimit) {
         return res.status(402).json({
-          error: `You have used your ${PRO_DAILY_SCANS} AI scans for the last 24 hours. More become available as earlier scans pass 24 hours.`,
+          error: `You have used your ${dailyLimit} AI scans for the last 24 hours. More become available as earlier scans pass 24 hours.`,
           code: 'DAILY_SCAN_LIMIT',
           subscription: toProfileSubscription(ent),
         });
@@ -3087,7 +3091,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
   // with the buyer's user id and plan so the payment can only activate that plan for that user.
   app.post('/api/razorpay/create-order', requireUser, async (req, res) => {
     try {
-      const tier = req.body?.tier === 'enterprise' ? 'enterprise' : 'pro';
+      const tier: PaidTier = isPaidTier(req.body?.tier) ? req.body.tier : 'pro';
       const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
       const amount = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100; // paise
       const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
@@ -3169,7 +3173,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         if (!simulatedPaymentsAllowed()) {
           return res.status(503).json({ verified: false, error: 'Payments are not configured on the server.' });
         }
-        const tier = req.body?.tier === 'enterprise' ? 'enterprise' : 'pro';
+        const tier: PaidTier = isPaidTier(req.body?.tier) ? req.body.tier : 'pro';
         const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
         const ent = await activatePlan(userId, tier, billingCycle, {
           gateway: 'simulated',
@@ -3197,7 +3201,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         headers: { Authorization: `Basic ${auth}` },
       });
       const order: any = await orderRes.json();
-      const tier = order?.notes?.tier === 'enterprise' ? 'enterprise' : order?.notes?.tier === 'pro' ? 'pro' : null;
+      const tier: PaidTier | null = isPaidTier(order?.notes?.tier) ? order.notes.tier : null;
       const billingCycle = order?.notes?.billing_cycle === 'annual' ? 'annual' : 'monthly';
       if (!orderRes.ok || order?.notes?.user_id !== userId || !tier) {
         return res.status(403).json({ verified: false, error: 'This payment does not belong to your account.' });
