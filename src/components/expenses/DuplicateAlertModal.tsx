@@ -21,7 +21,7 @@ export const DuplicateAlertModal: React.FC<DuplicateAlertModalProps> = ({
   if (!isOpen || !existingExpense || !newExpenseCandidate) return null;
 
   return (
-    <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
       <div className="bg-white border-2 border-amber-500/50 rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-white modal-enter-animation">
         {/* Warning Icon & Title */}
         <div className="text-center space-y-2">

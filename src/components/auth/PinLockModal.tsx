@@ -45,7 +45,7 @@ export const PinLockModal: React.FC<PinLockModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-90 bg-slate-50 flex flex-col justify-between p-6 select-none animate-in fade-in">
+    <div className="fixed inset-0 z-90 bg-slate-50 flex flex-col justify-between p-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] select-none animate-in fade-in">
       {/* Top Branding */}
       <div className="text-center pt-8 space-y-2">
         <div className="w-16 h-16 rounded-3xl bg-brand mx-auto flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-emerald-500/20 ring-4 ring-emerald-500/20">

@@ -1278,7 +1278,7 @@ export default function App() {
 
       {/* MODAL 12: Direct Camera Capture AI Processing Overlay */}
       {isProcessingReceipt && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 select-none modal-backdrop-animation">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl border border-slate-200/80 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="relative w-16 h-16 mx-auto">
               <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 animate-ping" />

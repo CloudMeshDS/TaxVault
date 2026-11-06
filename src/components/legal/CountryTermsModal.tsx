@@ -149,7 +149,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="country-terms-title"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 overflow-y-auto animate-in fade-in duration-200"
     >
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col max-h-[92vh] overflow-hidden my-auto">
         {/* --- HEADER --- */}
