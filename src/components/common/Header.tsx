@@ -3,6 +3,7 @@ import { Sparkles, User } from 'lucide-react';
 import { UserProfile } from '../../types';
 import { TAX_CONFIGS } from '../../services/taxRules';
 import { NavigationTab } from './BottomNav';
+import { currentFiscalYear, normalizeFiscalYear } from '../../services/fiscalYear';
 
 interface HeaderProps {
   profile: UserProfile;
@@ -60,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="min-w-0">
             <div className="text-[0.9375rem] font-semibold leading-tight truncate">{displayName}</div>
             <div className="text-xs text-slate-500 truncate">
-              <span aria-hidden="true">{flag}</span> {currencyCode} · {profile.financialYear || 'FY 2026-27'}
+              <span aria-hidden="true">{flag}</span> {currencyCode} · {normalizeFiscalYear(profile.financialYear || currentFiscalYear(profile.country), profile.country)}
             </div>
           </div>
         </div>

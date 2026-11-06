@@ -6,6 +6,7 @@ import {
   SupportedCountry,
   TaxCalculationResult,
 } from '../types';
+import { parseFiscalYearStart } from './fiscalYear';
 
 export const NZ_TAX_CONFIG: CountryTaxConfig = {
   countryCode: 'NZ',
@@ -652,12 +653,8 @@ export function getQuarterBounds(
   fyOrYear: string | number,
   country: SupportedCountry
 ): QuarterInfo {
-  let startYear = 2026;
-  if (typeof fyOrYear === 'number') {
-    startYear = fyOrYear;
-  } else {
-    startYear = parseInt(fyOrYear.replace(/[^0-9]/g, '').slice(0, 4), 10) || 2026;
-  }
+  // Falls back to the current financial year when no year can be read from the label
+  const startYear = parseFiscalYearStart(fyOrYear, country);
   const endYear = startYear + 1;
 
   if (country === 'AU') {

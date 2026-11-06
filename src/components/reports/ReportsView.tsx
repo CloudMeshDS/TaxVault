@@ -41,6 +41,7 @@ import {
 } from '../../services/periodFilterService';
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { toUserMessage } from '../../services/userMessages';
+import { currentFiscalYear } from '../../services/fiscalYear';
 
 interface ReportsViewProps {
   profile: UserProfile;
@@ -87,7 +88,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       ? periodFilter.selectedFY
       : periodFilter.mode === 'quarter'
       ? periodFilter.selectedQuarterFY
-      : profile.financialYear || 'FY 2026-27';
+      : profile.financialYear || currentFiscalYear(profile.country);
 
   const quarterInfos = useMemo(() => {
     return getAllQuartersForFY(selectedFY, profile.country);

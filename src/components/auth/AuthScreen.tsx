@@ -31,6 +31,7 @@ import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
 import { toUserMessage } from '../../services/userMessages';
+import { currentFiscalYear, currentFiscalYearEnding } from '../../services/fiscalYear';
 
 interface AuthScreenProps {
   onAuthenticated: (profile?: Partial<UserProfile>) => void;
@@ -313,6 +314,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
         fullName: signupFullName.trim() || cleanEmail.split('@')[0],
         businessName: signupBusinessName.trim() || `${signupFullName.trim() || 'My'} Business`,
         country: signupCountry,
+        financialYear: currentFiscalYear(signupCountry),
+        financialYearEnding: currentFiscalYearEnding(signupCountry),
         email: cleanEmail,
         // Nothing personal is inherited from the sample profile for this country
         phone: '',

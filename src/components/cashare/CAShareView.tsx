@@ -19,6 +19,7 @@ import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../../types';
 import { TAX_CONFIGS } from '../../services/taxRules';
 import { ExportClient, ProExportResult } from '../../services/exportClient';
 import { toUserMessage } from '../../services/userMessages';
+import { currentFiscalYear, fiscalYearOptions, normalizeFiscalYear } from '../../services/fiscalYear';
 
 interface CAShareViewProps {
   profile: UserProfile;
@@ -37,7 +38,9 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
   onSelectExpense,
   onOpenSubscription,
 }) => {
-  const [selectedFY, setSelectedFY] = useState(profile.financialYear || 'FY 2026-27');
+  const [selectedFY, setSelectedFY] = useState(() =>
+    profile.financialYear ? normalizeFiscalYear(profile.financialYear, profile.country) : currentFiscalYear(profile.country)
+  );
   const [selectedPeriod, setSelectedPeriod] = useState('Full Year');
   const isIndia = profile.country === 'IN';
   // Quarters follow the country's financial year (NZ/IN start in April, AU in July, CA/US in January)
@@ -241,8 +244,11 @@ export const CAShareView: React.FC<CAShareViewProps> = ({
               onChange={(e) => setSelectedFY(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-white font-mono"
             >
-              <option value="FY 2026-27">FY 2026-27</option>
-              <option value="FY 2025-26">FY 2025-26</option>
+              {Array.from(new Set([...fiscalYearOptions(profile.country, 3), selectedFY])).map((fy) => (
+                <option key={fy} value={fy}>
+                  {fy}
+                </option>
+              ))}
             </select>
           </div>
 

@@ -31,6 +31,14 @@ import {
   getCurrentFiscalQuarter,
   calculateQuarterlyBreakdown,
 } from '../../services/taxRules';
+import {
+  currentFiscalYear,
+  fiscalYearBounds,
+  fiscalYearOptions,
+  fiscalYearRangeLabel,
+  normalizeFiscalYear,
+  recentYears,
+} from '../../services/fiscalYear';
 import { SubscriptionService } from '../../services/subscriptionService';
 import { pressable } from '../../utils/a11y';
 import { formatDisplayDate } from '../../utils/format';
@@ -69,26 +77,8 @@ const MONTHS_LIST = [
   { value: 12, label: 'December' },
 ];
 
-const AVAILABLE_YEARS = [2027, 2026, 2025, 2024, 2023];
-const AVAILABLE_FYS = ['FY 2026-27', 'FY 2025-26', 'FY 2024-25'];
-
-function getFYBounds(fy: string, country: SupportedCountry): { start: string; end: string } {
-  const startYear = parseInt(fy.replace(/[^0-9]/g, '').slice(0, 4), 10) || 2026;
-  const endYear = startYear + 1;
-
-  if (country === 'AU') {
-    return {
-      start: `${startYear}-07-01`,
-      end: `${endYear}-06-30`,
-    };
-  }
-
-  // NZ, IN, CA default: 1 April to 31 March
-  return {
-    start: `${startYear}-04-01`,
-    end: `${endYear}-03-31`,
-  };
-}
+// Year lists and financial-year ranges follow today's date and each country's tax year
+const getFYBounds = (fy: string, country: SupportedCountry) => fiscalYearBounds(fy, country);
 
 function getCYBounds(year: number): { start: string; end: string } {
   return {
@@ -149,8 +139,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   });
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [selectedQuarter, setSelectedQuarter] = useState<FiscalQuarter>(() => getCurrentFiscalQuarter(profile.country));
-  const [selectedQuarterFY, setSelectedQuarterFY] = useState<string>(profile.financialYear || 'FY 2026-27');
-  const [selectedFY, setSelectedFY] = useState<string>(profile.financialYear || 'FY 2026-27');
+  const [selectedQuarterFY, setSelectedQuarterFY] = useState<string>(() =>
+    profile.financialYear ? normalizeFiscalYear(profile.financialYear, profile.country) : currentFiscalYear(profile.country)
+  );
+  const [selectedFY, setSelectedFY] = useState<string>(() =>
+    profile.financialYear ? normalizeFiscalYear(profile.financialYear, profile.country) : currentFiscalYear(profile.country)
+  );
   const [selectedCY, setSelectedCY] = useState<number>(() => new Date().getFullYear());
   const [customStartDate, setCustomStartDate] = useState<string>(() => {
     const d = new Date();
@@ -492,7 +486,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       onChange={(e) => setSelectedYear(Number(e.target.value))}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
-                      {AVAILABLE_YEARS.map((y) => (
+                      {recentYears(5).map((y) => (
                         <option key={y} value={y}>
                           {y}
                         </option>
@@ -513,7 +507,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         onChange={(e) => setSelectedQuarterFY(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                       >
-                        {AVAILABLE_FYS.map((fy) => (
+                        {fiscalYearOptions(profile.country, 3).map((fy) => (
                           <option key={fy} value={fy}>
                             {fy}
                           </option>
@@ -582,7 +576,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Select Financial Year ({profile.country} Rules)</span>
                     <span className="text-emerald-700 font-mono">
-                      {profile.country === 'AU' ? '1 Jul – 30 Jun' : '1 Apr – 31 Mar'}
+                      {fiscalYearRangeLabel(profile.country)}
                     </span>
                   </div>
                   <select
@@ -590,9 +584,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     onChange={(e) => setSelectedFY(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
-                    {AVAILABLE_FYS.map((fy) => (
+                    {fiscalYearOptions(profile.country, 3).map((fy) => (
                       <option key={fy} value={fy}>
-                        {fy} ({profile.country === 'AU' ? '1 Jul – 30 Jun' : '1 Apr – 31 Mar'})
+                        {fy} ({fiscalYearRangeLabel(profile.country)})
                       </option>
                     ))}
                   </select>
@@ -611,7 +605,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     onChange={(e) => setSelectedCY(Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
-                    {AVAILABLE_YEARS.map((y) => (
+                    {recentYears(5).map((y) => (
                       <option key={y} value={y}>
                         Calendar Year {y} (1 Jan {y} – 31 Dec {y})
                       </option>

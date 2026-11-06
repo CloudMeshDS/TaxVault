@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { ExpenseRecord, TaxCalculationResult, UserProfile } from '../types';
 import { formatCurrency, formatINR, TAX_CONFIGS, calculateQuarterlyBreakdown } from './taxRules';
+import { currentFiscalYear } from './fiscalYear';
 
 /**
  * PDF / Excel / CA zip generators for the Pro exports. Server-only: imported by server.ts for
@@ -310,7 +311,7 @@ export class ExportService {
 
     // Sheet 5: Quarterly Summary
     try {
-      const quarterly = calculateQuarterlyBreakdown(expenses, profile?.financialYear || 'FY 2026-27', country);
+      const quarterly = calculateQuarterlyBreakdown(expenses, profile?.financialYear || currentFiscalYear(country), country);
       const quarterRows = quarterly.quarters.map(q => ({
         'Quarter': q.quarter,
         'Date Range': `${q.info.start} to ${q.info.end}`,
