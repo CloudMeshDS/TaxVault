@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "orbitsys",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/2026/Extra/orbitsys-website", "run", "dev", "--", "-p", "3100"],
+      "port": 3100
     }
   ]
 }

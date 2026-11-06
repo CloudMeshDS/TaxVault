@@ -17,13 +17,12 @@ import {
   Camera,
   Activity,
   Cpu,
-  Database,
   Zap,
   LogOut,
   Scale,
 } from 'lucide-react';
 import { BusinessEntityType, SupportedCountry, UserProfile } from '../../types';
-import { storageService, DEFAULT_PROFILES } from '../../services/storageService';
+import { storageService } from '../../services/storageService';
 import { apiClient } from '../../services/apiClient';
 import { SubscriptionService } from '../../services/subscriptionService';
 import { GoogleIcon, AppleIcon } from '../auth/AuthModal';
@@ -31,6 +30,8 @@ import { getGeminiApiKey } from '../../services/receiptOcr';
 import { GeminiApiKeyModal } from '../common/GeminiApiKeyModal';
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { pressable } from '../../utils/a11y';
+import { saveFile } from '../../utils/saveFile';
+import { toUserMessage } from '../../services/userMessages';
 
 // Feature flag: Hide Google & Apple buttons (keep implementation intact)
 const SHOW_OAUTH_PROVIDERS = false;
@@ -143,7 +144,6 @@ interface SettingsViewProps {
   activeSection?: SettingSectionId | null;
   onSelectSection?: (section: SettingSectionId | null) => void;
   onOpenActivityLogs?: (tab?: 'activity' | 'usage') => void;
-  onOpenSupabaseSql?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -159,7 +159,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   activeSection: propActiveSection,
   onSelectSection,
   onOpenActivityLogs,
-  onOpenSupabaseSql,
 }) => {
   // Navigation State: null means Stage 1 (Settings List), string means Stage 2 (Detail View)
   const [internalSection, setInternalSection] = useState<SettingSectionId | null>(null);
@@ -181,7 +180,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [secondaryTaxId, setSecondaryTaxId] = useState(profile.secondaryTaxId || profile.gstin || '');
   const [financialYear, setFinancialYear] = useState(profile.financialYear || COUNTRY_CONFIGS[profile.country || 'NZ'].fiscalYears[0]);
   const [biometricLock, setBiometricLock] = useState(profile.biometricLock);
-  const [appPin, setAppPin] = useState(profile.appPin || '1234');
+  // No default PIN: the user must choose one before the lock can be turned on
+  // Reuse the stored PIN only while the lock is on; older profiles carry a placeholder '1234'
+  // that was never chosen by the user.
+  const [appPin, setAppPin] = useState(
+    profile.biometricLock && /^\d{4}$/.test(profile.appPin || '') ? profile.appPin! : ''
+  );
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(Boolean(getGeminiApiKey()));
 
@@ -198,7 +202,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setDeleteAccountError(null);
     const result = await onDeleteAccount();
     setIsDeletingAccount(false);
-    if (!result.success) setDeleteAccountError(result.error || 'Could not delete your account. Please try again.');
+    if (!result.success) setDeleteAccountError(toUserMessage(result.error, 'Could not delete your account. Please try again.'));
   };
 
   const handleCountryChange = (c: SupportedCountry) => {
@@ -208,11 +212,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (!cfg.entityTypes.includes(businessType)) {
       setBusinessType(cfg.entityTypes[0]);
     }
-    const defProf = DEFAULT_PROFILES[c];
-    if (defProf) {
-      setTaxId(defProf.taxId);
-      setSecondaryTaxId(defProf.secondaryTaxId || '');
-    }
+    // Tax IDs belong to one country: restore the saved ones when switching back, otherwise
+    // start blank. (Never fill in the sample profiles' placeholder numbers.)
+    const isSavedCountry = c === profile.country;
+    setTaxId(isSavedCountry ? profile.taxId || profile.pan || '' : '');
+    setSecondaryTaxId(isSavedCountry ? profile.secondaryTaxId || profile.gstin || '' : '');
   };
 
   const handleSeedForCountry = async (c: SupportedCountry) => {
@@ -220,14 +224,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     try {
       const res = await apiClient.seedCountryData(c);
       if (res.profile) {
-        onUpdateProfile(res.profile);
-        setCountry(res.profile.country);
-        setFullName(res.profile.fullName);
-        setBusinessName(res.profile.businessName);
-        setBusinessType(res.profile.businessType);
-        setTaxId(res.profile.taxId);
-        setSecondaryTaxId(res.profile.secondaryTaxId || '');
-        setFinancialYear(res.profile.financialYear);
+        // Sample data adds example expenses only. Keep the user's own name, business, contact
+        // details and tax IDs; switch just the country-specific settings.
+        const cfg = COUNTRY_CONFIGS[c];
+        const sameCountry = c === profile.country;
+        const updated: UserProfile = {
+          ...profile,
+          country: c,
+          defaultCurrency: cfg.currency,
+          currencySymbol: cfg.symbol,
+          taxAuthority: cfg.authority,
+          financialYear: sameCountry ? profile.financialYear : cfg.fiscalYears[0],
+          taxId: sameCountry ? profile.taxId : '',
+          secondaryTaxId: sameCountry ? profile.secondaryTaxId : '',
+          pan: c === 'IN' && sameCountry ? profile.pan : '',
+          gstin: c === 'IN' && sameCountry ? profile.gstin : '',
+        };
+        onUpdateProfile(updated);
+        setCountry(c);
+        setTaxId(updated.taxId || '');
+        setSecondaryTaxId(updated.secondaryTaxId || '');
+        setFinancialYear(updated.financialYear || cfg.fiscalYears[0]);
       }
       setFeedback(`Loaded realistic sample vouchers for ${COUNTRY_CONFIGS[c].name}!`);
       setTimeout(() => setFeedback(null), 3500);
@@ -237,6 +254,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleSaveProfile = (sectionName?: string) => {
+    if (biometricLock && !/^\d{4}$/.test(appPin)) {
+      setFeedback('Choose a 4-digit PIN to turn on the app lock.');
+      setTimeout(() => setFeedback(null), 3500);
+      return;
+    }
     const cfg = COUNTRY_CONFIGS[country];
     const updated: UserProfile = {
       ...profile,
@@ -251,8 +273,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       taxAuthority: cfg.authority,
       taxId: taxId.toUpperCase(),
       secondaryTaxId: secondaryTaxId.toUpperCase(),
-      pan: country === 'IN' ? taxId.toUpperCase() : (profile.pan || taxId.toUpperCase()),
-      gstin: country === 'IN' ? secondaryTaxId.toUpperCase() : (profile.gstin || secondaryTaxId.toUpperCase()),
+      // PAN and GSTIN are Indian registrations only
+      pan: country === 'IN' ? taxId.toUpperCase() : '',
+      gstin: country === 'IN' ? secondaryTaxId.toUpperCase() : '',
       financialYear,
       biometricLock,
       appPin,
@@ -269,14 +292,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: 'application/json',
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TaxVault_Backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    saveFile(blob, `TaxVault_Backup_${new Date().toISOString().split('T')[0]}.json`).catch((err) => console.warn('Backup export failed:', err));
     setFeedback('Backup file exported!');
     setTimeout(() => setFeedback(null), 3000);
   };
@@ -743,7 +759,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onClick={() => setShowTermsModal(true)}
                   className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-strong text-white text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
                 >
-                  View Terms (Database)
+                  View Terms
                 </button>
               </div>
             </div>
@@ -771,9 +787,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-bold text-white">Biometric / App Lock</div>
+                    <div className="font-bold text-white">PIN Lock</div>
                     <div className="text-xs text-slate-500">
-                      Require Face ID, Fingerprint or PIN to open TaxVault
+                      Require your 4-digit PIN to open TaxVault
                     </div>
                   </div>
                   <input
@@ -787,14 +803,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {biometricLock && (
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
                     <div>
-                      <span className="text-xs text-slate-700 font-bold">App Security PIN</span>
-                      <div className="text-xs text-slate-500">4-digit security code</div>
+                      <span className="text-xs text-slate-700 font-bold">Choose your PIN</span>
+                      <div className="text-xs text-slate-500">4 digits. Forgot it later? You can sign in again with your password.</div>
                     </div>
                     <input
                       type="password"
+                      inputMode="numeric"
+                      autoComplete="new-password"
                       maxLength={4}
+                      placeholder="••••"
+                      aria-label="4-digit PIN"
                       value={appPin}
-                      onChange={(e) => setAppPin(e.target.value)}
+                      onChange={(e) => setAppPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       className="w-20 bg-white shadow-xs border border-slate-300 rounded-lg text-center font-mono text-base tracking-widest text-teal-700 focus:outline-none"
                     />
                   </div>
@@ -1157,7 +1177,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Security & App Lock
               </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                {biometricLock ? 'Face ID / Fingerprint & PIN Enabled' : 'App Lock Disabled'}
+                {biometricLock ? 'PIN lock on' : 'App lock off'}
               </div>
             </div>
           </div>
@@ -1217,31 +1237,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
                 <div className="text-xs text-slate-500 truncate mt-0.5">
                   View activity log & AI usage
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all" />
-            </div>
-          </button>
-        )}
-
-        {/* 8. Supabase SQL & Cloud Database (developer builds only) */}
-        {import.meta.env.DEV && onOpenSupabaseSql && (
-          <button
-            onClick={onOpenSupabaseSql}
-            className="w-full text-left p-4 hover:bg-slate-50 active:bg-slate-100/70 flex items-center justify-between gap-3 transition-colors cursor-pointer group"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-700 shrink-0 group-hover:scale-105 transition-transform">
-                <Database className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-900">
-                  PostgreSQL Cloud Database Schema
-                </div>
-                <div className="text-xs text-slate-500 truncate mt-0.5">
-                  Multi-country DDL, RLS policies & tables
                 </div>
               </div>
             </div>

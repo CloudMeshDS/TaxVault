@@ -40,6 +40,7 @@ import {
   getPeriodFilterBadgeLabel,
 } from '../../services/periodFilterService';
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
+import { toUserMessage } from '../../services/userMessages';
 
 interface ReportsViewProps {
   profile: UserProfile;
@@ -231,7 +232,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       setTimeout(() => setDownloadNotice(null), 4500);
     } catch (err: any) {
       console.error('Download PDF error:', err);
-      setDownloadNotice({ type: 'error', message: err?.message || 'Failed to generate PDF. Please try again.' });
+      setDownloadNotice({ type: 'error', message: toUserMessage(err, 'Failed to generate PDF. Please try again.') });
       setTimeout(() => setDownloadNotice(null), 4500);
     } finally {
       setIsDownloadingPDF(false);
@@ -258,7 +259,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       setTimeout(() => setDownloadNotice(null), 4500);
     } catch (err: any) {
       console.error('Download Excel error:', err);
-      setDownloadNotice({ type: 'error', message: err?.message || 'Failed to generate Excel. Please try again.' });
+      setDownloadNotice({ type: 'error', message: toUserMessage(err, 'Failed to generate Excel. Please try again.') });
       setTimeout(() => setDownloadNotice(null), 4500);
     } finally {
       setIsDownloadingExcel(false);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Key, CheckCircle2, ExternalLink, X, Shield, AlertCircle } from 'lucide-react';
 import { getGeminiApiKey, setGeminiApiKey } from '../../services/receiptOcr';
+import { toUserMessage } from '../../services/userMessages';
 
 interface GeminiApiKeyModalProps {
   isOpen: boolean;
@@ -58,7 +59,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 w-full max-w-md rounded-3xl p-6 shadow-2xl relative space-y-5 modal-enter-animation">
         <button
           aria-label="Close"
@@ -116,7 +117,7 @@ export const GeminiApiKeyModal: React.FC<GeminiApiKeyModalProps> = ({
           {error && (
             <div className="flex items-center gap-1.5 text-rose-700 text-xs">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>{error}</span>
+              <span>{toUserMessage(error)}</span>
             </div>
           )}
         </div>

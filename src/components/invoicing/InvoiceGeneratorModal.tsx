@@ -19,6 +19,7 @@ import { ClientInvoice, ClientInvoiceItem, IncomeRecord, UserProfile } from '../
 import { formatCurrency, TAX_CONFIGS } from '../../services/taxRules';
 import { storageService } from '../../services/storageService';
 import { supabaseService } from '../../services/supabaseService';
+import { isNativeApp } from '../../utils/saveFile';
 
 interface InvoiceGeneratorModalProps {
   isOpen: boolean;
@@ -185,7 +186,7 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col text-slate-900 shadow-2xl relative modal-enter-animation">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/60">
@@ -405,14 +406,16 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
               </div>
 
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Preview</span>
-                </button>
+                {!isNativeApp() && (
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Preview</span>
+                  </button>
+                )}
 
                 <button
                   type="submit"
@@ -485,14 +488,16 @@ export const InvoiceGeneratorModal: React.FC<InvoiceGeneratorModalProps> = ({
                           </button>
                         )}
 
-                        <button
-                          aria-label="Print / Save PDF"
-                          onClick={handlePrint}
-                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-lg cursor-pointer transition-colors"
-                          title="Print / Save PDF"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
+                        {!isNativeApp() && (
+                          <button
+                            aria-label="Print / Save PDF"
+                            onClick={handlePrint}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-lg cursor-pointer transition-colors"
+                            title="Print / Save PDF"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

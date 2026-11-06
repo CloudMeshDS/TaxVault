@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { CAReviewStatus, ExpenseCategory, ExpenseRecord, UserProfile } from '../../types';
 import { ALL_CATEGORIES, CATEGORY_MAP, formatCurrency, formatINR } from '../../services/taxRules';
+import { saveFileFromUrl } from '../../utils/saveFile';
 
 interface ExpenseDetailModalProps {
   isOpen: boolean;
@@ -68,7 +69,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
       ? 'Vendor EIN / Tax ID:'
       : 'Vendor GSTIN:';
 
-  const hasIndianGst = Boolean(
+  const hasIndianGst = country === 'IN' && Boolean(
     (expense.cgst && expense.cgst > 0) ||
       (expense.sgst && expense.sgst > 0) ||
       (expense.igst && expense.igst > 0) ||
@@ -95,18 +96,13 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
 
   const handleDownloadReceipt = () => {
     if (!expense.receiptUrl) return;
-    const a = document.createElement('a');
-    a.href = expense.receiptUrl;
-    a.download = expense.receiptFileName || `${expense.merchant.replace(/\s+/g, '_')}_receipt.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    saveFileFromUrl(expense.receiptUrl, expense.receiptFileName || `${expense.merchant.replace(/\s+/g, '_')}_receipt.jpg`).catch((err) => console.warn('Receipt download failed:', err));
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex flex-col justify-between overflow-y-auto select-none modal-backdrop-animation">
       {/* Top Header */}
-      <div className="sticky top-0 z-30 bg-slate-50/95 border-b border-slate-200 p-4 flex items-center justify-between text-white">
+      <div className="sticky top-0 z-30 bg-slate-50/95 border-b border-slate-200 p-4 pt-[max(1rem,env(safe-area-inset-top))] flex items-center justify-between text-white">
         <div className="flex items-center gap-2">
           <Receipt className="w-5 h-5 text-emerald-700" />
           <h2 className="text-base font-extrabold tracking-tight">Expense Voucher Detail</h2>
@@ -395,7 +391,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
         <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-bold text-slate-500">
-              Chartered Accountant Status
+              {country === 'IN' ? 'Chartered Accountant Status' : 'Accountant Review'}
             </span>
             <span className="text-xs font-bold text-amber-700">{caStatus}</span>
           </div>
@@ -570,7 +566,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
 
       {/* Full Image Zoom */}
       {showImageFull && expense.receiptUrl && (
-        <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs flex flex-col justify-between p-4">
+        <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between text-white">
             <span className="font-bold text-sm">Receipt Image</span>
             <button

@@ -22,6 +22,7 @@ import {
 import { ActivityLog, CustomerUsage, TokenRequestLog, UserProfile } from '../../types';
 import { activityLogService } from '../../services/activityLogService';
 import { usageTrackingService } from '../../services/usageTrackingService';
+import { saveFile } from '../../utils/saveFile';
 
 interface ActivityAndUsageModalProps {
   isOpen: boolean;
@@ -81,13 +82,8 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
   });
 
   const handleExportJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(activityLogs, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `taxvault_activity_logs_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const blob = new Blob([JSON.stringify(activityLogs, null, 2)], { type: 'application/json' });
+    saveFile(blob, `taxvault_activity_logs_${new Date().toISOString().split('T')[0]}.json`).catch((err) => console.warn('Activity export failed:', err));
   };
 
   const formatTimeAgo = (isoString: string) => {
@@ -111,7 +107,7 @@ export const ActivityAndUsageModal: React.FC<ActivityAndUsageModalProps> = ({
   const scanPct = scansLimit === -1 ? 15 : Math.min(100, Math.round((scansUsed / scansLimit) * 100));
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden modal-enter-animation text-slate-900">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">

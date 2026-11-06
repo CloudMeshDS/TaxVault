@@ -22,7 +22,8 @@ import {
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { calculateTaxPosition, formatCurrency } from '../../services/taxRules';
 import { ExportClient } from '../../services/exportClient';
-import { DEFAULT_INDIAN_PROFILE, DEFAULT_PROFILES } from '../../services/storageService';
+import { createCleanUserProfile } from '../../services/storageService';
+import { toUserMessage } from '../../services/userMessages';
 
 interface ReportDownloadModalProps {
   isOpen: boolean;
@@ -72,14 +73,15 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
 
     try {
       const safeBadge = badgeLabel.replace(/[^a-zA-Z0-9_\-]/g, '_');
-      const baseProfile = DEFAULT_PROFILES[country] || DEFAULT_INDIAN_PROFILE;
+      // Reports carry only the user's own details. Blank fields stay blank rather than being
+      // filled from the sample profile (which would put a stranger's tax ID or accountant on them).
+      const baseProfile = profile || createCleanUserProfile('', undefined, country);
       const userProfile: UserProfile = {
         ...baseProfile,
-        ...(profile || {}),
         country,
         defaultCurrency: currCode,
         currencySymbol: currSymbol,
-        financialYear: profile?.financialYear || baseProfile.financialYear || 'FY 2026-27',
+        financialYear: baseProfile.financialYear || createCleanUserProfile('', undefined, country).financialYear,
       };
 
       if (format === 'excel') {
@@ -100,7 +102,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
         setSuccessMessage(`PDF Audit Report "${fileName}" downloaded successfully!`);
       } else if (format === 'csv') {
         const fileName = `TaxVault_Expenses_${safeBadge}.csv`;
-        ExportClient.downloadCSV(filteredList, fileName);
+        await ExportClient.downloadCSV(filteredList, fileName);
         setSuccessMessage(`CSV spreadsheet "${fileName}" downloaded successfully!`);
       }
 
@@ -116,7 +118,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-xs flex items-center justify-center p-4 select-none modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-xs flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
@@ -154,7 +156,7 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
           {errorMessage && (
             <div className="bg-rose-50 border border-rose-200 text-rose-200 text-xs p-3 rounded-2xl flex items-center gap-2 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
-              <span className="font-medium">{errorMessage}</span>
+              <span className="font-medium">{toUserMessage(errorMessage)}</span>
             </div>
           )}
 

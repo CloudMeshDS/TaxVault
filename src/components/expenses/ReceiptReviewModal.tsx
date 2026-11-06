@@ -592,7 +592,7 @@ export const ReceiptReviewModal: React.FC<ReceiptReviewModalProps> = ({
                 </div>
                 <div>
                   <label className={labelCls}>
-                    {country === 'US' ? 'Sales Tax' : 'GST / HST'}
+                    {country === 'US' ? 'Sales Tax' : country === 'CA' ? 'GST / HST' : 'GST'}
                   </label>
                   <input
                     type="number"

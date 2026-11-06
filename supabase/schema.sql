@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   accountant_email TEXT,
   accountant_phone TEXT,
   biometric_lock BOOLEAN DEFAULT FALSE,
-  app_pin TEXT DEFAULT '1234',
+  app_pin TEXT,
   subscription JSONB DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb,
   last_backup_date TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -77,7 +77,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS financial_year TEXT DEFAULT
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pan TEXT DEFAULT 'AAAPS1234K';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gstin TEXT DEFAULT '27AABCU9603R1ZM';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS biometric_lock BOOLEAN DEFAULT FALSE;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS app_pin TEXT DEFAULT '1234';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS app_pin TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription JSONB DEFAULT '{"tier":"free","billingCycle":"monthly","status":"active","receiptsScannedThisMonth":0,"monthlyReceiptLimit":10}'::jsonb;
 
 

@@ -30,6 +30,7 @@ import { createCleanUserProfile, takePendingSignupProfile } from '../../services
 import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
+import { toUserMessage } from '../../services/userMessages';
 
 export const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24">
@@ -422,7 +423,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 modal-backdrop-animation">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs backdrop-blur-md flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] modal-backdrop-animation">
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-sm p-6 text-slate-900 shadow-2xl relative overflow-hidden modal-enter-animation">
         {/* Close Button */}
         <button
@@ -866,7 +867,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {errorMessage && (
                   <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
-                    <span>{errorMessage}</span>
+                    <span>{toUserMessage(errorMessage)}</span>
                   </div>
                 )}
 
@@ -1034,7 +1035,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {errorMessage && (
                   <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
-                    <span>{errorMessage}</span>
+                    <span>{toUserMessage(errorMessage)}</span>
                   </div>
                 )}
 
@@ -1147,7 +1148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {errorMessage && (
                   <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-red-700 text-xs flex items-start gap-1.5">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
-                    <span>{errorMessage}</span>
+                    <span>{toUserMessage(errorMessage)}</span>
                   </div>
                 )}
 

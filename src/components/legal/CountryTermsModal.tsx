@@ -22,6 +22,7 @@ import {
 import { SupportedCountry } from '../../types';
 import { COUNTRY_TERMS, CountryLegalSection, CountryTermsData } from '../../constants/countryTerms';
 import { termsService } from '../../services/termsService';
+import { isNativeApp } from '../../utils/saveFile';
 
 interface CountryTermsModalProps {
   isOpen: boolean;
@@ -148,7 +149,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="country-terms-title"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 overflow-y-auto animate-in fade-in duration-200"
     >
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col max-h-[92vh] overflow-hidden my-auto">
         {/* --- HEADER --- */}
@@ -162,7 +163,7 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white text-slate-700 text-xs font-semibold border border-emerald-200">
                   <span className={`w-1.5 h-1.5 rounded-full ${isLoadingDb ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-                  <span>{isLoadingDb ? 'Syncing DB...' : termsData.isFromDatabase ? 'Live Compliance Database' : 'Database Verified'}</span>
+                  <span>{isLoadingDb ? 'Updating…' : termsData.isFromDatabase ? 'Latest version' : 'Verified'}</span>
                 </div>
               </div>
               <h1 id="country-terms-title" className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 tracking-tight">
@@ -278,15 +279,17 @@ export const CountryTermsModal: React.FC<CountryTermsModalProps> = ({
               {hasCopied ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{hasCopied ? 'Copied' : 'Copy'}</span>
             </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
-              title="Print terms"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print</span>
-            </button>
+            {!isNativeApp() && (
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-all"
+                title="Print terms"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print</span>
+              </button>
+            )}
           </div>
         </div>
 

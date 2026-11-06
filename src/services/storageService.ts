@@ -197,6 +197,55 @@ export const DEFAULT_PROFILES: Record<string, UserProfile> = {
   IN: DEFAULT_INDIAN_PROFILE,
 };
 
+const SAMPLE_PERSONAL_FIELDS = [
+  'taxId',
+  'secondaryTaxId',
+  'pan',
+  'gstin',
+  'gstNumber',
+  'taxNumber',
+  'phone',
+  'accountantName',
+  'accountantEmail',
+  'accountantPhone',
+] as const;
+
+/**
+ * Earlier versions copied the sample profiles' placeholder tax IDs, phone numbers and accountant
+ * details into real accounts (e.g. switching country in Settings set the IRD number to
+ * 123-456-789). Returns the profile with any such sample value cleared, and whether anything
+ * changed. The demo accounts themselves keep their sample data.
+ */
+export function stripSampleValues(profile: UserProfile): { profile: UserProfile; changed: boolean } {
+  if (!profile) return { profile, changed: false };
+  const samples = Object.values(DEFAULT_PROFILES);
+  const email = (profile.email || '').toLowerCase();
+  if (!email || samples.some((p) => p.email.toLowerCase() === email)) return { profile, changed: false };
+
+  const sampleValues = new Set<string>();
+  for (const p of samples) {
+    for (const field of SAMPLE_PERSONAL_FIELDS) {
+      const v = (p as any)[field];
+      if (typeof v === 'string' && v.trim()) sampleValues.add(v.trim().toUpperCase());
+    }
+  }
+  const cleaned: UserProfile = { ...profile };
+  let changed = false;
+  // The old default PIN, stored on profiles that never turned the lock on
+  if (!cleaned.biometricLock && cleaned.appPin === '1234') {
+    cleaned.appPin = '';
+    changed = true;
+  }
+  for (const field of SAMPLE_PERSONAL_FIELDS) {
+    const v = (cleaned as any)[field];
+    if (typeof v === 'string' && sampleValues.has(v.trim().toUpperCase())) {
+      (cleaned as any)[field] = '';
+      changed = true;
+    }
+  }
+  return { profile: changed ? cleaned : profile, changed };
+}
+
 export function createCleanUserProfile(
   email: string,
   fullName?: string,
@@ -216,8 +265,9 @@ export function createCleanUserProfile(
     businessName: `${cleanName}'s Business`,
     taxId: '',
     secondaryTaxId: '',
-    pan: country === 'IN' ? '' : defaultProfile.pan,
-    gstin: country === 'IN' ? '' : defaultProfile.gstin,
+    pan: '',
+    gstin: '',
+    appPin: '',
     gstRegistered: false,
     gstNumber: '',
     taxNumber: '',
@@ -232,7 +282,6 @@ export function createCleanUserProfile(
       status: 'active',
       receiptsScannedThisMonth: 0,
       monthlyReceiptLimit: 10,
-      renewsOn: '2026-11-01',
     },
   };
 }
@@ -660,7 +709,9 @@ class StorageService {
         if (!p.authProvider && p.email) {
           p.authProvider = 'google';
         }
-        return p;
+        const { profile: cleaned, changed } = stripSampleValues(p);
+        if (changed) this.saveUserProfile(cleaned);
+        return cleaned;
       }
     } catch {
       // ignore
@@ -831,8 +882,8 @@ class StorageService {
     }
   }
 
+  // Loads sample expenses only; the signed-in user's profile is left untouched
   public resetToSampleData(): void {
-    this.saveUserProfile(DEFAULT_INDIAN_PROFILE);
     this.saveExpenses(INITIAL_SAMPLE_EXPENSES);
   }
 

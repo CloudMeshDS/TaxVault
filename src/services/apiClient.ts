@@ -1,5 +1,5 @@
 import { ExpenseRecord, SupportedCountry, UserProfile } from '../types';
-import { storageService, DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE } from './storageService';
+import { storageService, DEFAULT_PROFILES, DEFAULT_INDIAN_PROFILE, stripSampleValues } from './storageService';
 import { supabaseService } from './supabaseService';
 import { authedFetch } from './apiBase';
 
@@ -27,6 +27,17 @@ export interface SupabaseStatusResponse {
   tableStatus?: string;
   message: string;
   error?: string;
+}
+
+/**
+ * Caches a profile loaded from the cloud, first clearing any sample placeholder values an older
+ * version copied into it, and writes the cleaned version back so it stays fixed everywhere.
+ */
+function keepCleanProfile(loaded: UserProfile): UserProfile {
+  const { profile, changed } = stripSampleValues(loaded);
+  storageService.saveUserProfile(profile);
+  if (changed) apiClient.updateProfile(profile).catch(() => {});
+  return profile;
 }
 
 export const apiClient = {
@@ -327,8 +338,7 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          storageService.saveUserProfile(json.data);
-          return json.data;
+          return keepCleanProfile(json.data);
         }
       }
     } catch (err) {
@@ -341,8 +351,7 @@ export const apiClient = {
       try {
         const res = await supabaseService.fetchProfile(userId, email);
         if (res.profile) {
-          storageService.saveUserProfile(res.profile);
-          return res.profile;
+          return keepCleanProfile(res.profile);
         }
       } catch (err) {
         console.warn('Direct Supabase getProfile fallback error:', err);
@@ -418,7 +427,7 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.expenses) storageService.saveExpenses(json.expenses);
-        if (json.profile) storageService.saveUserProfile(json.profile);
+        // The returned profile only describes the sample country; callers keep the user's own identity
         return { success: true, count: json.count || 0, profile: json.profile, expenses: json.expenses };
       }
     } catch (err) {
@@ -427,7 +436,6 @@ export const apiClient = {
     // Demo accounts and offline use: seed the on-device store (the server only seeds signed-in accounts)
     const targetProfile = DEFAULT_PROFILES[country] || DEFAULT_INDIAN_PROFILE;
     storageService.resetToSampleData();
-    storageService.saveUserProfile(targetProfile);
     return { success: true, count: storageService.getExpenses().length, profile: targetProfile };
   },
 

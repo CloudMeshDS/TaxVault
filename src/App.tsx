@@ -23,6 +23,7 @@ import { ScanLine, Loader2 } from 'lucide-react';
 import { activityLogService } from './services/activityLogService';
 import { usageTrackingService } from './services/usageTrackingService';
 import { authedFetch } from './services/apiBase';
+import { toUserMessage } from './services/userMessages';
 
 // Screens and modals load on demand so sign-in and Home don't wait on PDF/Excel/report code
 const ExpenseList = lazy(() => import('./components/expenses/ExpenseList').then((m) => ({ default: m.ExpenseList })));
@@ -41,7 +42,6 @@ const BankReconciliationModal = lazy(() => import('./components/banking/BankReco
 const InvoiceGeneratorModal = lazy(() => import('./components/invoicing/InvoiceGeneratorModal').then((m) => ({ default: m.InvoiceGeneratorModal })));
 const TaxCalendarModal = lazy(() => import('./components/compliance/TaxCalendarModal').then((m) => ({ default: m.TaxCalendarModal })));
 const ActivityAndUsageModal = lazy(() => import('./components/settings/ActivityAndUsageModal').then((m) => ({ default: m.ActivityAndUsageModal })));
-const SupabaseSqlModal = lazy(() => import('./components/settings/SupabaseSqlModal').then((m) => ({ default: m.SupabaseSqlModal })));
 const SettingsView = lazy(() => import('./components/settings/SettingsView').then((m) => ({ default: m.SettingsView })));
 
 const TabFallback = () => (
@@ -100,7 +100,10 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // 5. Security App Lock
-  const [isAppLocked, setIsAppLocked] = useState<boolean>(() => Boolean(profile.biometricLock));
+  // Only lock when the user has actually chosen a 4-digit PIN (there is no default PIN)
+  const [isAppLocked, setIsAppLocked] = useState<boolean>(
+    () => Boolean(profile.biometricLock) && /^\d{4}$/.test(profile.appPin || '')
+  );
 
   // 6. Modals
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -141,7 +144,6 @@ export default function App() {
   // 9. Activity Audit Trail & Supabase Schema Modals
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [activityModalTab, setActivityModalTab] = useState<'activity' | 'usage'>('activity');
-  const [isSupabaseSqlModalOpen, setIsSupabaseSqlModalOpen] = useState(false);
 
   // 10. Settings Section Navigation (for Android back navigation inside Settings)
   const [settingsSection, setSettingsSection] = useState<SettingSectionId | null>(null);
@@ -207,10 +209,6 @@ export default function App() {
       setIsActivityModalOpen(false);
       return true;
     }
-    if (isSupabaseSqlModalOpen) {
-      setIsSupabaseSqlModalOpen(false);
-      return true;
-    }
 
     // 8. Smart Tax Suite modals
     if (isMileageOpen) {
@@ -254,7 +252,6 @@ export default function App() {
     isAuthOpen,
     isSubscriptionOpen,
     isActivityModalOpen,
-    isSupabaseSqlModalOpen,
     isMileageOpen,
     isBankReconOpen,
     isInvoiceOpen,
@@ -795,7 +792,7 @@ export default function App() {
         profile.taxId || profile.gstin || '',
         profile.country || 'NZ'
       );
-      extracted.originalImage = dataUrl;
+      extracted.originalImage = extracted.originalImage || dataUrl;
       if (fileName) {
         extracted.receiptFileName = fileName;
       }
@@ -823,8 +820,13 @@ export default function App() {
     // On native mobile (Android APK or iOS): Open device camera directly and as fast as possible!
     if (Capacitor.isNativePlatform()) {
       try {
+        // 2000px on the long side keeps receipt text sharp for the AI while avoiding
+        // 12+ megapixel originals that are slow to decode, upload and store.
         const photo = await CapCamera.getPhoto({
-          quality: 92,
+          quality: 85,
+          width: 2000,
+          height: 2000,
+          correctOrientation: true,
           allowEditing: false,
           resultType: CameraResultType.DataUrl,
           source: CameraSource.Camera,
@@ -979,7 +981,7 @@ export default function App() {
       });
       if (!result.ok) {
         if (result.reason === 'pro_required') openSubscriptionModal(result.message);
-        else window.alert(result.message);
+        else window.alert(toUserMessage(result.message));
         return;
       }
 
@@ -1010,12 +1012,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-canvas text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Biometric / PIN Lock Screen */}
+      {/* PIN Lock Screen */}
       {isAppLocked && (
         <PinLockModal
           isOpen={isAppLocked}
-          correctPin={profile.appPin || '1234'}
+          correctPin={profile.appPin || ''}
           onUnlock={() => setIsAppLocked(false)}
+          onForgotPin={async () => {
+            // Turn the lock off for this account, then sign out: the password is needed to get back in
+            const unlocked: UserProfile = { ...profile, biometricLock: false, appPin: '' };
+            storageService.saveUserProfile(unlocked);
+            await apiClient.updateProfile(unlocked).catch(() => {});
+            setIsAppLocked(false);
+            await handleSignOut();
+          }}
         />
       )}
 
@@ -1108,7 +1118,6 @@ export default function App() {
                   setActivityModalTab(tab);
                   setIsActivityModalOpen(true);
                 }}
-                onOpenSupabaseSql={() => setIsSupabaseSqlModalOpen(true)}
               />
             )}
           </div>
@@ -1273,7 +1282,7 @@ export default function App() {
 
       {/* MODAL 12: Direct Camera Capture AI Processing Overlay */}
       {isProcessingReceipt && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 select-none modal-backdrop-animation">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] select-none modal-backdrop-animation">
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl border border-slate-200/80 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="relative w-16 h-16 mx-auto">
               <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 animate-ping" />
@@ -1308,14 +1317,6 @@ export default function App() {
       />
       )}
 
-      {/* MODAL 14: Supabase PostgreSQL Schema & Multi-Country DDL */}
-      {isSupabaseSqlModalOpen && (
-      <SupabaseSqlModal
-        isOpen={isSupabaseSqlModalOpen}
-        onClose={() => setIsSupabaseSqlModalOpen(false)}
-        supabaseUrl={(import.meta as any).env?.VITE_SUPABASE_URL || 'https://supabase.com/dashboard'}
-      />
-      )}
       </Suspense>
     </div>
   );
