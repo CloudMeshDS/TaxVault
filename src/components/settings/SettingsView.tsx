@@ -25,6 +25,7 @@ import { BusinessEntityType, SupportedCountry, UserProfile } from '../../types';
 import { storageService } from '../../services/storageService';
 import { apiClient } from '../../services/apiClient';
 import { SubscriptionService } from '../../services/subscriptionService';
+import { fiscalYearBounds, fiscalYearOptions, fiscalYearRangeLabel, normalizeFiscalYear } from '../../services/fiscalYear';
 import { GoogleIcon, AppleIcon } from '../auth/AuthModal';
 import { getGeminiApiKey } from '../../services/receiptOcr';
 import { GeminiApiKeyModal } from '../common/GeminiApiKeyModal';
@@ -71,7 +72,7 @@ const COUNTRY_CONFIGS: Record<SupportedCountry, CountryConfig> = {
     secondaryTaxIdLabel: 'GST Number',
     secondaryTaxIdPlaceholder: '123-456-789',
     entityTypes: ['Sole Trader', 'Company / Pty Ltd', 'Partnership', 'Trust', 'Individual'],
-    fiscalYears: ['FY 2026-27 (1 Apr - 31 Mar)', 'FY 2025-26'],
+    fiscalYears: fiscalYearOptions('NZ', 3),
   },
   AU: {
     code: 'AU',
@@ -85,7 +86,7 @@ const COUNTRY_CONFIGS: Record<SupportedCountry, CountryConfig> = {
     secondaryTaxIdLabel: 'TFN (Tax File Number)',
     secondaryTaxIdPlaceholder: '123 456 789',
     entityTypes: ['Sole Trader', 'Company / Pty Ltd', 'Partnership', 'Trust', 'Individual'],
-    fiscalYears: ['FY 2026-27 (1 Jul - 30 Jun)', 'FY 2025-26'],
+    fiscalYears: fiscalYearOptions('AU', 3),
   },
   CA: {
     code: 'CA',
@@ -99,7 +100,7 @@ const COUNTRY_CONFIGS: Record<SupportedCountry, CountryConfig> = {
     secondaryTaxIdLabel: 'Provincial Tax ID / SIN',
     secondaryTaxIdPlaceholder: '123 456 789',
     entityTypes: ['Sole Trader', 'Corporation', 'Partnership', 'Contractor / Freelancer'],
-    fiscalYears: ['Tax Year 2026 (Jan - Dec)', 'Tax Year 2025'],
+    fiscalYears: fiscalYearOptions('CA', 3),
   },
   US: {
     code: 'US',
@@ -113,7 +114,7 @@ const COUNTRY_CONFIGS: Record<SupportedCountry, CountryConfig> = {
     secondaryTaxIdLabel: 'State Tax ID / SSN',
     secondaryTaxIdPlaceholder: '987-65-4321',
     entityTypes: ['LLC', 'Sole Trader', 'Corporation', 'Partnership', 'Contractor / Freelancer'],
-    fiscalYears: ['Tax Year 2026 (Jan - Dec)', 'Tax Year 2025'],
+    fiscalYears: fiscalYearOptions('US', 3),
   },
   IN: {
     code: 'IN',
@@ -127,7 +128,7 @@ const COUNTRY_CONFIGS: Record<SupportedCountry, CountryConfig> = {
     secondaryTaxIdLabel: 'GSTIN (GST Number)',
     secondaryTaxIdPlaceholder: '27AABCU9603R1ZM',
     entityTypes: ['Proprietorship', 'Private Limited', 'LLP', 'Partnership', 'Freelancer / Individual'],
-    fiscalYears: ['FY 2026-27 (1 Apr - 31 Mar)', 'FY 2025-26'],
+    fiscalYears: fiscalYearOptions('IN', 3),
   },
 };
 
@@ -178,7 +179,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [businessType, setBusinessType] = useState<BusinessEntityType>(profile.businessType || 'Sole Trader');
   const [taxId, setTaxId] = useState(profile.taxId || profile.pan || '');
   const [secondaryTaxId, setSecondaryTaxId] = useState(profile.secondaryTaxId || profile.gstin || '');
-  const [financialYear, setFinancialYear] = useState(profile.financialYear || COUNTRY_CONFIGS[profile.country || 'NZ'].fiscalYears[0]);
+  // Stored without the date-range suffix older versions saved ("FY 2026-27 (1 Apr - 31 Mar)")
+  const [financialYear, setFinancialYear] = useState(
+    profile.financialYear
+      ? normalizeFiscalYear(profile.financialYear, profile.country || 'NZ')
+      : COUNTRY_CONFIGS[profile.country || 'NZ'].fiscalYears[0]
+  );
   const [biometricLock, setBiometricLock] = useState(profile.biometricLock);
   // No default PIN: the user must choose one before the lock can be turned on
   // Reuse the stored PIN only while the lock is on; older profiles carry a placeholder '1234'
@@ -277,6 +283,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       pan: country === 'IN' ? taxId.toUpperCase() : '',
       gstin: country === 'IN' ? secondaryTaxId.toUpperCase() : '',
       financialYear,
+      financialYearEnding: fiscalYearBounds(financialYear, country).end,
       biometricLock,
       appPin,
     };
@@ -722,9 +729,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onChange={(e) => setFinancialYear(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-white font-mono"
                     >
-                      {COUNTRY_CONFIGS[country].fiscalYears.map((fy) => (
+                      {Array.from(new Set([...COUNTRY_CONFIGS[country].fiscalYears, financialYear])).map((fy) => (
                         <option key={fy} value={fy}>
-                          {fy}
+                          {fy} ({fiscalYearRangeLabel(country)})
                         </option>
                       ))}
                     </select>

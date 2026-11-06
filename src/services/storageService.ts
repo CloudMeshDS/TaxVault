@@ -7,6 +7,7 @@ import {
   ClientInvoice,
   SupportedCountry,
 } from '../types';
+import { currentFiscalYear, currentFiscalYearEnding } from './fiscalYear';
 
 const STORAGE_KEYS = {
   USER_PROFILE: 'taxvault_user_profile_v3',
@@ -260,6 +261,9 @@ export function createCleanUserProfile(
     ...defaultProfile,
     id: userId || `usr_${country.toLowerCase()}_${Date.now().toString(36)}`,
     fullName: cleanName,
+    // New accounts start in today's financial year, not the sample profile's
+    financialYear: currentFiscalYear(country),
+    financialYearEnding: currentFiscalYearEnding(country),
     email: email.trim().toLowerCase(),
     phone: '',
     businessName: `${cleanName}'s Business`,

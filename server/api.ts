@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import { COUNTRY_TERMS } from '../src/constants/countryTerms';
 import { ExportService } from '../src/services/exportService';
+import { currentFiscalYear, currentFiscalYearEnding } from '../src/services/fiscalYear';
 
 // Verified Supabase user attached to the request by the requireUser / optionalUser middleware
 type AuthUser = { id: string; email: string };
@@ -2495,7 +2496,8 @@ export function createApi(): express.Express {
         defaultCurrency: sample.defaultCurrency,
         currencySymbol: sample.currencySymbol,
         taxAuthority: sample.taxAuthority,
-        financialYear: sample.financialYear,
+        financialYear: currentFiscalYear(country),
+        financialYearEnding: currentFiscalYearEnding(country),
       };
       const ownedSeed = seedList.map((exp: any) => ({
         ...exp,
@@ -2685,6 +2687,7 @@ export function createApi(): express.Express {
 
         const prompt = `You are an expert tax accountant and OCR engine for ${country} tax compliance.
 Analyze this receipt or invoice carefully.
+Today is ${new Date().toISOString().slice(0, 10)}. Write "date" as YYYY-MM-DD; if the receipt shows no year, use the most recent date with that day and month that is not after today.
 Extract all fields and return ONLY a valid JSON object without markdown fences, conforming strictly to:
 {
   "merchant": "Vendor / Store Name",

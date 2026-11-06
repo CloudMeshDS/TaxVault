@@ -8,14 +8,15 @@ import {
 } from 'lucide-react';
 import { SupportedCountry } from '../../types';
 import {
-  AVAILABLE_FYS,
-  AVAILABLE_YEARS,
+  getAvailableFiscalYears,
+  getAvailableYears,
   MONTHS_LIST,
   PeriodFilterMode,
   PeriodFilterState,
   getPeriodFilterBadgeLabel,
 } from '../../services/periodFilterService';
 import { FiscalQuarter, getAllQuartersForFY } from '../../services/taxRules';
+import { currentFiscalYear } from '../../services/fiscalYear';
 
 interface PeriodFilterControlsProps {
   filter: PeriodFilterState;
@@ -214,7 +215,7 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                     }
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
-                    {AVAILABLE_YEARS.map((y) => (
+                    {getAvailableYears().map((y) => (
                       <option key={y} value={y}>
                         {y}
                       </option>
@@ -252,7 +253,7 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                       onChange={(e) => onChange({ ...filter, selectedQuarterFY: e.target.value })}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                     >
-                      {AVAILABLE_FYS.map((fy) => (
+                      {getAvailableFiscalYears(country).map((fy) => (
                         <option key={fy} value={fy}>
                           {fy}
                         </option>
@@ -301,9 +302,9 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                   onChange={(e) => onChange({ ...filter, selectedFY: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  {AVAILABLE_FYS.map((fy) => (
+                  {getAvailableFiscalYears(country).map((fy) => (
                     <option key={fy} value={fy}>
-                      {fy} {fy === 'FY 2026-27' ? '(Current Financial Year)' : ''}
+                      {fy} {fy === currentFiscalYear(country) ? '(Current Financial Year)' : ''}
                     </option>
                   ))}
                 </select>
@@ -319,7 +320,7 @@ export const PeriodFilterControls: React.FC<PeriodFilterControlsProps> = ({
                   onChange={(e) => onChange({ ...filter, selectedCY: parseInt(e.target.value, 10) })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  {AVAILABLE_YEARS.map((y) => (
+                  {getAvailableYears().map((y) => (
                     <option key={y} value={y}>
                       {y} Calendar Year (1 Jan – 31 Dec {y})
                     </option>

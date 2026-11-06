@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { SUPABASE_SQL_SCHEMA } from '../constants/supabaseSchema';
 import { apiUrl } from './apiBase';
+import { currentFiscalYear, currentFiscalYearEnding } from './fiscalYear';
 
 export { SUPABASE_SQL_SCHEMA };
 
@@ -336,7 +337,7 @@ export function supabaseRowToProfile(row: any): UserProfile {
     secondaryTaxId: row.secondary_tax_id || row.gstin || row.gst_number || '',
     pan: row.pan || row.tax_id || row.tax_number || '',
     gstin: row.gstin || row.secondary_tax_id || row.gst_number || '',
-    financialYear: row.financial_year || 'FY 2026-27',
+    financialYear: row.financial_year || currentFiscalYear(row.country || 'NZ'),
     accountantName: row.accountant_name || undefined,
     accountantEmail: row.accountant_email || undefined,
     accountantPhone: row.accountant_phone || undefined,
@@ -347,7 +348,7 @@ export function supabaseRowToProfile(row: any): UserProfile {
     gstRegistered: Boolean(row.gst_registered),
     gstNumber: row.gst_number || row.secondary_tax_id || '',
     baseCurrency: row.base_currency || (country === 'IN' ? 'INR' : country === 'AU' ? 'AUD' : country === 'CA' ? 'CAD' : country === 'US' ? 'USD' : 'NZD'),
-    financialYearEnding: row.financial_year_ending || '2027-03-31',
+    financialYearEnding: row.financial_year_ending || currentFiscalYearEnding(row.country || 'NZ'),
     mfaEnabled: Boolean(row.mfa_enabled),
     biometricEnabled: Boolean(row.biometric_enabled),
     devicePlatform: row.device_platform || 'ios',

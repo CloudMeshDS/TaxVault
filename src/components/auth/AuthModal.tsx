@@ -31,6 +31,7 @@ import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { termsService } from '../../services/termsService';
 import { apiUrl } from '../../services/apiBase';
 import { toUserMessage } from '../../services/userMessages';
+import { currentFiscalYear, currentFiscalYearEnding } from '../../services/fiscalYear';
 
 export const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24">
@@ -417,7 +418,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       country: selectedCountry,
       entityType,
       baseCurrency: config.currencyCode,
-      financialYearEnding: config.nextTaxDeadline,
+      financialYear: currentFiscalYear(selectedCountry),
+      financialYearEnding: currentFiscalYearEnding(selectedCountry),
     });
     onClose();
   };
@@ -526,7 +528,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="bg-white shadow-xs p-2 rounded-xl border border-slate-200">
                     <span className="text-xs text-slate-500 block">Tax Jurisdiction</span>
                     <span className="text-white font-semibold block mt-0.5">
-                      {currentProfile.country} · {currentProfile.financialYear || 'FY 26-27'}
+                      {currentProfile.country} · {currentProfile.financialYear || currentFiscalYear(currentProfile.country)}
                     </span>
                   </div>
                 </div>

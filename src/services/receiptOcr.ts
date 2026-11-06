@@ -817,7 +817,7 @@ Analyze this document, receipt, or invoice photo/PDF very carefully and extract 
 
 Instructions:
 1. "merchant": The business, supplier, vendor, store, institution, utility provider, or issuer name (e.g. Bunnings, Shell, Countdown, AWS, Vodafone, Spark, Genesis Energy, etc.). If no store name, use the prominent document header or company name. If still unclear, use "Tax Invoice / Vendor". DO NOT return empty string if any company/issuer is visible.
-2. "date": The transaction or invoice date formatted strictly as YYYY-MM-DD. If year is missing, assume 2026.
+2. "date": The transaction or invoice date formatted strictly as YYYY-MM-DD. Today is ${new Date().toISOString().slice(0, 10)}; if the year is missing, use the most recent date with that day and month that is not after today.
 3. "time": Transaction time formatted as HH:MM if visible, else "12:00".
 4. "invoiceNumber": The invoice number, receipt number, docket number, or tax invoice #.
 5. "vendorTaxId": The business tax registration number (GST #, IRD #, ABN, GSTIN, EIN, VAT).

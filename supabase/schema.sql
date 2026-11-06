@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   country TEXT DEFAULT 'NZ', -- 'NZ' | 'AU' | 'CA' | 'US' | 'IN'
   default_currency TEXT DEFAULT 'NZD',
   currency_symbol TEXT DEFAULT '$',
-  financial_year TEXT DEFAULT 'FY 2026-27',
+  financial_year TEXT,
   tax_authority TEXT DEFAULT 'Inland Revenue Department (IRD)',
   
   -- Primary & Secondary Tax IDs
@@ -73,7 +73,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS secondary_tax_id TEXT DEFAU
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS tax_authority TEXT DEFAULT 'Inland Revenue Department (IRD)';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS default_currency TEXT DEFAULT 'NZD';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS currency_symbol TEXT DEFAULT '$';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS financial_year TEXT DEFAULT 'FY 2026-27';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS financial_year TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pan TEXT DEFAULT 'AAAPS1234K';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gstin TEXT DEFAULT '27AABCU9603R1ZM';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS biometric_lock BOOLEAN DEFAULT FALSE;
