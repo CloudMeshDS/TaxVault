@@ -94,9 +94,14 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
     onUpdateExpense(updated);
   };
 
+  // Stored photos arrive as signed links from the server; a raw "storage:" reference (offline
+  // fallback) can't be displayed, so treat it as no photo rather than a broken image.
+  const receiptImageUrl =
+    typeof expense.receiptUrl === 'string' && /^(https?:|data:image|blob:)/.test(expense.receiptUrl) ? expense.receiptUrl : '';
+
   const handleDownloadReceipt = () => {
-    if (!expense.receiptUrl) return;
-    saveFileFromUrl(expense.receiptUrl, expense.receiptFileName || `${expense.merchant.replace(/\s+/g, '_')}_receipt.jpg`).catch((err) => console.warn('Receipt download failed:', err));
+    if (!receiptImageUrl) return;
+    saveFileFromUrl(receiptImageUrl, expense.receiptFileName || `${expense.merchant.replace(/\s+/g, '_')}_receipt.jpg`).catch((err) => console.warn('Receipt download failed:', err));
   };
 
   return (
@@ -114,7 +119,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {expense.receiptUrl && (
+          {receiptImageUrl && (
             <button
               aria-label="Download Receipt"
               onClick={handleDownloadReceipt}
@@ -196,10 +201,10 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
           </div>
         )}
         {/* Receipt Image Preview Hero */}
-        {expense.receiptUrl && (
+        {receiptImageUrl && (
           <div className="bg-white shadow-xs border border-slate-200 rounded-2xl p-3 flex flex-col items-center justify-center relative overflow-hidden group">
             <img
-              src={expense.receiptUrl}
+              src={receiptImageUrl}
               alt={expense.merchant}
               className="max-h-56 w-auto object-contain rounded-xl cursor-pointer hover:scale-102 transition-transform"
               onClick={() => setShowImageFull(true)}
@@ -565,7 +570,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
       )}
 
       {/* Full Image Zoom */}
-      {showImageFull && expense.receiptUrl && (
+      {showImageFull && receiptImageUrl && (
         <div className="fixed inset-0 z-70 bg-black/50 backdrop-blur-xs flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between text-white">
             <span className="font-bold text-sm">Receipt Image</span>
@@ -580,7 +585,7 @@ export const ExpenseDetailModal: React.FC<ExpenseDetailModalProps> = ({
 
           <div className="flex-1 flex items-center justify-center p-2 overflow-hidden">
             <img
-              src={expense.receiptUrl}
+              src={receiptImageUrl}
               alt={expense.merchant}
               className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl"
             />

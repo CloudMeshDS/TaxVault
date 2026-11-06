@@ -1585,11 +1585,121 @@ function mapRowToExpense(row: any): any {
     };
   }
 
+// ---------------------------------------------------------------------------------------------
+// Receipt photos live in a private Supabase Storage bucket, one folder per user, instead of
+// inside expense rows. Rows keep a short reference ("storage:receipts/<user>/<expense>.jpg");
+// API responses swap it for a short-lived signed URL, so the app downloads a photo only when
+// it is actually shown (the expense list no longer carries every image).
+// ---------------------------------------------------------------------------------------------
+export const RECEIPT_BUCKET = 'receipts';
+const RECEIPT_REF_PREFIX = `storage:${RECEIPT_BUCKET}/`;
+const RECEIPT_SIGNED_URL_SECONDS = 6 * 60 * 60;
+// The app sends photos of 100 KB or less; this ceiling only admits older app versions' uploads.
+const RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
+
+let receiptBucketReady: Promise<void> | null = null;
+function ensureReceiptBucket(admin: any): Promise<void> {
+  if (!receiptBucketReady) {
+    receiptBucketReady = (async () => {
+      const { data } = await admin.storage.getBucket(RECEIPT_BUCKET);
+      if (data) return;
+      const { error } = await admin.storage.createBucket(RECEIPT_BUCKET, {
+        public: false,
+        fileSizeLimit: RECEIPT_MAX_BYTES,
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      });
+      if (error && !/already exists/i.test(error.message)) throw error;
+    })().catch((err) => {
+      receiptBucketReady = null;
+      throw err;
+    });
+  }
+  return receiptBucketReady;
+}
+
+/** Bucket path a stored reference or one of our signed URLs points to, if any. */
+export function receiptStoragePath(value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  if (value.startsWith(RECEIPT_REF_PREFIX)) return value.slice(RECEIPT_REF_PREFIX.length);
+  const signed = value.match(/\/storage\/v1\/object\/sign\/receipts\/([^?#]+)/);
+  return signed ? decodeURIComponent(signed[1]) : null;
+}
+
+/**
+ * Value to keep in receipt_url for this expense. An inline data:image photo is uploaded to the
+ * owner's folder; a stored reference (or a signed URL the app sends back unchanged) stays as is,
+ * but only if it points into the owner's own folder. Other URLs (e.g. sample data) pass through.
+ */
+export async function resolveReceiptRef(admin: any, exp: any, ownerId: string): Promise<string | null> {
+  const value = exp.receiptUrl;
+  const existing = receiptStoragePath(value);
+  if (existing) return existing.startsWith(`${ownerId}/`) ? RECEIPT_REF_PREFIX + existing : null;
+
+  if (typeof value === 'string' && value.startsWith('data:image')) {
+    const match = value.match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,(.+)$/);
+    if (!match) return null;
+    const contentType = match[1] === 'image/jpg' ? 'image/jpeg' : match[1];
+    const bytes = Buffer.from(match[2], 'base64');
+    if (bytes.length > RECEIPT_MAX_BYTES) {
+      console.warn(`Receipt photo for ${exp.id} is ${Math.round(bytes.length / 1024)} KB; not stored.`);
+      return null;
+    }
+    const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+    const safeId = String(exp.id).replace(/[^A-Za-z0-9_.-]/g, '_');
+    const path = `${ownerId}/${safeId}.${ext}`;
+    try {
+      await ensureReceiptBucket(admin);
+      const { error } = await admin.storage.from(RECEIPT_BUCKET).upload(path, bytes, { contentType, upsert: true });
+      if (error) throw error;
+      return RECEIPT_REF_PREFIX + path;
+    } catch (err: any) {
+      // Never lose the photo: keep it inline if Storage is unavailable
+      console.warn('Receipt upload to Storage failed; keeping inline copy:', err?.message);
+      return value;
+    }
+  }
+  return typeof value === 'string' && value ? value : null;
+}
+
+/** Replaces stored receipt references on expenses with signed URLs (one batched request). */
+export async function signReceiptUrls(admin: any, expenses: any[]): Promise<any[]> {
+  const paths = Array.from(
+    new Set(expenses.map((e) => receiptStoragePath(e?.receiptUrl)).filter((p): p is string => Boolean(p)))
+  );
+  if (paths.length === 0) return expenses;
+  const signedByPath = new Map<string, string>();
+  try {
+    const { data } = await admin.storage.from(RECEIPT_BUCKET).createSignedUrls(paths, RECEIPT_SIGNED_URL_SECONDS);
+    for (const item of data || []) if (item?.path && item.signedUrl) signedByPath.set(item.path, item.signedUrl);
+  } catch (err: any) {
+    console.warn('Could not sign receipt URLs:', err?.message);
+  }
+  return expenses.map((e) => {
+    const path = receiptStoragePath(e?.receiptUrl);
+    if (!path) return e;
+    return { ...e, receiptUrl: signedByPath.get(path) };
+  });
+}
+
+/** Deletes every stored receipt photo in a user's folder (account deletion). */
+async function deleteUserReceipts(admin: any, ownerId: string): Promise<void> {
+  const bucket = admin.storage.from(RECEIPT_BUCKET);
+  for (;;) {
+    const { data, error } = await bucket.list(ownerId, { limit: 1000 });
+    if (error || !data?.length) return;
+    const { error: removeErr } = await bucket.remove(data.map((f: any) => `${ownerId}/${f.name}`));
+    if (removeErr) throw removeErr;
+    if (data.length < 1000) return;
+  }
+}
+
 // Persists a full expense record to Supabase, falling back to packed metadata in `notes`
 // when the dedicated multi-country columns have not been migrated yet.
 // `ownerId` is the verified auth user id: it always becomes customer_tax_id, the column that
 // Row Level Security uses to decide who owns the row.
-async function persistExpenseRow(supabase: any, exp: any, ownerId: string): Promise<void> {
+// Returns the receipt reference that was stored (see resolveReceiptRef).
+async function persistExpenseRow(supabase: any, exp: any, ownerId: string): Promise<string | null> {
+  const receiptRef = await resolveReceiptRef(supabase, exp, ownerId);
   const ownerProfile = profileCache.get(ownerId) || {};
   // Attempt full insert with dedicated multi-country columns
   const country = exp.country || ownerProfile.country || 'NZ';
@@ -1642,7 +1752,7 @@ async function persistExpenseRow(supabase: any, exp: any, ownerId: string): Prom
     claimable_business_amount: exp.claimableBusinessAmount ?? exp.amount,
     items: exp.items || [],
     confidence_scores: exp.confidenceScores || {},
-    receipt_url: exp.receiptUrl || null,
+    receipt_url: receiptRef,
     receipt_file_name: exp.receiptFileName || null,
     gst_treatment: exp.gstTreatment || 'Likely eligible',
     ca_review_status: exp.caReviewStatus || 'Not Reviewed',
@@ -1702,7 +1812,7 @@ async function persistExpenseRow(supabase: any, exp: any, ownerId: string): Prom
       gst_amount: exp.gstAmount || (exp.cgst || 0) + (exp.sgst || 0) + (exp.igst || 0) || exp.taxAmount || 0,
       is_deductible: exp.expenseType === 'Business',
       deductible_percentage: exp.businessPercentage ?? 100,
-      receipt_url: exp.receiptUrl || null,
+      receipt_url: receiptRef,
       receipt_file_name: exp.receiptFileName || null,
       receipt_number: exp.invoiceNumber || exp.receiptNumber || null,
       payment_method: exp.paymentMethod || 'Credit Card',
@@ -1715,6 +1825,7 @@ async function persistExpenseRow(supabase: any, exp: any, ownerId: string): Prom
       await supabase.from('expenses').upsert(compatRow);
     } catch {}
   }
+  return receiptRef;
 }
 
 export function createApi(): express.Express {
@@ -1821,6 +1932,8 @@ export function createApi(): express.Express {
   // read but not write (RLS). profiles.subscription and the app's local profile are display
   // copies only and are never trusted.
   const FREE_MONTHLY_SCANS = 10;
+  // Tax Compliance Pro: AI scans allowed in any rolling 24 hours (Enterprise is unlimited)
+  const PRO_DAILY_SCANS = 10;
   const PAID_PLAN_PRICES_INR: Record<'pro' | 'enterprise', { monthly: number; annual: number }> = {
     pro: { monthly: 1199, annual: 11999 },
     enterprise: { monthly: 3199, annual: 31999 },
@@ -1841,9 +1954,11 @@ export function createApi(): express.Express {
     status: string;
     periodEnd: string | null;
     scansUsed: number;
+    /** Successful AI scans in the last 24 hours */
+    scansLast24h: number;
   };
   const getEntitlement = async (userId: string): Promise<Entitlement> => {
-    const ent: Entitlement = { tier: 'free', billingCycle: 'monthly', status: 'active', periodEnd: null, scansUsed: 0 };
+    const ent: Entitlement = { tier: 'free', billingCycle: 'monthly', status: 'active', periodEnd: null, scansUsed: 0, scansLast24h: 0 };
     const [{ data: sub }, { data: usage }] = await Promise.all([
       supabaseAdmin!.from('customer_subscriptions').select('*').eq('user_id', userId)
         .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
@@ -1861,6 +1976,12 @@ export function createApi(): express.Express {
       ent.periodEnd = sub.current_period_end || null;
     }
     ent.scansUsed = Number(usage?.scans_used || 0);
+    if (ent.tier === 'pro') {
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabaseAdmin!.from('token_request_logs').select('id', { count: 'exact', head: true })
+        .eq('user_id', userId).eq('request_type', 'receipt_ocr').eq('status', 'success').gte('created_at', since);
+      ent.scansLast24h = count || 0;
+    }
     return ent;
   };
   // Shape used by the app's UserProfile.subscription
@@ -2000,7 +2121,7 @@ export function createApi(): express.Express {
         .order('date', { ascending: false });
 
       if (!error && Array.isArray(data)) {
-        const mapped = data.map(mapRowToExpense);
+        const mapped = await signReceiptUrls(supabaseAdmin, data.map(mapRowToExpense));
         setCachedExpenses(userId, mapped);
         return res.json({ success: true, count: mapped.length, data: mapped, source: 'supabase' });
       }
@@ -2039,7 +2160,8 @@ export function createApi(): express.Express {
       exp.updatedAt = new Date().toISOString();
       if (!exp.createdAt) exp.createdAt = new Date().toISOString();
 
-      await persistExpenseRow(supabaseAdmin, exp, userId);
+      exp.receiptUrl = await persistExpenseRow(supabaseAdmin, exp, userId);
+      [exp.receiptUrl] = (await signReceiptUrls(supabaseAdmin, [exp])).map((e: any) => e.receiptUrl);
 
       const cached = getCachedExpenses(userId);
       const existingIdx = cached.findIndex(e => e.id === exp.id);
@@ -2080,7 +2202,8 @@ export function createApi(): express.Express {
 
       // Persist every edited field (type, business %, taxes, CA status, notes), not just the headline values
       try {
-        await persistExpenseRow(supabaseAdmin, updatedData, userId);
+        updatedData.receiptUrl = await persistExpenseRow(supabaseAdmin, updatedData, userId);
+        [updatedData.receiptUrl] = (await signReceiptUrls(supabaseAdmin, [updatedData])).map((e: any) => e.receiptUrl);
       } catch (dbErr: any) {
         console.warn('Supabase expense update error:', dbErr?.message);
       }
@@ -2549,6 +2672,8 @@ export function createApi(): express.Express {
   app.delete('/api/account', rateLimit('delete-account', 3, 15 * 60 * 1000), requireUser, async (req, res) => {
     const { id: userId, email } = req.user!;
     try {
+      // Receipt photos first, so none are left behind if a later step fails
+      await deleteUserReceipts(supabaseAdmin, userId);
       const deletions: Array<[string, string, string]> = [
         ['expenses', 'customer_tax_id', userId],
         ['incomes', 'user_id', userId],
@@ -2678,6 +2803,13 @@ export function createApi(): express.Express {
           subscription: toProfileSubscription(ent),
         });
       }
+      if (ent.tier === 'pro' && ent.scansLast24h >= PRO_DAILY_SCANS) {
+        return res.status(402).json({
+          error: `You have used your ${PRO_DAILY_SCANS} AI scans for the last 24 hours. More become available as earlier scans pass 24 hours.`,
+          code: 'DAILY_SCAN_LIMIT',
+          subscription: toProfileSubscription(ent),
+        });
+      }
 
       const isPdf = String(input).startsWith('data:application/pdf');
       const isImage = String(input).startsWith('data:image') || isPdf;
@@ -2778,6 +2910,20 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
                 await incrementScanUsage(req.user!.id);
               } catch (usageErr: any) {
                 console.warn('Scan usage update notice:', usageErr?.message);
+              }
+              try {
+                await supabaseAdmin!.from('token_request_logs').insert({
+                  user_id: req.user!.id,
+                  request_type: 'receipt_ocr',
+                  model_name: model,
+                  prompt_tokens: usage.promptTokenCount || 0,
+                  completion_tokens: usage.candidatesTokenCount || 0,
+                  total_tokens: usage.totalTokenCount || 0,
+                  status: 'success',
+                  metadata: { country },
+                });
+              } catch (logErr: any) {
+                console.warn('Scan log notice:', logErr?.message);
               }
               parsed._meta = {
                 model,
