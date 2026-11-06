@@ -795,7 +795,7 @@ export default function App() {
         profile.taxId || profile.gstin || '',
         profile.country || 'NZ'
       );
-      extracted.originalImage = dataUrl;
+      extracted.originalImage = extracted.originalImage || dataUrl;
       if (fileName) {
         extracted.receiptFileName = fileName;
       }
@@ -823,8 +823,13 @@ export default function App() {
     // On native mobile (Android APK or iOS): Open device camera directly and as fast as possible!
     if (Capacitor.isNativePlatform()) {
       try {
+        // 2000px on the long side keeps receipt text sharp for the AI while avoiding
+        // 12+ megapixel originals that are slow to decode, upload and store.
         const photo = await CapCamera.getPhoto({
-          quality: 92,
+          quality: 85,
+          width: 2000,
+          height: 2000,
+          correctOrientation: true,
           allowEditing: false,
           resultType: CameraResultType.DataUrl,
           source: CameraSource.Camera,

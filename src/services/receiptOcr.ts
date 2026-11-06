@@ -717,7 +717,10 @@ export async function optimizeReceiptImage(dataUrl: string, maxDim = 1280, quali
 
   return new Promise((resolve) => {
     // 2.5s safety timeout so mobile canvas decoding can never hang
-    const timer = setTimeout(() => resolve(dataUrl), 2500);
+    // Safety timeout so a stuck decode can't hang the scan. Full-resolution phone photos can
+    // take several seconds to decode, and giving up early meant the multi-MB original was
+    // uploaded and stored with the expense.
+    const timer = setTimeout(() => resolve(dataUrl), 8000);
 
     const img = new Image();
     img.onload = () => {
@@ -977,7 +980,9 @@ async function callServerOcr(
 ): Promise<ExtractedReceiptData | null> {
   try {
     const isPdf = inputPayload.startsWith('data:application/pdf') || inputPayload.startsWith('JVBERi');
-    const payload = isPdf ? inputPayload : await optimizeReceiptImage(inputPayload, 1280, 0.82);
+    // parseReceiptData already compressed images; only re-encode if something larger slipped through
+    const payload =
+      isPdf || inputPayload.length < 700_000 ? inputPayload : await optimizeReceiptImage(inputPayload, 1280, 0.82);
     const started = Date.now();
     const res = await authedFetch('/api/receipt-ocr', {
       method: 'POST',
@@ -1153,6 +1158,13 @@ export async function parseReceiptData(
 
   // 2. If it's an image or PDF document, read it with Gemini via the TaxVault server
   if (isDocumentOrImage) {
+    // Compress photos once (a phone camera shot is often 4-10 MB as base64). The compact copy is
+    // both what the AI reads and what is kept as the receipt image (result.originalImage), so
+    // saving and syncing an expense never uploads the full-resolution original.
+    if (inputPayload.startsWith('data:image')) {
+      inputPayload = await optimizeReceiptImage(inputPayload, 1600, 0.82);
+    }
+
     const isUsable = (r: ExtractedReceiptData | null): r is ExtractedReceiptData =>
       Boolean(r && (r.merchant || r.totalAmount > 0 || (r.items && r.items.length > 0)));
 

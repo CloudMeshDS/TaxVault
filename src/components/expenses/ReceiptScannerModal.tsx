@@ -210,7 +210,10 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
 
     try {
       const photo = await CapCamera.getPhoto({
-        quality: 92,
+        quality: 85,
+        width: 2000,
+        height: 2000,
+        correctOrientation: true,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera,
@@ -243,7 +246,10 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
 
     try {
       const photo = await CapCamera.getPhoto({
-        quality: 92,
+        quality: 85,
+        width: 2000,
+        height: 2000,
+        correctOrientation: true,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
         source: CameraSource.Photos,
@@ -319,7 +325,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
             profile.taxId || profile.gstin || '',
             profile.country || 'NZ'
           );
-          data.originalImage = dataUrl;
+          data.originalImage = data.originalImage || dataUrl;
           data.receiptFileName = file.name;
           extractedList.push(data);
         } catch {
@@ -349,7 +355,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
           profile.country || 'NZ'
         );
         if (cancelledRef.current) return;
-        data.originalImage = dataUrl;
+        data.originalImage = data.originalImage || dataUrl;
         data.receiptFileName = file.name;
         stopCamera();
         setMode('camera');
@@ -399,7 +405,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
         profile.country || 'NZ'
       );
       if (cancelledRef.current) return;
-      extracted.originalImage = capturedImage;
+      extracted.originalImage = extracted.originalImage || capturedImage;
 
       if (isScanningBatch) {
         setBatchCount((prev) => prev + 1);
