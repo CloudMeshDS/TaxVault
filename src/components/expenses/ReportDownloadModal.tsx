@@ -22,7 +22,7 @@ import {
 import { PeriodFilterControls } from '../common/PeriodFilterControls';
 import { calculateTaxPosition, formatCurrency } from '../../services/taxRules';
 import { ExportClient } from '../../services/exportClient';
-import { DEFAULT_INDIAN_PROFILE, DEFAULT_PROFILES } from '../../services/storageService';
+import { createCleanUserProfile } from '../../services/storageService';
 import { toUserMessage } from '../../services/userMessages';
 
 interface ReportDownloadModalProps {
@@ -73,14 +73,15 @@ export const ReportDownloadModal: React.FC<ReportDownloadModalProps> = ({
 
     try {
       const safeBadge = badgeLabel.replace(/[^a-zA-Z0-9_\-]/g, '_');
-      const baseProfile = DEFAULT_PROFILES[country] || DEFAULT_INDIAN_PROFILE;
+      // Reports carry only the user's own details. Blank fields stay blank rather than being
+      // filled from the sample profile (which would put a stranger's tax ID or accountant on them).
+      const baseProfile = profile || createCleanUserProfile('', undefined, country);
       const userProfile: UserProfile = {
         ...baseProfile,
-        ...(profile || {}),
         country,
         defaultCurrency: currCode,
         currencySymbol: currSymbol,
-        financialYear: profile?.financialYear || baseProfile.financialYear || 'FY 2026-27',
+        financialYear: baseProfile.financialYear || createCleanUserProfile('', undefined, country).financialYear,
       };
 
       if (format === 'excel') {

@@ -2404,7 +2404,7 @@ export function createApi(): express.Express {
           accountantEmail: data.accountant_email,
           accountantPhone: data.accountant_phone,
           biometricLock: Boolean(data.biometric_lock),
-          appPin: data.app_pin || '1234',
+          appPin: data.app_pin || '',
           // Never profiles.subscription: it is owner-writable and its column default says "pro"
           subscription: toProfileSubscription(await getEntitlement(userId)),
         };
@@ -2453,7 +2453,7 @@ export function createApi(): express.Express {
           accountant_email: updated.accountantEmail,
           accountant_phone: updated.accountantPhone,
           biometric_lock: Boolean(updated.biometricLock),
-          app_pin: updated.appPin || '1234',
+          app_pin: updated.appPin || '',
           updated_at: new Date().toISOString()
         };
         const { error: fullProfileErr } = await supabaseAdmin!.from('profiles').upsert(profileRow);
@@ -2485,7 +2485,18 @@ export function createApi(): express.Express {
     try {
       const country = (req.params.country || 'NZ').toUpperCase();
       const seedList = SEED_EXPENSES_BY_COUNTRY[country] || SEED_NZ_EXPENSES;
-      const targetProfile = { ...(DEFAULT_PROFILES[country] || DEFAULT_PROFILES.NZ), id: userId, email: userEmail };
+      // Only the country settings come from the sample profile; the user's own name, business,
+      // contact details and tax IDs are never replaced by the sample person's.
+      const sample = DEFAULT_PROFILES[country] || DEFAULT_PROFILES.NZ;
+      const targetProfile = {
+        id: userId,
+        email: userEmail,
+        country: sample.country,
+        defaultCurrency: sample.defaultCurrency,
+        currencySymbol: sample.currencySymbol,
+        taxAuthority: sample.taxAuthority,
+        financialYear: sample.financialYear,
+      };
       const ownedSeed = seedList.map((exp: any) => ({
         ...exp,
         id: `${userId}-${exp.id}`,

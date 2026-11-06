@@ -314,6 +314,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, current
         businessName: signupBusinessName.trim() || `${signupFullName.trim() || 'My'} Business`,
         country: signupCountry,
         email: cleanEmail,
+        // Nothing personal is inherited from the sample profile for this country
+        phone: '',
+        appPin: '',
+        biometricLock: false,
         taxId: '',
         secondaryTaxId: '',
         pan: '',

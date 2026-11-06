@@ -100,7 +100,10 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // 5. Security App Lock
-  const [isAppLocked, setIsAppLocked] = useState<boolean>(() => Boolean(profile.biometricLock));
+  // Only lock when the user has actually chosen a 4-digit PIN (there is no default PIN)
+  const [isAppLocked, setIsAppLocked] = useState<boolean>(
+    () => Boolean(profile.biometricLock) && /^\d{4}$/.test(profile.appPin || '')
+  );
 
   // 6. Modals
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -1009,12 +1012,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-canvas text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Biometric / PIN Lock Screen */}
+      {/* PIN Lock Screen */}
       {isAppLocked && (
         <PinLockModal
           isOpen={isAppLocked}
-          correctPin={profile.appPin || '1234'}
+          correctPin={profile.appPin || ''}
           onUnlock={() => setIsAppLocked(false)}
+          onForgotPin={async () => {
+            // Turn the lock off for this account, then sign out: the password is needed to get back in
+            const unlocked: UserProfile = { ...profile, biometricLock: false, appPin: '' };
+            storageService.saveUserProfile(unlocked);
+            await apiClient.updateProfile(unlocked).catch(() => {});
+            setIsAppLocked(false);
+            await handleSignOut();
+          }}
         />
       )}
 

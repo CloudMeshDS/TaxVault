@@ -22,7 +22,7 @@ import {
   Scale,
 } from 'lucide-react';
 import { BusinessEntityType, SupportedCountry, UserProfile } from '../../types';
-import { storageService, DEFAULT_PROFILES } from '../../services/storageService';
+import { storageService } from '../../services/storageService';
 import { apiClient } from '../../services/apiClient';
 import { SubscriptionService } from '../../services/subscriptionService';
 import { GoogleIcon, AppleIcon } from '../auth/AuthModal';
@@ -180,7 +180,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [secondaryTaxId, setSecondaryTaxId] = useState(profile.secondaryTaxId || profile.gstin || '');
   const [financialYear, setFinancialYear] = useState(profile.financialYear || COUNTRY_CONFIGS[profile.country || 'NZ'].fiscalYears[0]);
   const [biometricLock, setBiometricLock] = useState(profile.biometricLock);
-  const [appPin, setAppPin] = useState(profile.appPin || '1234');
+  // No default PIN: the user must choose one before the lock can be turned on
+  // Reuse the stored PIN only while the lock is on; older profiles carry a placeholder '1234'
+  // that was never chosen by the user.
+  const [appPin, setAppPin] = useState(
+    profile.biometricLock && /^\d{4}$/.test(profile.appPin || '') ? profile.appPin! : ''
+  );
   const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
   const [hasGeminiKey, setHasGeminiKey] = useState(Boolean(getGeminiApiKey()));
 
@@ -207,11 +212,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (!cfg.entityTypes.includes(businessType)) {
       setBusinessType(cfg.entityTypes[0]);
     }
-    const defProf = DEFAULT_PROFILES[c];
-    if (defProf) {
-      setTaxId(defProf.taxId);
-      setSecondaryTaxId(defProf.secondaryTaxId || '');
-    }
+    // Tax IDs belong to one country: restore the saved ones when switching back, otherwise
+    // start blank. (Never fill in the sample profiles' placeholder numbers.)
+    const isSavedCountry = c === profile.country;
+    setTaxId(isSavedCountry ? profile.taxId || profile.pan || '' : '');
+    setSecondaryTaxId(isSavedCountry ? profile.secondaryTaxId || profile.gstin || '' : '');
   };
 
   const handleSeedForCountry = async (c: SupportedCountry) => {
@@ -219,14 +224,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     try {
       const res = await apiClient.seedCountryData(c);
       if (res.profile) {
-        onUpdateProfile(res.profile);
-        setCountry(res.profile.country);
-        setFullName(res.profile.fullName);
-        setBusinessName(res.profile.businessName);
-        setBusinessType(res.profile.businessType);
-        setTaxId(res.profile.taxId);
-        setSecondaryTaxId(res.profile.secondaryTaxId || '');
-        setFinancialYear(res.profile.financialYear);
+        // Sample data adds example expenses only. Keep the user's own name, business, contact
+        // details and tax IDs; switch just the country-specific settings.
+        const cfg = COUNTRY_CONFIGS[c];
+        const sameCountry = c === profile.country;
+        const updated: UserProfile = {
+          ...profile,
+          country: c,
+          defaultCurrency: cfg.currency,
+          currencySymbol: cfg.symbol,
+          taxAuthority: cfg.authority,
+          financialYear: sameCountry ? profile.financialYear : cfg.fiscalYears[0],
+          taxId: sameCountry ? profile.taxId : '',
+          secondaryTaxId: sameCountry ? profile.secondaryTaxId : '',
+          pan: c === 'IN' && sameCountry ? profile.pan : '',
+          gstin: c === 'IN' && sameCountry ? profile.gstin : '',
+        };
+        onUpdateProfile(updated);
+        setCountry(c);
+        setTaxId(updated.taxId || '');
+        setSecondaryTaxId(updated.secondaryTaxId || '');
+        setFinancialYear(updated.financialYear || cfg.fiscalYears[0]);
       }
       setFeedback(`Loaded realistic sample vouchers for ${COUNTRY_CONFIGS[c].name}!`);
       setTimeout(() => setFeedback(null), 3500);
@@ -236,6 +254,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const handleSaveProfile = (sectionName?: string) => {
+    if (biometricLock && !/^\d{4}$/.test(appPin)) {
+      setFeedback('Choose a 4-digit PIN to turn on the app lock.');
+      setTimeout(() => setFeedback(null), 3500);
+      return;
+    }
     const cfg = COUNTRY_CONFIGS[country];
     const updated: UserProfile = {
       ...profile,
@@ -250,8 +273,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       taxAuthority: cfg.authority,
       taxId: taxId.toUpperCase(),
       secondaryTaxId: secondaryTaxId.toUpperCase(),
-      pan: country === 'IN' ? taxId.toUpperCase() : (profile.pan || taxId.toUpperCase()),
-      gstin: country === 'IN' ? secondaryTaxId.toUpperCase() : (profile.gstin || secondaryTaxId.toUpperCase()),
+      // PAN and GSTIN are Indian registrations only
+      pan: country === 'IN' ? taxId.toUpperCase() : '',
+      gstin: country === 'IN' ? secondaryTaxId.toUpperCase() : '',
       financialYear,
       biometricLock,
       appPin,
@@ -763,9 +787,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-bold text-white">Biometric / App Lock</div>
+                    <div className="font-bold text-white">PIN Lock</div>
                     <div className="text-xs text-slate-500">
-                      Require Face ID, Fingerprint or PIN to open TaxVault
+                      Require your 4-digit PIN to open TaxVault
                     </div>
                   </div>
                   <input
@@ -779,14 +803,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 {biometricLock && (
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
                     <div>
-                      <span className="text-xs text-slate-700 font-bold">App Security PIN</span>
-                      <div className="text-xs text-slate-500">4-digit security code</div>
+                      <span className="text-xs text-slate-700 font-bold">Choose your PIN</span>
+                      <div className="text-xs text-slate-500">4 digits. Forgot it later? You can sign in again with your password.</div>
                     </div>
                     <input
                       type="password"
+                      inputMode="numeric"
+                      autoComplete="new-password"
                       maxLength={4}
+                      placeholder="••••"
+                      aria-label="4-digit PIN"
                       value={appPin}
-                      onChange={(e) => setAppPin(e.target.value)}
+                      onChange={(e) => setAppPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       className="w-20 bg-white shadow-xs border border-slate-300 rounded-lg text-center font-mono text-base tracking-widest text-teal-700 focus:outline-none"
                     />
                   </div>
@@ -1149,7 +1177,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Security & App Lock
               </div>
               <div className="text-xs text-slate-500 truncate mt-0.5">
-                {biometricLock ? 'Face ID / Fingerprint & PIN Enabled' : 'App Lock Disabled'}
+                {biometricLock ? 'PIN lock on' : 'App lock off'}
               </div>
             </div>
           </div>
