@@ -18,7 +18,7 @@ Status as of 7 Nov 2026. `[x]` done, `[ ]` pending. **Blocker** = a store will r
 - [x] Secrets set: Razorpay webhook, cron, Firebase service account
 - [x] Daily payment-reminder job (09:00 IST)
 - [x] Razorpay live mode: webhook saved (4 subscription events), Subscriptions on, international cards on
-- [ ] Deploy the account-deletion fix (deleting an account now cancels Razorpay auto-pay first). Code is ready, not deployed.
+- [x] Account deletion cancels Razorpay auto-pay first (deployed 7 Nov 2026)
 - [ ] Test one real payment (monthly and annual) and one renewal webhook
 - [ ] Rotate the EmailJS private key
 - [ ] Delete the unused Firebase key `37511120b4` in Google Cloud, and remove both `tax-vault-e6765-firebase-adminsdk-*.json` files from the project folder
