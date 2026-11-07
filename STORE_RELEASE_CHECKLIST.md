@@ -9,7 +9,8 @@ Status as of 7 Nov 2026. `[x]` done, `[ ]` pending. **Blocker** = a store will r
   - **Google Play:** digital subscriptions must use Google Play Billing. In India and some other countries, Google offers a "user choice billing" programme where Razorpay can be offered *next to* Play Billing (enrolment and a reduced Google fee apply). Check the current Play Payments policy for your countries before submitting.
   - Until this is decided, the safest first release is free-plan-only on both stores, with paid plans sold on the web.
 - [ ] **App ID is permanent.** Both stores lock `nz.taxvault.mobile` forever after the first upload. Change it now if "nz" is wrong for an India-based business (`capacitor.config.ts`, `android/app/build.gradle`, Xcode bundle ID, Firebase app).
-- [ ] **Legal entity and support email.** Replace `[BUSINESS LEGAL NAME]`, `[BUSINESS ADDRESS]` and `[SUPPORT EMAIL]` in `docs/privacy.html` and `docs/delete-account.html`. Have the policy reviewed; it is a draft written from what the app actually does.
+- [x] **Legal entity and support email** filled in: Cloudmesh Digital Solutions, Sohna (Gurugram), cloudmeshdigitalsolutions@gmail.com
+- [ ] Have the privacy policy reviewed; it is a draft written from what the app actually does
 
 ## 1. Server and backend
 
