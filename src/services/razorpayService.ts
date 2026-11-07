@@ -153,7 +153,7 @@ export class RazorpayService {
     tier: PaidTier,
     billingCycle: 'monthly' | 'annual',
     couponCode?: string
-  ): Promise<{ success: boolean; orderId?: string; amount?: number; currency?: string; error?: string }> {
+  ): Promise<{ success: boolean; orderId?: string; amount?: number; currency?: string; keyId?: string; error?: string }> {
     try {
       const res = await authedFetch('/api/razorpay/create-order', {
         method: 'POST',
@@ -162,7 +162,7 @@ export class RazorpayService {
       });
       const data = await res.json();
       if (res.ok && data.order?.id) {
-        return { success: true, orderId: data.order.id, amount: data.order.amount, currency: data.order.currency };
+        return { success: true, orderId: data.order.id, amount: data.order.amount, currency: data.order.currency, keyId: data.keyId };
       }
       return { success: false, error: data?.error || 'Order creation failed' };
     } catch (err: any) {
