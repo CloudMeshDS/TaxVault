@@ -21,6 +21,7 @@ import type express from 'express';
 import nodemailer from 'nodemailer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PLANS, PaidTier, PlanPrice, formatPlanPrice, isPaidTier, planPrice, planPriceInCurrency, toMinorUnits } from '../src/constants/plans';
+import { CouponError, expectedMinorFromNotes, type CouponQuote, type createCouponService } from './coupons';
 
 type ActivatePlan = (
   userId: string,
@@ -45,6 +46,7 @@ export interface BillingDeps {
   /** Current plan, already shaped for the app's profile */
   profileSubscription: (userId: string) => Promise<unknown>;
   razorpayApiBase: string;
+  coupons: ReturnType<typeof createCouponService>;
 }
 
 /** A plan stays active for this long after the charge date, so a slightly late webhook never locks a payer out. */
@@ -148,7 +150,7 @@ async function sendEmail(to: string, subject: string, text: string) {
 
 // ---- Routes -----------------------------------------------------------------------------------
 export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
-  const { admin, requireUser, activatePlan, profileSubscription, razorpayApiBase } = deps;
+  const { admin, requireUser, activatePlan, profileSubscription, razorpayApiBase, coupons } = deps;
 
   const razorpayAuth = () => {
     const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
@@ -190,6 +192,7 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
 
   /** Writes the plan from a Razorpay subscription that has just been paid for. */
   const activateFromSubscription = async (userId: string, tier: PaidTier, sub: any, payment: { id: string; amount: number; currency: string; signature?: string }) => {
+    const couponCode = sub.notes?.coupon_code ? String(sub.notes.coupon_code) : null;
     const currentEnd = unixToIso(sub.current_end) || new Date(Date.now() + 30 * DAY_MS).toISOString();
     const nextChargeAt = unixToIso(sub.charge_at) || currentEnd;
     await activatePlan(userId, tier, 'monthly', {
@@ -205,6 +208,7 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
         next_charge_at: nextChargeAt,
         amount: payment.amount,
         currency: payment.currency,
+        ...(couponCode ? { coupon_code: couponCode } : {}),
       },
     });
   };
@@ -222,7 +226,20 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
       const userId = req.user!.id;
       const tier: PaidTier = isPaidTier(req.body?.tier) ? req.body.tier : 'pro';
       const price = planPrice(tier);
-      const planId = await razorpayPlanId(tier, price);
+      let coupon: CouponQuote | null = null;
+      if (req.body?.couponCode) {
+        try {
+          coupon = await coupons.quote(req.body.couponCode, userId, tier, 'monthly');
+        } catch (err: any) {
+          if (err instanceof CouponError) return res.status(400).json({ success: false, error: err.message });
+          throw err;
+        }
+      }
+      // A coupon gives the subscription its own lower-priced Razorpay plan, so every monthly
+      // charge is discounted while this auto-pay runs
+      const charged: PlanPrice = coupon ? { ...price, monthly: coupon.finalAmount } : price;
+      const amountMinor = toMinorUnits(charged.monthly);
+      const planId = await razorpayPlanId(tier, charged);
       const sub = await razorpay('/subscriptions', {
         method: 'POST',
         body: {
@@ -230,10 +247,15 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
           total_count: 120, // up to 10 years of monthly charges; the user can cancel any time
           quantity: 1,
           customer_notify: 1,
-          notes: { user_id: userId, tier, currency: price.currency },
+          notes: {
+            user_id: userId,
+            tier,
+            currency: price.currency,
+            ...(coupon ? { coupon_code: coupon.code, amount_minor: String(amountMinor), discount_usd: String(coupon.discount) } : {}),
+          },
         },
       });
-      return res.json({ success: true, subscriptionId: sub.id, keyId: auth.keyId, amount: toMinorUnits(price.monthly), currency: price.currency });
+      return res.json({ success: true, subscriptionId: sub.id, keyId: auth.keyId, amount: amountMinor, currency: price.currency });
     } catch (err: any) {
       return res.status(500).json({ success: false, error: err?.message || 'Could not start auto-pay' });
     }
@@ -263,13 +285,23 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
       const payment = await razorpay(`/payments/${encodeURIComponent(paymentId)}`);
       const currency = String(payment.currency || '').toUpperCase();
       const expected = planPriceInCurrency(tier, currency);
-      if (!expected || !['captured', 'authorized'].includes(payment.status) || Number(payment.amount) < toMinorUnits(expected.monthly)) {
+      if (!expected || !['captured', 'authorized'].includes(payment.status) || Number(payment.amount) < expectedMinorFromNotes(sub.notes, expected.monthly)) {
         return res.status(402).json({ verified: false, error: 'Payment has not been completed.' });
       }
       if (await paymentAlreadyRecorded(paymentId)) {
         return res.json({ verified: true, subscription: await profileSubscription(userId) });
       }
       await activateFromSubscription(userId, tier, sub, { id: paymentId, amount: Number(payment.amount) / 100, currency, signature });
+      if (sub.notes?.coupon_code) {
+        await coupons.redeem({
+          code: String(sub.notes.coupon_code),
+          userId,
+          tier,
+          billingCycle: 'monthly',
+          discountUsd: Number(sub.notes.discount_usd) || 0,
+          paymentId,
+        });
+      }
       return res.json({ verified: true, subscription: await profileSubscription(userId) });
     } catch (err: any) {
       return res.status(500).json({ verified: false, error: err?.message || 'Server error verifying payment' });
@@ -305,7 +337,7 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
         const payment = event?.payload?.payment?.entity;
         const currency = String(payment?.currency || '').toUpperCase();
         const expected = planPriceInCurrency(tier, currency);
-        if (!payment?.id || !expected || Number(payment.amount) < toMinorUnits(expected.monthly)) {
+        if (!payment?.id || !expected || Number(payment.amount) < expectedMinorFromNotes(sub.notes, expected.monthly)) {
           return res.json({ ok: true, ignored: 'amount' });
         }
         if (!(await paymentAlreadyRecorded(payment.id))) {
@@ -334,6 +366,16 @@ export function registerBillingRoutes(app: express.Express, deps: BillingDeps) {
       platform: String(req.body?.platform || 'android').slice(0, 20),
       updated_at: new Date().toISOString(),
     });
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    return res.json({ success: true });
+  });
+
+  // 5b. Forget this device on sign-out, so the next person to use the phone gets no reminders
+  //     meant for this account. Only the caller's own token can be removed.
+  app.post('/api/push/unregister', requireUser, async (req, res) => {
+    const token = String(req.body?.token || '').trim();
+    if (!token) return res.status(400).json({ success: false, error: 'Missing device token.' });
+    const { error } = await admin.from('push_tokens').delete().eq('token', token).eq('user_id', req.user!.id);
     if (error) return res.status(500).json({ success: false, error: error.message });
     return res.json({ success: true });
   });

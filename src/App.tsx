@@ -17,7 +17,7 @@ import { supabaseService } from './services/supabaseService';
 import { apiClient } from './services/apiClient';
 import { ExtractedReceiptData, parseReceiptData } from './services/receiptOcr';
 import { SubscriptionService, monthlyReceiptLimitFor } from './services/subscriptionService';
-import { registerForPushNotifications } from './services/pushNotifications';
+import { registerForPushNotifications, unregisterPushNotifications } from './services/pushNotifications';
 import { devicePermissions } from './services/devicePermissions';
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -969,6 +969,8 @@ export default function App() {
 
   const handleSignOut = async () => {
     setIsAuthOpen(false);
+    // While the session is still valid: stop payment reminders for this account on this phone
+    await unregisterPushNotifications();
     storageService.setAuthenticated(false);
     await supabaseService.signOut().catch(() => {});
     storageService.clearUserProfile();

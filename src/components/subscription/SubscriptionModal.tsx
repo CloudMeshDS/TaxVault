@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Check, X, Zap, Lock, CheckCircle2, ArrowRight, Copy, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check, X, Zap, Lock, CheckCircle2, ArrowRight, Copy, ShieldCheck, Tag } from 'lucide-react';
 import { CountryTaxConfig, SubscriptionTier, UserProfile } from '../../types';
 import { SUBSCRIPTION_PLANS, SubscriptionService } from '../../services/subscriptionService';
 import { PAID_TIERS, PaidTier, formatPlanPrice, planPrice, type PlanCurrency } from '../../constants/plans';
 import { supabaseService } from '../../services/supabaseService';
 import { activityLogService } from '../../services/activityLogService';
 import { RazorpayCheckoutModal } from './RazorpayCheckoutModal';
-import { RazorpaySuccessResponse, RazorpayService } from '../../services/razorpayService';
+import { CouponQuote, RazorpaySuccessResponse, RazorpayService } from '../../services/razorpayService';
 import { authedFetch } from '../../services/apiBase';
 
 interface SubscriptionModalProps {
@@ -44,7 +44,43 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     date: string;
   } | null>(null);
 
+  // Coupon: checked by the server for the selected plan + period; re-checked when either changes
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState<(CouponQuote & { tier: PaidTier; cycle: 'monthly' | 'annual' }) | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
+
+  const checkCoupon = async (code: string, tier: PaidTier, cycle: 'monthly' | 'annual') => {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    setCouponOpen(true);
+    setCouponChecking(true);
+    setCouponError(null);
+    const result = await RazorpayService.validateCoupon(trimmed, tier, cycle);
+    setCouponChecking(false);
+    if (result.valid) {
+      setCoupon({ ...result, tier, cycle });
+    } else {
+      setCoupon(null);
+      setCouponError(result.error);
+    }
+  };
+
+  // The same code can be worth a different amount (or nothing) on another plan or period
+  useEffect(() => {
+    if (coupon && (coupon.tier !== selectedTierForPayment || coupon.cycle !== billingCycle)) {
+      checkCoupon(coupon.code, selectedTierForPayment, billingCycle);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTierForPayment, billingCycle]);
+
   if (!isOpen) return null;
+
+  const activeCoupon =
+    coupon && coupon.tier === selectedTierForPayment && coupon.cycle === billingCycle ? coupon : null;
+  const chargeFor = (tier: PaidTier) =>
+    activeCoupon && activeCoupon.tier === tier ? activeCoupon.finalAmount : planPrice(tier)[billingCycle];
 
   const currentTier = profile.subscription.tier;
   const usage = SubscriptionService.getScanUsage(profile);
@@ -57,7 +93,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
   const handleRazorpaySuccess = async (res: RazorpaySuccessResponse) => {
     const tier = selectedTierForPayment;
-    const { currency, [billingCycle]: amount } = planPrice(tier);
+    const { currency } = planPrice(tier);
+    const amount = chargeFor(tier);
     const userId = profile.id || 'usr_taxvault_admin';
     setPaymentError(null);
 
@@ -90,6 +127,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         amount,
         paymentGateway: 'razorpay',
         paymentId: res.razorpay_payment_id,
+        ...(activeCoupon ? { couponCode: activeCoupon.code } : {}),
       },
     });
 
@@ -322,8 +360,79 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   ))}
                 </ul>
 
+                <div>
+                  {activeCoupon ? (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-emerald-600/40 bg-emerald-50 text-xs">
+                      <span className="flex items-center gap-1.5 flex-wrap min-w-0 text-emerald-800">
+                        <Tag className="w-3.5 h-3.5 shrink-0" />
+                        <span className="font-bold font-mono">{activeCoupon.code}</span>
+                        <span>
+                          {activeCoupon.description} · save {formatPlanPrice(activeCoupon.discount)}
+                          {billingCycle === 'monthly' ? '/mo' : ''}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCoupon(null);
+                          setCouponInput('');
+                          setCouponError(null);
+                        }}
+                        className="text-slate-500 hover:text-slate-900 underline underline-offset-2 shrink-0 cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : couponOpen || coupon ? (
+                    <form
+                      className="flex gap-2"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        checkCoupon(couponInput, selectedTierForPayment, billingCycle);
+                      }}
+                    >
+                      <input
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          setCouponError(null);
+                        }}
+                        placeholder="Coupon code"
+                        aria-label="Coupon code"
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        spellCheck={false}
+                        maxLength={32}
+                        className="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm font-mono uppercase text-slate-900 placeholder:normal-case placeholder:font-sans placeholder:text-slate-400 focus:outline-none focus:border-emerald-600"
+                      />
+                      <button
+                        type="submit"
+                        disabled={couponChecking || !couponInput.trim()}
+                        className="px-4 py-2 rounded-xl border-2 border-emerald-600 text-emerald-700 font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-default"
+                      >
+                        {couponChecking ? 'Checking…' : 'Apply'}
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setCouponOpen(true)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 cursor-pointer"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      Have a coupon code?
+                    </button>
+                  )}
+                  {couponError && (
+                    <p role="alert" className="text-[11px] text-rose-700 mt-1">
+                      {couponError}
+                    </p>
+                  )}
+                </div>
+
                 {(() => {
-                  const { currency, [billingCycle]: price } = planPrice(selectedTierForPayment);
+                  const { currency, [billingCycle]: fullPrice } = planPrice(selectedTierForPayment);
+                  const price = chargeFor(selectedTierForPayment);
                   const isCurrent = currentTier === selectedTierForPayment;
                   return (
                     <button
@@ -333,7 +442,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     >
                       {isCurrent
                         ? 'This is your current plan'
-                        : `${billingCycle === 'monthly' ? 'Subscribe' : 'Pay'} · ${formatPlanPrice(price, currency)} ${billingCycle === 'monthly' ? '/ month' : '/ year'}`}
+                        : (
+                          <>
+                            {billingCycle === 'monthly' ? 'Subscribe' : 'Pay'} ·{' '}
+                            {price < fullPrice && (
+                              <span className="line-through opacity-70 font-medium mr-1">{formatPlanPrice(fullPrice, currency)}</span>
+                            )}
+                            {formatPlanPrice(price, currency)} {billingCycle === 'monthly' ? '/ month' : '/ year'}
+                          </>
+                        )}
                     </button>
                   );
                 })()}
@@ -371,8 +488,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         planName={SUBSCRIPTION_PLANS[selectedTierForPayment].name}
         planTier={selectedTierForPayment}
         billingCycle={billingCycle}
-        amount={planPrice(selectedTierForPayment)[billingCycle]}
+        amount={chargeFor(selectedTierForPayment)}
         currency={planPrice(selectedTierForPayment).currency}
+        couponCode={activeCoupon?.code}
         onPaymentSuccess={handleRazorpaySuccess}
       />
     </>

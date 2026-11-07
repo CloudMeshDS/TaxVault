@@ -28,6 +28,8 @@ interface RazorpayCheckoutModalProps {
   billingCycle: 'monthly' | 'annual';
   amount: number;
   currency: PlanCurrency;
+  /** Coupon already checked on the plan screen; the server applies it again when pricing the order */
+  couponCode?: string;
   onPaymentSuccess: (response: RazorpaySuccessResponse) => void;
 }
 
@@ -40,6 +42,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   billingCycle,
   amount,
   currency,
+  couponCode,
   onPaymentSuccess,
 }) => {
   const [activeTab, setActiveTab] = useState<'upi' | 'card' | 'netbanking'>('upi');
@@ -65,11 +68,12 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
       // 1. Monthly plans are auto-debited (Razorpay subscription + mandate); annual is a one-time order
       let paymentTarget: { order_id?: string; subscription_id?: string; amount?: number; currency?: string };
       if (billingCycle === 'monthly') {
-        const subRes = await RazorpayService.createSubscriptionOnServer(planTier);
+        const subRes = await RazorpayService.createSubscriptionOnServer(planTier, couponCode);
         if (!subRes.success || !subRes.subscriptionId) throw new Error(subRes.error || 'Could not start auto-pay');
         paymentTarget = { subscription_id: subRes.subscriptionId };
       } else {
-        const orderRes = await RazorpayService.createOrderOnServer(planTier, billingCycle);
+        const orderRes = await RazorpayService.createOrderOnServer(planTier, billingCycle, couponCode);
+        if (!orderRes.success && couponCode) throw new Error(orderRes.error || 'This coupon could not be applied');
         paymentTarget = {
           order_id: orderRes.orderId,
           amount: orderRes.amount ?? toMinorUnits(amount),

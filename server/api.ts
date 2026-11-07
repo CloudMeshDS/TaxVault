@@ -23,6 +23,7 @@ import {
   FREE_MONTHLY_SCANS as PLAN_FREE_MONTHLY_SCANS,
 } from '../src/constants/plans';
 import { registerBillingRoutes } from './billing';
+import { CouponError, createCouponService, expectedMinorFromNotes, registerCouponRoutes, type CouponQuote } from './coupons';
 
 // Verified Supabase user attached to the request by the requireUser / optionalUser middleware
 type AuthUser = { id: string; email: string };
@@ -2719,6 +2720,8 @@ export function createApi(): express.Express {
         ['bank_transactions', 'user_id', userId],
         ['token_request_logs', 'user_id', userId],
         ['activity_logs', 'user_id', userId],
+        ['push_tokens', 'user_id', userId],
+        ['coupon_redemptions', 'user_id', userId],
         ['customer_agreements', 'user_id', userId],
         ...(email ? [['customer_agreements', 'user_email', email] as [string, string, string]] : []),
         // Deleting the profile cascades to subscriptions, transactions and usage.
@@ -3123,13 +3126,26 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
   // 15. Razorpay: Create Order API (Server-to-Server)
   // The price comes from the server's plan table, never from the client, and the order is tagged
   // with the buyer's user id and plan so the payment can only activate that plan for that user.
+  const coupons = createCouponService(supabaseAdmin!);
+  registerCouponRoutes(app, { requireUser, rateLimit: rateLimit('coupon-check', 20, 10 * 60 * 1000), coupons });
+
   app.post('/api/razorpay/create-order', requireUser, async (req, res) => {
     try {
       const tier: PaidTier = isPaidTier(req.body?.tier) ? req.body.tier : 'pro';
       const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
       const price = planPrice(tier);
       const currency = price.currency;
-      const amount = toMinorUnits(price[billingCycle]); // paise / cents
+      let coupon: CouponQuote | null = null;
+      if (req.body?.couponCode) {
+        try {
+          coupon = await coupons.quote(req.body.couponCode, req.user!.id, tier, billingCycle);
+        } catch (err: any) {
+          if (err instanceof CouponError) return res.status(400).json({ success: false, error: err.message });
+          throw err;
+        }
+      }
+      const amount = coupon ? toMinorUnits(coupon.finalAmount) : toMinorUnits(price[billingCycle]); // cents
+      const couponNotes = coupon ? { coupon_code: coupon.code, amount_minor: String(amount), discount_usd: String(coupon.discount) } : {};
       const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -3164,7 +3180,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
           amount,
           currency,
           receipt: `rcpt_${tier}_${Date.now()}`,
-          notes: { user_id: req.user!.id, tier, billing_cycle: billingCycle, currency },
+          notes: { user_id: req.user!.id, tier, billing_cycle: billingCycle, currency, ...couponNotes },
         }),
       });
 
@@ -3248,7 +3264,8 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
       // is not sold in is refused, so a cheap foreign-currency order cannot buy a plan.
       const orderCurrency = String(order?.currency || '').toUpperCase();
       const planInCurrency = planPriceInCurrency(tier, orderCurrency);
-      const price = planInCurrency ? toMinorUnits(planInCurrency[billingCycle]) : Infinity;
+      // With a coupon the order was priced lower by the server; the notes carry that price
+      const price = planInCurrency ? expectedMinorFromNotes(order.notes, planInCurrency[billingCycle]) : Infinity;
       if (order.status !== 'paid' || Number(order.amount_paid || 0) < price) {
         return res.status(402).json({ verified: false, error: 'Payment has not been completed.' });
       }
@@ -3260,7 +3277,18 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         orderId: String(razorpay_order_id),
         paymentId: String(razorpay_payment_id),
         signature: given,
+        ...(order.notes?.coupon_code ? { metadata: { coupon_code: String(order.notes.coupon_code) } } : {}),
       });
+      if (order.notes?.coupon_code) {
+        await coupons.redeem({
+          code: String(order.notes.coupon_code),
+          userId,
+          tier,
+          billingCycle,
+          discountUsd: Number(order.notes.discount_usd) || 0,
+          paymentId: String(razorpay_payment_id),
+        });
+      }
       return res.json({
         verified: true,
         paymentId: razorpay_payment_id,
@@ -3288,6 +3316,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
     activatePlan,
     profileSubscription: async (userId) => toProfileSubscription(await getEntitlement(userId)),
     razorpayApiBase: RAZORPAY_API_BASE,
+    coupons,
   });
 
   // 16c. Switch the signed-in user to the free plan (POST /api/subscription/downgrade)

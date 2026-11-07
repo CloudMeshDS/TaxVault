@@ -156,3 +156,15 @@ Run `2026-11-07_usd_prices.sql`. Every plan is charged in USD for every user (co
 changes the price): Pro US$5.99, Business US$8.99, CA Firm US$19.99 a month; annual = 10x.
 Razorpay must have international payments (USD) enabled. UPI only works in rupees, so USD auto-pay
 is by card mandate.
+
+## Coupon codes (2026-11-07)
+
+Run `2026-11-07_coupons.sql`, then deploy the server. Codes live in `public.coupons` (server only);
+each paid use is recorded in `public.coupon_redemptions`. Users enter a code on the plan screen;
+the server prices the order with it, so the app can never set its own price.
+
+- Percent or fixed US$ off, optionally limited to plans (`tiers`), `billing_cycles`, a start/end
+  date, a total number of uses and uses per user (default 1).
+- Monthly: the discount applies to every monthly auto-debit of that subscription.
+- No charge goes below US$1.00 (a 100% code charges US$1.00).
+- Examples are at the top of the migration file.

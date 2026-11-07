@@ -36,6 +36,17 @@ export interface RazorpaySuccessResponse {
   razorpay_signature?: string;
 }
 
+/** A coupon checked by the server, priced for one plan and billing period (US dollars). */
+export interface CouponQuote {
+  valid: true;
+  code: string;
+  description: string;
+  originalAmount: number;
+  finalAmount: number;
+  discount: number;
+  currency: 'USD';
+}
+
 export interface RazorpayFailureResponse {
   error: {
     code: string;
@@ -140,13 +151,14 @@ export class RazorpayService {
    */
   public static async createOrderOnServer(
     tier: PaidTier,
-    billingCycle: 'monthly' | 'annual'
+    billingCycle: 'monthly' | 'annual',
+    couponCode?: string
   ): Promise<{ success: boolean; orderId?: string; amount?: number; currency?: string; error?: string }> {
     try {
       const res = await authedFetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, billingCycle }),
+        body: JSON.stringify({ tier, billingCycle, couponCode }),
       });
       const data = await res.json();
       if (res.ok && data.order?.id) {
@@ -186,13 +198,14 @@ export class RazorpayService {
 
   /** Starts a monthly auto-debit subscription; the server sets the price for the user's country. */
   public static async createSubscriptionOnServer(
-    tier: PaidTier
+    tier: PaidTier,
+    couponCode?: string
   ): Promise<{ success: boolean; subscriptionId?: string; keyId?: string; error?: string }> {
     try {
       const res = await authedFetch('/api/razorpay/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, couponCode }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.subscriptionId) return { success: true, subscriptionId: data.subscriptionId, keyId: data.keyId };
@@ -216,6 +229,27 @@ export class RazorpayService {
       return { verified: res.ok && Boolean(data?.verified), subscription: data?.subscription, error: data?.error };
     } catch (err: any) {
       return { verified: false, error: err?.message };
+    }
+  }
+
+  /** Checks a coupon for a plan and period; the server returns the price it will charge. */
+  public static async validateCoupon(
+    code: string,
+    tier: PaidTier,
+    billingCycle: 'monthly' | 'annual'
+  ): Promise<CouponQuote | { valid: false; error: string }> {
+    try {
+      const res = await authedFetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, tier, billingCycle }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.valid) return data as CouponQuote;
+      if (res.status === 401) return { valid: false, error: 'Sign in to use a coupon.' };
+      return { valid: false, error: data?.error || 'This coupon code is not valid.' };
+    } catch {
+      return { valid: false, error: 'Could not check this coupon. Please check your connection.' };
     }
   }
 
