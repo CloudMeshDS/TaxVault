@@ -13,7 +13,16 @@ import nodemailer from 'nodemailer';
 import { COUNTRY_TERMS } from '../src/constants/countryTerms';
 import { ExportService } from '../src/services/exportService';
 import { currentFiscalYear, currentFiscalYearEnding } from '../src/services/fiscalYear';
-import { PLANS, PaidTier, isPaidTier, FREE_MONTHLY_SCANS as PLAN_FREE_MONTHLY_SCANS } from '../src/constants/plans';
+import {
+  PLANS,
+  PaidTier,
+  isPaidTier,
+  planPrice,
+  planPriceInCurrency,
+  toMinorUnits,
+  FREE_MONTHLY_SCANS as PLAN_FREE_MONTHLY_SCANS,
+} from '../src/constants/plans';
+import { registerBillingRoutes } from './billing';
 
 // Verified Supabase user attached to the request by the requireUser / optionalUser middleware
 type AuthUser = { id: string; email: string };
@@ -1841,7 +1850,12 @@ export function createApi(): express.Express {
   // CA zip packs carry the receipt images, so that route accepts larger bodies
   const jsonBody = express.json({ limit: '20mb' });
   const largeJsonBody = express.json({ limit: '60mb' });
-  app.use((req, res, next) => (req.path.startsWith('/api/exports/') ? largeJsonBody : jsonBody)(req, res, next));
+  // The Razorpay webhook is verified against the exact bytes Razorpay signed, so it is kept raw
+  const rawWebhookBody = express.raw({ type: '*/*', limit: '1mb' });
+  app.use((req, res, next) => {
+    if (req.path === '/api/razorpay/webhook') return rawWebhookBody(req, res, next);
+    return (req.path.startsWith('/api/exports/') ? largeJsonBody : jsonBody)(req, res, next);
+  });
 
   // CORS for the Capacitor Android/iOS builds, which call this server from their own origin.
   // Add more origins (comma separated) via CORS_ORIGINS if the web app is hosted elsewhere.
@@ -1934,11 +1948,7 @@ export function createApi(): express.Express {
   // copies only and are never trusted.
   // Prices and scan limits come from src/constants/plans.ts (shared with the app)
   const FREE_MONTHLY_SCANS = PLAN_FREE_MONTHLY_SCANS;
-  const PAID_PLAN_PRICES_INR: Record<PaidTier, { monthly: number; annual: number }> = {
-    pro: PLANS.pro.priceINR,
-    business: PLANS.business.priceINR,
-    enterprise: PLANS.enterprise.priceINR,
-  };
+  // Plans are priced and charged in US dollars for everyone (planPrice), never from the request.
   // Without RAZORPAY_KEY_SECRET payments cannot be verified. Simulated upgrades are then only
   // accepted when explicitly enabled (local testing), never by default.
   // Overridable only from the server environment (used to test against a stub of the Razorpay API)
@@ -1957,9 +1967,16 @@ export function createApi(): express.Express {
     scansUsed: number;
     /** Successful AI scans in the last 24 hours */
     scansLast24h: number;
+    /** Monthly plan paid by Razorpay auto-debit that has not been cancelled */
+    autoRenew: boolean;
+    /** When Razorpay will next charge (ISO), for auto-renewing plans */
+    nextChargeAt: string | null;
   };
   const getEntitlement = async (userId: string): Promise<Entitlement> => {
-    const ent: Entitlement = { tier: 'free', billingCycle: 'monthly', status: 'active', periodEnd: null, scansUsed: 0, scansLast24h: 0 };
+    const ent: Entitlement = {
+      tier: 'free', billingCycle: 'monthly', status: 'active', periodEnd: null, scansUsed: 0, scansLast24h: 0,
+      autoRenew: false, nextChargeAt: null,
+    };
     const [{ data: sub }, { data: usage }] = await Promise.all([
       supabaseAdmin!.from('customer_subscriptions').select('*').eq('user_id', userId)
         .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
@@ -1975,6 +1992,8 @@ export function createApi(): express.Express {
       ent.billingCycle = sub.billing_cycle === 'annual' ? 'annual' : 'monthly';
       ent.status = sub.status;
       ent.periodEnd = sub.current_period_end || null;
+      ent.autoRenew = Boolean(sub.metadata?.razorpay_subscription_id) && !sub.cancel_at_period_end;
+      ent.nextChargeAt = ent.autoRenew ? sub.metadata?.next_charge_at || null : null;
     }
     ent.scansUsed = Number(usage?.scans_used || 0);
     if (ent.tier !== 'free') {
@@ -1996,6 +2015,8 @@ export function createApi(): express.Express {
     scansLast24h: ent.scansLast24h,
     usagePeriod: currentPeriodStart().slice(0, 7),
     renewsOn: ent.periodEnd ? ent.periodEnd.slice(0, 10) : undefined,
+    autoRenew: ent.autoRenew,
+    nextChargeOn: ent.nextChargeAt ? ent.nextChargeAt.slice(0, 10) : undefined,
   });
   const incrementScanUsage = async (userId: string) => {
     const periodStart = currentPeriodStart();
@@ -2020,12 +2041,23 @@ export function createApi(): express.Express {
     userId: string,
     tier: 'free' | PaidTier,
     billingCycle: 'monthly' | 'annual',
-    payment: { gateway: string; amount: number; orderId?: string; paymentId?: string; signature?: string },
+    payment: {
+      gateway: string;
+      amount: number;
+      currency?: string;
+      orderId?: string;
+      paymentId?: string;
+      signature?: string;
+      /** Auto-renewing plans: the end of the period Razorpay has charged for */
+      periodEnd?: string;
+      /** Stored on customer_subscriptions.metadata (Razorpay subscription id, next charge date) */
+      metadata?: Record<string, unknown>;
+    },
   ) => {
     const now = new Date();
     const periodEnd = tier === 'free'
       ? null
-      : new Date(now.getTime() + (billingCycle === 'annual' ? 365 : 30) * 86400000).toISOString();
+      : payment.periodEnd || new Date(now.getTime() + (billingCycle === 'annual' ? 365 : 30) * 86400000).toISOString();
     const subId = 'sub_' + userId;
     const { error: subErr } = await supabaseAdmin!.from('customer_subscriptions').upsert({
       id: subId,
@@ -2037,6 +2069,8 @@ export function createApi(): express.Express {
       current_period_end: periodEnd,
       cancel_at_period_end: false,
       payment_method: payment.gateway,
+      // Replaced on every activation: a one-time purchase or the free plan has no auto-renewal
+      metadata: payment.metadata ?? {},
       updated_at: now.toISOString(),
     });
     if (subErr) throw new Error(subErr.message);
@@ -2046,7 +2080,7 @@ export function createApi(): express.Express {
       user_id: userId,
       plan_id: tier,
       amount: payment.amount,
-      currency: 'INR',
+      currency: payment.currency || 'USD',
       status: 'succeeded',
       billing_cycle: billingCycle,
       payment_gateway: payment.gateway,
@@ -3093,7 +3127,9 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
     try {
       const tier: PaidTier = isPaidTier(req.body?.tier) ? req.body.tier : 'pro';
       const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
-      const amount = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100; // paise
+      const price = planPrice(tier);
+      const currency = price.currency;
+      const amount = toMinorUnits(price[billingCycle]); // paise / cents
       const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -3108,7 +3144,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
           order: {
             id: `order_SIM${Date.now().toString().slice(-6)}${rand.slice(0, 4)}`,
             amount,
-            currency: 'INR',
+            currency,
             receipt: `rcpt_${tier}_${Date.now()}`,
             status: 'created',
           },
@@ -3126,9 +3162,9 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         },
         body: JSON.stringify({
           amount,
-          currency: 'INR',
+          currency,
           receipt: `rcpt_${tier}_${Date.now()}`,
-          notes: { user_id: req.user!.id, tier, billing_cycle: billingCycle },
+          notes: { user_id: req.user!.id, tier, billing_cycle: billingCycle, currency },
         }),
       });
 
@@ -3175,9 +3211,11 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
         }
         const tier: PaidTier = isPaidTier(req.body?.tier) ? req.body.tier : 'pro';
         const billingCycle = req.body?.billingCycle === 'annual' ? 'annual' : 'monthly';
+        const simPrice = planPrice(tier);
         const ent = await activatePlan(userId, tier, billingCycle, {
           gateway: 'simulated',
-          amount: PAID_PLAN_PRICES_INR[tier][billingCycle],
+          amount: simPrice[billingCycle],
+          currency: simPrice.currency,
           orderId: String(razorpay_order_id),
           paymentId: String(razorpay_payment_id),
         });
@@ -3206,7 +3244,11 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
       if (!orderRes.ok || order?.notes?.user_id !== userId || !tier) {
         return res.status(403).json({ verified: false, error: 'This payment does not belong to your account.' });
       }
-      const price = PAID_PLAN_PRICES_INR[tier][billingCycle] * 100;
+      // Check the amount in the currency the order was actually charged in. A currency the plan
+      // is not sold in is refused, so a cheap foreign-currency order cannot buy a plan.
+      const orderCurrency = String(order?.currency || '').toUpperCase();
+      const planInCurrency = planPriceInCurrency(tier, orderCurrency);
+      const price = planInCurrency ? toMinorUnits(planInCurrency[billingCycle]) : Infinity;
       if (order.status !== 'paid' || Number(order.amount_paid || 0) < price) {
         return res.status(402).json({ verified: false, error: 'Payment has not been completed.' });
       }
@@ -3214,6 +3256,7 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
       const ent = await activatePlan(userId, tier, billingCycle, {
         gateway: 'razorpay',
         amount: price / 100,
+        currency: orderCurrency,
         orderId: String(razorpay_order_id),
         paymentId: String(razorpay_payment_id),
         signature: given,
@@ -3238,9 +3281,20 @@ Extract all fields and return ONLY a valid JSON object without markdown fences, 
     }
   });
 
+  // 16b-2. Monthly auto-debit (Razorpay Subscriptions), webhook, device tokens and reminders
+  const billing = registerBillingRoutes(app, {
+    admin: supabaseAdmin!,
+    requireUser,
+    activatePlan,
+    profileSubscription: async (userId) => toProfileSubscription(await getEntitlement(userId)),
+    razorpayApiBase: RAZORPAY_API_BASE,
+  });
+
   // 16c. Switch the signed-in user to the free plan (POST /api/subscription/downgrade)
   app.post('/api/subscription/downgrade', requireUser, async (req, res) => {
     try {
+      // Stop any auto-debit first so the user is never charged after leaving the paid plan
+      await billing.cancelAutoRenew(req.user!.id, false);
       const ent = await activatePlan(req.user!.id, 'free', 'monthly', { gateway: 'manual', amount: 0 });
       return res.json({ success: true, data: toProfileSubscription(ent) });
     } catch (err: any) {

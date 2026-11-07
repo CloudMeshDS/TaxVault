@@ -128,3 +128,31 @@ Run `2026-11-06_daily_scan_plans.sql` **before** deploying the server that sells
 Free 10 scans/month; Pro 10/day ₹465; Business 20/day ₹699; CA Firm 100/day ₹1,499; annual = 10× monthly.
 "Per day" means any rolling 24 hours, counted from `token_request_logs`. Existing Pro/Enterprise
 customers keep their plan id and get the new daily limit.
+
+## Monthly auto-pay and payment reminders (2026-11-07)
+
+Monthly plans are paid by Razorpay Subscriptions (UPI Autopay / card mandate); annual plans stay a
+one-time payment. Code: `server/billing.ts`. Set up in this order:
+
+1. Run `2026-11-07_autopay_and_reminders.sql` (Razorpay plan cache, push device tokens, indexes).
+2. Server secrets (`npx supabase secrets set NAME=value --project-ref egtmuxewuremxgodpjxj`):
+   - `RAZORPAY_WEBHOOK_SECRET`: any long random string, also entered in step 3.
+   - `CRON_SECRET`: another long random string, also stored in Vault in step 5.
+   - `FCM_SERVICE_ACCOUNT`: the Firebase service-account JSON (Firebase console → Project
+     settings → Service accounts → Generate new private key), raw or base64.
+3. Razorpay dashboard → Settings → Webhooks → Add: URL
+   `https://egtmuxewuremxgodpjxj.supabase.co/functions/v1/api/razorpay/webhook`, the secret from
+   step 2, events `subscription.charged`, `subscription.cancelled`, `subscription.halted`,
+   `subscription.completed`. Subscriptions must be enabled on the Razorpay account.
+4. Deploy the server.
+5. `SELECT vault.create_secret('<CRON_SECRET>', 'cron_secret');` then run `2026-11-07_reminder_schedule.sql`
+   (daily at 09:00 IST: push + email 7 days before each auto-debit).
+6. App: put `google-services.json` (Firebase console → add Android app with package name `nz.taxvault.mobile`) in `android/app/`, set `VITE_PUSH_ENABLED=true` in `.env.mobile`,
+   rebuild the APK. Without the file, keep it `false`: registering for push would crash Android.
+
+## US dollar prices (2026-11-07)
+
+Run `2026-11-07_usd_prices.sql`. Every plan is charged in USD for every user (country no longer
+changes the price): Pro US$5.99, Business US$8.99, CA Firm US$19.99 a month; annual = 10x.
+Razorpay must have international payments (USD) enabled. UPI only works in rupees, so USD auto-pay
+is by card mandate.

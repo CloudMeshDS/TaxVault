@@ -33,6 +33,7 @@ import { CountryTermsModal } from '../legal/CountryTermsModal';
 import { pressable } from '../../utils/a11y';
 import { saveFile } from '../../utils/saveFile';
 import { toUserMessage } from '../../services/userMessages';
+import { RazorpayService } from '../../services/razorpayService';
 
 // Feature flag: Hide Google & Apple buttons (keep implementation intact)
 const SHOW_OAUTH_PROVIDERS = false;
@@ -171,6 +172,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const scanUsage = SubscriptionService.getScanUsage(profile);
   const currentPlan = SUBSCRIPTION_PLANS[profile.subscription?.tier || 'free'] || SUBSCRIPTION_PLANS.free;
   const isPaidPlan = currentPlan.id !== 'free';
+  const [isCancellingAutoRenew, setIsCancellingAutoRenew] = useState(false);
+  const [autoRenewError, setAutoRenewError] = useState<string | null>(null);
+  const formatPlanDate = (value?: string) =>
+    value ? new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const handleCancelAutoRenew = async () => {
+    setIsCancellingAutoRenew(true);
+    setAutoRenewError(null);
+    const result = await RazorpayService.cancelAutoRenew();
+    setIsCancellingAutoRenew(false);
+    if (!result.success) {
+      setAutoRenewError(result.error ? toUserMessage(result.error) : 'Could not cancel auto-pay. Please try again.');
+      return;
+    }
+    onUpdateProfile({ ...profile, subscription: { ...profile.subscription, ...(result.subscription || {}), autoRenew: false } });
+  };
   const scanUsageLabel = scanUsage.period === 'day'
     ? `${scanUsage.limit} AI scans per day`
     : `${scanUsage.used} / ${scanUsage.limit} scans used this month`;
@@ -512,6 +528,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   ))}
                 </ul>
               </div>
+
+              {isPaidPlan && (profile.subscription?.renewsOn || profile.subscription?.nextChargeOn) && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 text-xs">
+                  {profile.subscription?.autoRenew && profile.subscription?.nextChargeOn ? (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-500 font-medium">Next auto-payment</span>
+                        <span className="text-slate-900 font-bold">{formatPlanDate(profile.subscription.nextChargeOn)}</span>
+                      </div>
+                      <p className="text-slate-500">You'll get a reminder 7 days before. Cancelling keeps your plan until the paid month ends.</p>
+                      {autoRenewError && <p role="alert" className="text-rose-700">{autoRenewError}</p>}
+                      <button
+                        type="button"
+                        onClick={handleCancelAutoRenew}
+                        disabled={isCancellingAutoRenew}
+                        className="w-full py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium cursor-pointer disabled:opacity-60"
+                      >
+                        {isCancellingAutoRenew ? 'Cancelling…' : 'Cancel auto-pay'}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-500 font-medium">Plan active until</span>
+                      <span className="text-slate-900 font-bold">{formatPlanDate(profile.subscription?.renewsOn)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Plan & Scan Quota Simulator (development builds only: it bypasses billing) */}
               {import.meta.env.DEV && (

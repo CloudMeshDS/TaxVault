@@ -10,6 +10,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { UserProfile } from '../../types';
+import { formatPlanPrice, planPrice } from '../../constants/plans';
 
 interface ScanLimitModalProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export const ScanLimitModal: React.FC<ScanLimitModalProps> = ({
                   </span>
                 </div>
                 <div className="text-xs font-semibold text-on-fill/80 mt-0.5">
-                  From ₹465/month · 10 AI scans a day & CA audit packs
+                  From {formatPlanPrice(planPrice('pro').monthly)}/month · 10 AI scans a day & CA audit packs
                 </div>
               </div>
             </div>
