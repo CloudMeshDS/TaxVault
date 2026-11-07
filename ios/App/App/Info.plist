@@ -66,6 +66,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>TaxVault requires access to your camera to scan and digitize expense receipts and tax invoices.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

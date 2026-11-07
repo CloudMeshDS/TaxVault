@@ -53,3 +53,9 @@ supabase/.temp/
 # The server reads FCM_SERVICE_ACCOUNT; android/app/google-services.json comes from the Firebase console.
 *firebase-adminsdk*.json
 google-services.json
+# Release signing: upload keystore and its passwords stay on this machine (back them up!)
+*.jks
+*.keystore
+android/keystore.properties
+# Release builds
+TaxVault-release.aab

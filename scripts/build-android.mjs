@@ -3,6 +3,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const androidDir = path.resolve('android');
+// --release builds the signed Play Store bundle (AAB) instead of the debug APK
+const release = process.argv.includes('--release');
 const wrapperJar = path.join(androidDir, 'gradle', 'wrapper', 'gradle-wrapper.jar');
 const localJdkRoot = process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Programs', 'Temurin', 'jdk-21');
 const localJdkName = localJdkRoot && existsSync(localJdkRoot)
@@ -43,7 +45,7 @@ if (stopResult.error) {
 
 const result = spawnSync(
   javaExecutable,
-  ['-classpath', wrapperJar, 'org.gradle.wrapper.GradleWrapperMain', 'assembleDebug'],
+  ['-classpath', wrapperJar, 'org.gradle.wrapper.GradleWrapperMain', release ? 'bundleRelease' : 'assembleDebug'],
   { cwd: androidDir, env, stdio: 'inherit' },
 );
 
@@ -52,7 +54,16 @@ if (result.error) {
   process.exit(1);
 }
 
-if (result.status === 0) {
+if (result.status === 0 && release) {
+  const bundle = path.join(androidDir, 'app', 'build', 'outputs', 'bundle', 'release', 'app-release.aab');
+  if (existsSync(bundle)) {
+    const { copyFileSync } = await import('node:fs');
+    copyFileSync(bundle, path.resolve('TaxVault-release.aab'));
+    console.log(existsSync(path.join(androidDir, 'keystore.properties'))
+      ? 'Signed release bundle: TaxVault-release.aab'
+      : 'WARNING: android/keystore.properties is missing, so TaxVault-release.aab is UNSIGNED');
+  }
+} else if (result.status === 0) {
   const generatedApk = path.join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
   if (existsSync(generatedApk)) {
     const { copyFileSync, rmSync } = await import('node:fs');

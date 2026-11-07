@@ -2710,6 +2710,8 @@ export function createApi(): express.Express {
   app.delete('/api/account', rateLimit('delete-account', 3, 15 * 60 * 1000), requireUser, async (req, res) => {
     const { id: userId, email } = req.user!;
     try {
+      // Stop any monthly auto-debit first: a deleted account must never be charged again
+      await billing.cancelAutoRenew(userId, false);
       // Receipt photos first, so none are left behind if a later step fails
       await deleteUserReceipts(supabaseAdmin, userId);
       const deletions: Array<[string, string, string]> = [
