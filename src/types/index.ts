@@ -218,6 +218,10 @@ export interface UserSubscription {
   dailyScanLimit?: number;
   /** Paid plans: AI scans used in the last 24 hours, as of the last profile load */
   scansLast24h?: number;
+  /** Monthly plan paid by auto-debit that has not been cancelled */
+  autoRenew?: boolean;
+  /** Next auto-debit date (YYYY-MM-DD) */
+  nextChargeOn?: string;
 }
 
 export interface SubscriptionPlanMaster {

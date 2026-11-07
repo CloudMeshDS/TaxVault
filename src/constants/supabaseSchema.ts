@@ -527,8 +527,8 @@ INSERT INTO public.subscription_plans (
 (
   'pro', 'tax_compliance_pro', 'Tax Compliance Pro', 'For freelancers and sole traders',
   '10 AI receipt scans per day, CA audit packs and cloud backup.', 'monthly',
-  465.00, 0, 0, 0, 0,
-  4650.00, 0, 0, 0, 0,
+  0, 5.99, 0, 0, 0,
+  0, 59.90, 0, 0, 0,
   -1, 2000000, 1000, -1,
   '["10 AI receipt scans per day", "CA audit PDF, with receipt photos", "Multi-sheet Excel tax workbook", "Accountant share link & audit ZIP pack", "Cloud backup & sync across devices"]'::jsonb,
   'Most popular', 2
@@ -536,8 +536,8 @@ INSERT INTO public.subscription_plans (
 (
   'business', 'business_daily_20', 'Business', 'For busy small businesses',
   '20 AI receipt scans per day, CA audit packs and cloud backup.', 'monthly',
-  699.00, 0, 0, 0, 0,
-  6990.00, 0, 0, 0, 0,
+  0, 8.99, 0, 0, 0,
+  0, 89.90, 0, 0, 0,
   -1, 4000000, 2000, -1,
   '["20 AI receipt scans per day", "CA audit PDF, with receipt photos", "Multi-sheet Excel tax workbook", "Accountant share link & audit ZIP pack", "Cloud backup & sync across devices"]'::jsonb,
   NULL, 3
@@ -545,8 +545,8 @@ INSERT INTO public.subscription_plans (
 (
   'enterprise', 'firm_multi_entity', 'CA Firm & Multi-Entity', 'For accountants and high-volume teams',
   '100 AI receipt scans per day, CA audit packs and cloud backup.', 'monthly',
-  1499.00, 0, 0, 0, 0,
-  14990.00, 0, 0, 0, 0,
+  0, 19.99, 0, 0, 0,
+  0, 199.90, 0, 0, 0,
   -1, 10000000, 10000, -1,
   '["100 AI receipt scans per day", "CA audit PDF, with receipt photos", "Multi-sheet Excel tax workbook", "Accountant share link & audit ZIP pack", "Cloud backup & sync across devices"]'::jsonb,
   NULL, 4

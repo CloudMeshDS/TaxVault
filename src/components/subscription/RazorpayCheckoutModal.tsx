@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { PaidTier } from '../../constants/plans';
+import { formatPlanPrice, toMinorUnits, type PaidTier, type PlanCurrency } from '../../constants/plans';
 import { SUBSCRIPTION_PLANS } from '../../services/subscriptionService';
 import {
   X,
@@ -26,7 +26,10 @@ interface RazorpayCheckoutModalProps {
   planName: string;
   planTier: PaidTier;
   billingCycle: 'monthly' | 'annual';
-  amountINR: number;
+  amount: number;
+  currency: PlanCurrency;
+  /** Coupon already checked on the plan screen; the server applies it again when pricing the order */
+  couponCode?: string;
   onPaymentSuccess: (response: RazorpaySuccessResponse) => void;
 }
 
@@ -37,7 +40,9 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   planName,
   planTier,
   billingCycle,
-  amountINR,
+  amount,
+  currency,
+  couponCode,
   onPaymentSuccess,
 }) => {
   const [activeTab, setActiveTab] = useState<'upi' | 'card' | 'netbanking'>('upi');
@@ -60,22 +65,33 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
     setProcessingStep('Generating Razorpay live order...');
 
     try {
-      // 1. Create server-side order with Razorpay
-      const orderRes = await RazorpayService.createOrderOnServer(planTier, billingCycle);
+      // 1. Monthly plans are auto-debited (Razorpay subscription + mandate); annual is a one-time order
+      let paymentTarget: { order_id?: string; subscription_id?: string; amount?: number; currency?: string };
+      if (billingCycle === 'monthly') {
+        const subRes = await RazorpayService.createSubscriptionOnServer(planTier, couponCode);
+        if (!subRes.success || !subRes.subscriptionId) throw new Error(subRes.error || 'Could not start auto-pay');
+        paymentTarget = { subscription_id: subRes.subscriptionId };
+      } else {
+        const orderRes = await RazorpayService.createOrderOnServer(planTier, billingCycle, couponCode);
+        if (!orderRes.success && couponCode) throw new Error(orderRes.error || 'This coupon could not be applied');
+        paymentTarget = {
+          order_id: orderRes.orderId,
+          amount: orderRes.amount ?? toMinorUnits(amount),
+          currency: orderRes.currency || currency,
+        };
+      }
 
       setProcessingStep('Launching Razorpay Checkout...');
 
       // 2. Open official Razorpay Checkout modal
       const res = await RazorpayService.openCheckout({
-        amount: Math.round(amountINR * 100),
-        currency: 'INR',
+        ...paymentTarget,
         name: 'TaxVault Compliance',
-        description: `${planName} (${billingCycle === 'annual' ? 'Annual Plan' : 'Monthly Plan'})`,
-        order_id: orderRes.orderId,
+        description: `${planName} (${billingCycle === 'annual' ? 'Annual Plan' : 'Monthly, auto-renews'})`,
         prefill: {
           name: cardName || profile.fullName || 'TaxVault Subscriber',
           email: profile.email || 'user@taxvault.app',
-          contact: '9876543210',
+          contact: profile.phone || undefined,
         },
         theme: {
           color: '#0c2340',
@@ -212,7 +228,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
                 style={{ color: '#ffffff' }}
                 className="text-2xl font-black font-mono tracking-tight block"
               >
-                ₹{amountINR.toLocaleString('en-IN')}
+                {formatPlanPrice(amount, currency)}
               </span>
               <span style={{ color: '#94a3b8' }} className="text-xs font-mono block">
                 INR · All taxes incl.
@@ -459,7 +475,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           >
             <Lock className="w-4 h-4 text-emerald-700" />
             <span style={{ color: '#ffffff' }} className="font-extrabold text-white text-sm">
-              Pay ₹{amountINR.toLocaleString('en-IN')} via Razorpay
+              Pay {formatPlanPrice(amount, currency)} via Razorpay
             </span>
           </button>
 

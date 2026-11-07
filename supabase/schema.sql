@@ -1058,3 +1058,18 @@ ON CONFLICT (id) DO UPDATE SET
 -- The daily limit counts successful scans per user in the last 24 hours.
 CREATE INDEX IF NOT EXISTS idx_token_request_logs_user_type_time
   ON public.token_request_logs (user_id, request_type, created_at DESC);
+
+-- Current prices (US dollars): see migrations/2026-11-07_usd_prices.sql
+UPDATE public.subscription_plans SET
+  price_usd = v.monthly, price_annual_usd = v.annual,
+  price_inr = 0, price_annual_inr = 0,
+  price_nzd = 0, price_annual_nzd = 0,
+  price_aud = 0, price_annual_aud = 0,
+  price_cad = 0, price_annual_cad = 0,
+  updated_at = NOW()
+FROM (VALUES
+  ('pro', 5.99, 59.90),
+  ('business', 8.99, 89.90),
+  ('enterprise', 19.99, 199.90)
+) AS v(id, monthly, annual)
+WHERE public.subscription_plans.id = v.id;
