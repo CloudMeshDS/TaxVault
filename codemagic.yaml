@@ -1,0 +1,47 @@
+# Codemagic: builds the iPhone app on a cloud Mac and uploads it to TestFlight.
+#
+# One-time setup in Codemagic (see STORE_RELEASE_CHECKLIST.md, section 4):
+#  1. Teams → Integrations → Developer Portal: add an App Store Connect API key and name it
+#     "TaxVault App Store Connect" (the name below must match).
+#  2. App settings → Environment variables: group "taxvault_app" with the VITE_* values from your
+#     local .env (they are compiled into the app, so they are not secret, but keep them out of git).
+#  3. The app "nz.taxvault.mobile" must exist in App Store Connect.
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: TaxVault App Store Connect
+    environment:
+      groups:
+        - taxvault_app   # VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_RAZORPAY_KEY_ID, VITE_EMAILJS_*
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: nz.taxvault.mobile
+      node: 22
+      xcode: latest
+    triggering:
+      events: []         # start builds by hand from Codemagic
+    scripts:
+      - name: Install packages
+        script: npm ci --legacy-peer-deps
+      - name: Build the web app (mobile mode)
+        script: npm run build:mobile
+      - name: Copy into the iOS project
+        script: npx cap sync ios
+      - name: Signing profiles
+        script: xcode-project use-profiles --project ios/App/App.xcodeproj
+      - name: Build number
+        script: |
+          cd ios/App
+          agvtool new-version -all "$BUILD_NUMBER"
+      - name: Build IPA
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
