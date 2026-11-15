@@ -12,8 +12,10 @@ let registered = false;
 /** This install's Firebase token, kept so sign-out can tell the server to forget it. */
 let currentToken: string | null = null;
 
+// Android only for now: on iPhone this plugin returns an APNs token, but the server sends through
+// Firebase and needs an FCM token. iOS needs a Firebase Messaging plugin and an APNs key first.
 export const pushEnabled = () =>
-  Capacitor.isNativePlatform() && import.meta.env.VITE_PUSH_ENABLED === 'true';
+  Capacitor.getPlatform() === 'android' && import.meta.env.VITE_PUSH_ENABLED === 'true';
 
 export async function registerForPushNotifications(): Promise<void> {
   if (registered || !pushEnabled()) return;

@@ -72,7 +72,8 @@ The iOS project exists (`ios/`), but it can only be built, signed and uploaded *
 - [x] Camera and photo-library permission texts in `Info.plist`
 - [x] Export compliance answered in `Info.plist` (standard HTTPS only, so no encryption paperwork)
 - [ ] Apple Developer Program (US$99 a year)
-- [ ] Mac: `npm run ios:sync`, open `ios/App/App.xcworkspace`, set the Team, bundle ID, version 1.0.0 (build 1)
+- [x] Cloud build without a Mac: `codemagic.yaml` (workflow "iOS → TestFlight"), version 1.0.0, build number from Codemagic
+- [ ] Codemagic: App Store Connect API key integration + env group `taxvault_app`, then start the workflow
 - [ ] **Push on iOS:** add the Push Notifications capability, create an APNs key and upload it to Firebase, add `GoogleService-Info.plist`, and add a Firebase Messaging plugin. The current push plugin gives an APNs token on iPhone, but the server sends through Firebase and needs an FCM token. Until then, keep `VITE_PUSH_ENABLED` off for iOS builds.
 - [ ] **Payments:** see section 0. Without Apple In-App Purchase, the iOS build must not show prices or subscribe buttons.
 - [ ] App Store Connect: create the app, privacy policy URL, support URL
